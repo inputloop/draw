@@ -1,0 +1,60 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+   egad.css -- the egad design system's tokens, as topology uses them.
+
+   egad is Corwin Brust's design system (https://egad.bru.st; code GPL-3.0-or-later,
+   prose CC BY-SA 4.0; Copyright (C) 2026 Corwin Brust <corwin@bru.st>).  Its colour
+   values come from GNU Emacs's Modus themes (Protesilaos Stavrou, GPL-3.0-or-later),
+   which are built to clear WCAG AAA for text.
+
+   These values are copied from egad's dist/css/egad-tokens.css (made by its
+   emit/emit.py from tokens/egad-tokens.json, 2026-10-04).  Change a colour in egad,
+   then here; tests/js/a11y.test.mjs measures the pairs topology.css draws from them.
+   egad names its themes operandi (light) and vivendi (dark); topology's data-theme
+   says "light" and "dark", and both spellings work here. */
+
+:root,
+:root[data-theme="light"], :root[data-theme="operandi"] {
+  color-scheme: light;
+  --egad-bg-main: #ffffff;    --egad-bg-dim: #f2f2f2;     --egad-bg-active: #c4c4c4;
+  --egad-bg-inactive: #e0e0e0; --egad-bg-hl-line: #dae5ec; --egad-bg-region: #bdbdbd;
+  --egad-fg-main: #000000;    --egad-fg-dim: #595959;     --egad-fg-alt: #193668;
+  --egad-border: #9f9f9f;
+  --egad-red: #a60000;   --egad-green: #006800; --egad-yellow: #6f5500;
+  --egad-blue: #0031a9;  --egad-magenta: #721045; --egad-cyan: #005e8b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="operandi"]) {
+    color-scheme: dark;
+    --egad-bg-main: #000000;    --egad-bg-dim: #1e1e1e;     --egad-bg-active: #535353;
+    --egad-bg-inactive: #303030; --egad-bg-hl-line: #2f3849; --egad-bg-region: #5a5a5a;
+    --egad-fg-main: #ffffff;    --egad-fg-dim: #989898;     --egad-fg-alt: #c6daff;
+    --egad-border: #646464;
+    --egad-red: #ff5f59;   --egad-green: #44bc44; --egad-yellow: #d0bc00;
+    --egad-blue: #2fafff;  --egad-magenta: #feacd0; --egad-cyan: #00d3d0;
+  }
+}
+:root[data-theme="dark"], :root[data-theme="vivendi"] {
+  color-scheme: dark;
+  --egad-bg-main: #000000;    --egad-bg-dim: #1e1e1e;     --egad-bg-active: #535353;
+  --egad-bg-inactive: #303030; --egad-bg-hl-line: #2f3849; --egad-bg-region: #5a5a5a;
+  --egad-fg-main: #ffffff;    --egad-fg-dim: #989898;     --egad-fg-alt: #c6daff;
+  --egad-border: #646464;
+  --egad-red: #ff5f59;   --egad-green: #44bc44; --egad-yellow: #d0bc00;
+  --egad-blue: #2fafff;  --egad-magenta: #feacd0; --egad-cyan: #00d3d0;
+}
+
+/* the semantic layer (egad: what components use) */
+:root {
+  --egad-canvas: var(--egad-bg-main);        --egad-canvas-dim: var(--egad-bg-dim);
+  --egad-canvas-line: var(--egad-bg-hl-line); --egad-canvas-region: var(--egad-bg-region);
+  --egad-text: var(--egad-fg-main);          --egad-text-dim: var(--egad-fg-dim);
+  --egad-text-alt: var(--egad-fg-alt);       --egad-link: var(--egad-blue);
+  --egad-priority: var(--egad-magenta);
+  --egad-signal-error: var(--egad-red);      --egad-signal-warning: var(--egad-yellow);
+  --egad-signal-success: var(--egad-green);  --egad-signal-info: var(--egad-cyan);
+  --egad-border-divider: var(--egad-border); --egad-border-control: var(--egad-fg-dim);
+  --egad-focus-ring: var(--egad-blue);
+  --egad-font-fixed: ui-monospace, "Fira Code", "DejaVu Sans Mono", monospace;
+  --egad-font-variable: system-ui, "Noto Sans", "DejaVu Sans", sans-serif;
+  --egad-space-2: 8px; --egad-space-4: 16px; --egad-radius-1: 2px;
+}

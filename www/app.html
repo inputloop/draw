@@ -6,32 +6,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>topology: draw</title>
+<link rel="stylesheet" href="css/egad.css">
 <link rel="stylesheet" href="css/topology.css">
+<script src="js/look.js"></script>
 </head>
 <body>
 <a class="skip" href="#canvas">Skip to the drawing</a>
+<a class="skip skip2" href="#settings">Skip to the settings</a>
+<noscript><p class="status">The drawing app needs JavaScript. <a href="./">The front door</a> works without it, and the source is one click away there.</p></noscript>
 <div class="wide">
-<header class="mast" style="padding:.6rem 0 .4rem">
-  <a href="./" class="name" style="font-size:1.4rem;text-decoration:none;color:inherit">topology</a>
+<header class="mast mast-app">
+  <a href="./" class="name">topology</a>
   <span class="muted" id="where-settings">settings: this browser only</span>
 </header>
 
+<main id="main">
+<h1 class="sr-only">Draw with topology</h1>
 <div id="wizard" hidden></div>
 
 <div class="app" id="app">
-  <div class="side">
+  <aside class="side" id="settings" tabindex="-1" aria-label="Settings">
     <section aria-labelledby="h-api">
       <h2 id="h-api">Where the graph comes from</h2>
       <label for="endpoint">Use</label>
       <select id="endpoint"></select>
-      <details style="margin-top:.5em"><summary>Add an address</summary>
+      <details class="add"><summary>Add an address</summary>
         <label for="ep-name">Name</label><input id="ep-name" type="text" placeholder="my server">
         <label for="ep-url">Address of a graph API</label><input id="ep-url" type="url" placeholder="https://example.org/api/v1">
         <label for="ep-kind">It is</label>
         <select id="ep-kind"><option value="own">mine</option><option value="ours">the topology project's</option><option value="other">someone else's</option></select>
         <p><button class="btn quiet" id="ep-add" type="button">Add</button></p>
       </details>
-      <p class="muted" style="font-size:.85rem">The address stays in this browser. The server sees only the requests you make.</p>
+      <p class="muted small">The address stays in this browser. The server sees only the requests you make.</p>
     </section>
 
     <section aria-labelledby="h-priv">
@@ -51,7 +57,11 @@
       <select id="treatment"><option value="classic">classic</option><option value="console">console</option><option value="cards">cards</option></select>
       <label for="notation">Read drawings as</label>
       <select id="notation"></select>
-      <p class="muted" id="notation-about" style="font-size:.85rem"></p>
+      <p class="muted small" id="notation-about"></p>
+      <label for="palette">Colours</label>
+      <select id="palette"><option value="egad">egad (high contrast)</option><option value="original">the first palette</option></select>
+      <label for="theme">Light or dark</label>
+      <select id="theme"><option value="auto">as my system says</option><option value="light">light</option><option value="dark">dark</option></select>
       <label><input type="checkbox" id="still"> less motion</label>
     </section>
 
@@ -61,10 +71,10 @@
       <label for="import">Bring back an export</label>
       <input id="import" type="file" accept="application/json">
     </section>
-  </div>
+  </aside>
 
-  <div class="canvas" id="canvas">
-    <div class="acts" role="toolbar" aria-label="What the drawing does">
+  <div class="canvas" id="canvas" tabindex="-1" role="region" aria-label="The drawing">
+    <div class="acts" role="group" aria-label="What the drawing does">
       <button class="btn quiet" id="act-load" type="button">Draw the graph</button>
       <button class="btn quiet" id="act-prompt" type="button" title="describe or propose">Copy as a prompt</button>
       <button class="btn" id="act-go" type="button">Go</button>
@@ -73,6 +83,7 @@
     <iframe id="tf" title="TopoForge, the drawing" src="topoforge/index.html"></iframe>
   </div>
 </div>
+</main>
 </div>
 
 <script type="module">
@@ -109,7 +120,7 @@ function wizard(plan) {
       w.innerHTML = '';
       const box = document.createElement('div'); box.className = 'wizard'; box.setAttribute('role', 'region'); box.setAttribute('aria-label', 'Changes to your saved settings');
       if (i === -1) {
-        box.innerHTML = `<h1>Your saved settings need an update</h1>
+        box.innerHTML = `<h2>Your saved settings need an update</h2>
           <p>This version of topology keeps settings a little differently. ${changes.length} change${changes.length === 1 ? '' : 's'}
           will be made, one at a time, and nothing changes until you press ACCEPT at the end.</p>
           <p>Before anything changes, you can keep a copy of everything as it is now.</p>
@@ -121,7 +132,7 @@ function wizard(plan) {
         const c = changes[i];
         const tension = c.tension ? `<p class="tension muted">This pulls between ${pill(c.tension[0])} and ${pill(c.tension[1])}.</p>` : '';
         box.innerHTML = `<p class="stepno">Change ${i + 1} of ${changes.length} · ${pill(c.pillar)} <span class="tag">${c.category}</span></p>
-          <h1>${c.title}</h1><p>${c.detail}</p>${tension}
+          <h2>${c.title}</h2><p>${c.detail}</p>${tension}
           <div class="row"><button class="btn quiet" id="w-back">Back</button>
           <button class="btn" id="w-next">${i + 1 === changes.length ? 'To the summary' : 'Next'}</button>
           <button class="btn quiet" id="w-all">Accept all: show the summary</button></div>`;
@@ -130,7 +141,7 @@ function wizard(plan) {
         const ul = nodes => '<ul>' + nodes.map(n => n.change
           ? `<li>${n.label}${n.category ? ` <span class="tag">${n.category}</span>` : ''}${n.change.tension ? ` <span class="tension">(pulls between ${pill(n.change.tension[0])} and ${pill(n.change.tension[1])})</span>` : ''}</li>`
           : `<li><span class="${n.pillar ? '' : 'cat'}">${n.label}</span>${ul(n.children)}</li>`).join('') + '</ul>';
-        box.innerHTML = `<h1>Summary</h1><p>These changes are made together when you press ACCEPT.
+        box.innerHTML = `<h2>Summary</h2><p>These changes are made together when you press ACCEPT.
           They are grouped by what they touch: where (place), what (part), how (path) and who (person).</p>
           <div class="tree">${ul(tree)}</div>
           <p><label><input type="checkbox" id="w-after"> Also export my settings after accepting</label></p>
@@ -145,15 +156,15 @@ function wizard(plan) {
       on('w-next', () => { i++; render(); });
       on('w-back', () => { i = Math.max(-1, i - 1); render(); });
       on('w-all', () => { i = changes.length; render(); });
-      on('w-cancel', () => { w.hidden = true; $('app').inert = false; resolve(null); });
+      on('w-cancel', () => { w.hidden = true; $('app').inert = false; $('endpoint').focus(); resolve(null); });
       on('w-accept', () => {
         const after = box.querySelector('#w-after').checked;
         const next = T.applyUpgrade(state);
         persist(next);
         if (after) exportNow('after');
-        w.hidden = true; $('app').inert = false; resolve(next);
+        w.hidden = true; $('app').inert = false; $('endpoint').focus(); resolve(next);
       });
-      box.querySelector('h1').tabIndex = -1; box.querySelector('h1').focus();
+      const hd = box.querySelector('h2'); hd.tabIndex = -1; hd.focus();
     };
     render();
   });
@@ -201,7 +212,7 @@ function fillPrivate(nodes) {
     for (const v of ['', 'show', 'hide', 'auto']) s.add(new Option(v || 'as everywhere', v));
     s.value = state.showPrivate.containers[n.id] || '';
     s.onchange = () => { if (s.value) state.showPrivate.containers[n.id] = s.value; else delete state.showPrivate.containers[n.id]; save(state); };
-    const k = document.createElement('div'); k.className = 'kept';
+    const k = document.createElement('div'); k.className = 'kept'; k.id = id + '-by'; s.setAttribute('aria-describedby', k.id);
     k.textContent = n.private_kept_back ? `kept back (decided by: ${n.private_by})${n.private_seam ? '; the two files disagree: ' + n.private_seam : ''}` : `shown (decided by: ${n.private_by})`;
     box.append(l, s, k);
   }
@@ -217,6 +228,19 @@ const showNotation = () => { $('notation-about').textContent = T.NOTATIONS[state
 $('notation').value = state.notation; showNotation();
 $('notation').onchange = e => { state.notation = e.target.value; save(state); showNotation(); };
 $('still').onchange = applyLook; applyLook();
+
+// colours: kept apart from the settings (a per-browser convenience; js/look.js reads it before the page draws)
+let look = { palette: 'egad', theme: 'auto' };
+try { look = { ...look, ...(JSON.parse(localStorage.getItem('topology.look') || 'null') || {}) }; } catch (e) { /* defaults */ }
+const applyColours = () => {
+  const r = document.documentElement;
+  if (look.palette === 'original') r.dataset.palette = 'original'; else delete r.dataset.palette;
+  if (look.theme === 'light' || look.theme === 'dark') r.dataset.theme = look.theme; else delete r.dataset.theme;
+  try { localStorage.setItem('topology.look', JSON.stringify(look)); } catch (e) { /* the choice lasts until the page closes */ }
+};
+$('palette').value = look.palette; $('theme').value = look.theme;
+$('palette').onchange = e => { look.palette = e.target.value; applyColours(); };
+$('theme').onchange = e => { look.theme = e.target.value; applyColours(); };
 
 $('export').onclick = () => exportNow('now');
 $('import').onchange = async e => {
