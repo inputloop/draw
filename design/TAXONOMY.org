@@ -1,0 +1,99 @@
+#+TITLE: Topology's taxonomy: four pillars, two axes, six tensions
+#+SUBTITLE: The prose reading of taxonomy/pillars.json
+#+LANGUAGE: en
+#+STARTUP: showall
+#+OPTIONS: toc:nil num:nil
+
+This taxonomy stands alone: you need nothing from C4, inputloop or anyone's
+notes to use it.  It was grown from them (the sources are named at the end),
+and it is kept as data, in =taxonomy/pillars.json=, which the server
+(=Topology::Taxonomy=) and the browser app (=topology-core.js=) both read.
+Change a word there and both change.  The tests fail if the app shows a word
+that has no row (=perl/Topology/t/40-taxonomy.t=).
+
+* The four pillars
+
+Every thing a drawing holds answers one question first.  The pillar is that
+question.
+
+| pillar | asks                                       | holds                                                        |
+|--------+--------------------------------------------+--------------------------------------------------------------|
+| Place  | Where is it?                               | hosts, sites, racks, folders, repositories as places, mirrors |
+| Part   | What is it, and what is it made of?        | components, packages, modules, versions, containment          |
+| Path   | How does it connect, flow or happen?       | links, transports, processes (BPMN, BPMN+), flowcharts, logic |
+| Person | Who may see it, change it, or answer for it? | people, roles, consent, privacy, credentials, the hand on go |
+
+A thing can be read in more than one pillar.  A repository is a place you can
+clone and a part you can package.  The taxonomy does not force one reading;
+it records the first (=pillar=) and any others (=also=), and the tensions
+below say what each pair of readings pulls against.
+
+Why these four.  They are the four questions a person drawing a system asks
+of every shape, in the order they usually ask them: where, what, how, who.
+They map onto TopoForge's own shape families without remainder (each of its
+device, container and basic shapes sits in one pillar; the test checks the
+shape names against the copy we ship), and onto the drawing tasks the prompt
+names: physical layout (place), components and packages (part), BPMN and
+flowcharts and logic (path), and private parts, credentials and "go" (person).
+
+Falsifier: a shape or word that people keep placing in two pillars with equal
+conviction.  That is a fifth question, or a tension that should be a pillar.
+
+* Two axes that cross every pillar
+
+** Layer: at what level is this drawn?
+
+- *abstract*: an idea or a design; nothing need exist
+- *operational*: how it runs: processes, services, schedules
+- *physical*: what you could touch or ping
+
+A =TOPOLOGY.md= may say =layer:=; the app can show one layer, or all of them
+stacked.
+
+** Act: what does drawing it do?
+
+- *describe*: shapes or words describe something buildable
+- *propose*: drawn over an existing thing, it is a proposed change, or asks for a prompt to make it
+- *effect*: press go, and tools that can make the change make it
+
+This axis is Bridget's, from the recording of 2026-10-31 (00:01:51 to
+00:02:28): "if I'm putting shapes on the page or if I'm typing. Either way I'm
+describing something I want to have be buildable ... If that's an existing
+thing I'm proposing a change to it asking for a prompt to do it or literally
+affecting that change if I press go and I have tools that can implement the
+change for me."  In the app it is the row of three buttons over the drawing.
+
+* Six tensions
+
+Four pillars make six pairs.  Each pair pulls in a known way; the app names
+the pull where it bears (in the upgrade wizard, beside a change; in the
+graph, beside a thing read in two pillars) instead of listing all six
+everywhere.
+
+| between        | name                               | what to do about it                                              |
+|----------------+------------------------------------+------------------------------------------------------------------|
+| place, path    | where it sits / how it moves       | draw once, show both readings; a mirror is both                   |
+| part, person   | what it is / who answers for it    | separate rows that link: the package, and its maintainer          |
+| place, person  | where it is / who may see that     | show-private applies to places too                               |
+| part, path     | what it is / what it does          | the layer axis says which reading is drawn                        |
+| place, part    | the box / what is in the box       | containment: a repository is both                                 |
+| path, person   | the flow / the hand on it          | a BPMN lane is a person, its task a path; go only a person takes  |
+
+* Words
+
+The app's words, each with its pillar and its sense, are the =words= rows of
+=pillars.json=.  A word the app shows that has no row is a gap: not an error,
+a word to define.  The list is short on purpose; it grows when a word is
+needed, never in advance.
+
+* Where it came from
+
+- TopoForge 1.7's shape families (=www/topoforge/index.html=, =defShape=).
+- The prompt of 2026-10-31 (=context/PROMPT-2026-10-31-topology-corwin.md=):
+  BPMN and flowcharts, abstract and operational and physical, private parts,
+  credentials.
+- The recording with Bridget (=context/REVIEW-2026-10-31-topography-transcript.md=): the act axis.
+- C4's way of keeping words in a registry with a place for each sense, and of
+  naming seams where two readings split (in Corwin's C4 project; not needed here).
+- The UI directions on Corwin's bench (Board, Cosmos, Chamber, Console;
+  motion with a still path), which became the treatments.

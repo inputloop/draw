@@ -1,0 +1,24 @@
+Installing topology
+===================
+
+From packages (Debian 13 or Ubuntu 24.04):
+
+    sudo apt install ./topology-www_0.01_all.deb      # the app, as files
+    sudo apt install ./topology*_0.01*.deb            # all of it
+
+From source, without packages:
+
+    sh bin/fetch-sources.sh
+    # build perl 5.44.0 into /opt/topology/perl (RECIPE.org, "Build perl by hand")
+    sh bin/vendor-install.sh /opt/topology/perl/bin/perl vendor/cpan /tmp/vendor-build
+    cd perl/Topology && /opt/topology/perl/bin/perl Makefile.PL && make && make test && make install
+    sh bin/stage-www.sh /usr/local/share/topology/www
+
+Or with any perl 5.36 or later that has Feature::Compat::Class and Future:
+
+    cd perl/Topology && perl Makefile.PL && make test
+
+Just the app, no install at all: open www/index.html in a browser.
+(The taxonomy and the recipe links need bin/stage-www.sh's layout.)
+
+Check: sh bin/test.sh

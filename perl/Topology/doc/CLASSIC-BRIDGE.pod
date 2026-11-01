@@ -1,0 +1,154 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+CLASSIC-BRIDGE - perl's new class syntax, read by someone who learned bless
+
+=head1 WHO THIS IS FOR
+
+You know Perl.  Maybe you wrote it for years, maybe the last time was a
+CGI script in 2004.  You know C<package>, C<bless>, C<@ISA>, C<$self>,
+C<shift>.  Topology's data modules use the C<class> syntax that came into
+perl 5.38 (2023), and its server uses C<async>/C<await>.  This page puts
+each new construct beside the classic code that does the same job, using
+Topology's own code as the examples.
+
+Every claim here is checked: F<t/> runs the same modules on perl 5.44
+(core C<class>) and on perl 5.38 (where L<Feature::Compat::Class> loads
+L<Object::Pad> instead).  Both pass.
+
+=head1 THE PREAMBLE
+
+  use v5.36;                    # classic: use strict; use warnings;
+                                #          use feature qw(say signatures);
+  use Feature::Compat::Class;   # classic: nothing; there was no syntax
+
+C<use v5.36> turns on strict, warnings, C<say> and subroutine signatures.
+L<Feature::Compat::Class> is a few lines by Paul Evans (who also wrote the
+core feature): on perl 5.42 and later it switches on C<feature 'class'>;
+on older perls it loads Object::Pad set up to accept only what core
+accepts, so code written against it keeps working when you upgrade.
+
+=head1 A CLASS AND ITS FIELDS
+
+New (F<lib/Topology/Repo.pm>):
+
+  class Topology::Repo {
+      field $name   :param :reader;
+      field $branch :param :reader = 'main';
+      field @problems;
+      ...
+  }
+
+Classic:
+
+  package Topology::Repo;
+  use Carp;
+  sub new {
+      my ($class, %arg) = @_;
+      my $self = bless {}, $class;
+      $self->{name}   = delete $arg{name} // croak "name is required";
+      $self->{branch} = delete $arg{branch} // 'main';
+      $self->{problems} = [];
+      croak "unknown arguments: @{[ sort keys %arg ]}" if %arg;
+      return $self;
+  }
+  sub name   { $_[0]{name} }
+  sub branch { $_[0]{branch} }
+
+What changed, and why it matters to a maintainer:
+
+=over
+
+=item * C<:param> makes the constructor take C<< name => ... >>; a field
+with C<:param> and no default is required.  Unknown arguments are an
+error, which classic code had to remember to check.
+
+=item * C<:reader> writes the accessor.  C<:writer> (perl 5.42+) writes
+C<set_name>.
+
+=item * A field is a lexical variable inside every C<method>.  Mistyping
+C<$nmae> is a compile-time error; mistyping C<< $self->{nmae} >> was a
+silent C<undef>.
+
+=item * There is no hash.  You cannot reach inside an object from outside;
+C<Data::Dumper> shows an opaque object.  If you want to see the fields,
+give the class a method that returns them.
+
+=back
+
+=head1 ADJUST IS THE TAIL OF sub new
+
+  ADJUST {
+      $name =~ /^[A-Za-z0-9][\w.-]*$/ or die "...";
+  }
+
+Classic: the checks you would write in C<new> after the assignments and
+before C<return $self>.  A class may have several ADJUST blocks; they run
+in order.
+
+=head1 method IS sub WITH $self ALREADY SHIFTED
+
+  method usable { !$strict || !@problems }
+
+Classic:
+
+  sub usable { my $self = shift; !$self->{strict} || !@{ $self->{problems} } }
+
+C<$self> exists inside every method without being written.  Signatures
+work as in subs: C<method update ($root, $askpass = '/usr/libexec/...')>.
+
+=head1 INHERITANCE
+
+  class Topology::Repo::Mirror :isa(Topology::Repo) { ... }
+
+Classic: C<our @ISA = ('Topology::Repo');> (or C<use parent>).  One
+superclass only.  A classic package cannot inherit from a C<class>, but
+it can hold one and call its methods, which is how F<script/topology>
+(classic) uses every class here.
+
+=head1 WHERE TOPOLOGY STAYS CLASSIC, ON PURPOSE
+
+L<Topology::Config>, L<Topology::CSV>, L<Topology::Build> and
+F<script/topology> are written the way Perl was written in 2002: the
+parts an operator opens to see why something is off.  The house rule we
+follow (from Bob Proulx's medley): new code should look like the code
+around it, and a consistent older style is a choice, not an oversight.
+
+=head1 ASYNC AND AWAIT
+
+L<Topology::Server> uses L<Future::AsyncAwait> on L<IO::Async>:
+
+  async method fetch_all ($repos) {
+      my @r = await Future->needs_all(map { $self->fetch($_) } @$repos);
+      return scalar @r;
+  }
+
+Classic, with the same L<Future> objects:
+
+  sub fetch_all {
+      my ($self, $repos) = @_;
+      return Future->needs_all(map { $self->fetch($_) } @$repos)
+          ->then(sub { my @r = @_; Future->done(scalar @r) });
+  }
+
+C<await> does not block the program.  It pauses this method until the
+future is ready and lets the event loop run everything else meanwhile.
+An async method always returns a Future; call C<< ->get >> on it at the
+top of a script to wait for the answer.
+
+=head1 IF YOU HAVE OBJECT::PAD CODE
+
+Object::Pad was the proving ground for core C<class>.  It has more (roles
+with C<:does>, C<:strict(params)>, field blocks).  Feature::Compat::Class
+refuses those on purpose, so code using it will run on core.  Topology
+uses only what both accept.
+
+=head1 SEE ALSO
+
+L<perlclass>, L<perlclassguts>, L<Feature::Compat::Class>, L<Object::Pad>,
+L<Future>, L<Future::AsyncAwait>, L<IO::Async>.
+
+=cut

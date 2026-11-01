@@ -1,0 +1,78 @@
+#!/usr/bin/make -f
+# Tangled from RECIPE.org; edit it there.
+# topology's debian/rules: build perl 5.44.0 into topology-perl, install
+# the vendored CPAN distributions with that perl, then the Topology
+# modules into topology and the site into topology-www.
+
+PERLVER := 5.44.0
+PREFIX  := /opt/topology/perl
+TP      := $(CURDIR)/debian/topology-perl
+TPERL   := $(TP)$(PREFIX)/bin/perl
+B       := $(CURDIR)/debian/build
+JOBS    := $(or $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS))),1)
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	mkdir -p $(B)
+	tar -C $(B) -xzf vendor/perl/perl-$(PERLVER).tar.gz
+	cd $(B)/perl-$(PERLVER) && sh Configure -des -Dprefix=$(PREFIX) \
+	    -Duserelocatableinc -Dman1dir=$(PREFIX)/man/man1 -Dman3dir=$(PREFIX)/man/man3 \
+	    -Dinstallusrbinperl=undef -Dcf_email=corwin@bru.st >$(B)/configure.log
+
+override_dh_auto_build:
+	$(MAKE) -C $(B)/perl-$(PERLVER) -j$(JOBS) >$(B)/make.log
+	sh bin/stage-www.sh $(B)/www
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	if node --version >/dev/null 2>&1; then node --test tests/js/*.test.mjs; \
+	else echo "node not found: the JavaScript half is not tested in this build"; fi
+endif
+
+override_dh_auto_install:
+	$(MAKE) -C $(B)/perl-$(PERLVER) install DESTDIR=$(TP) >$(B)/install.log
+	# the vendored CPAN distributions, in the order vendor/ORDER gives
+	TOPOLOGY_TEST=$(if $(filter nocheck,$(DEB_BUILD_OPTIONS)),no,yes) \
+	    sh bin/vendor-install.sh $(TPERL) vendor/cpan $(B)/vendor
+	# Topology itself, tested with the perl it will run under
+	cd perl/Topology && $(TPERL) Makefile.PL >/dev/null && $(MAKE) >/dev/null
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	cd perl/Topology && $(MAKE) test
+endif
+	mkdir -p debian/topology/usr/share/topology/perl5 debian/topology/usr/bin \
+	         debian/topology/usr/libexec/topology debian/topology/usr/share/topology/taxonomy \
+	         debian/topology/etc/topology/repos.d debian/topology/usr/share/man/man1
+	cp -R perl/Topology/lib/. debian/topology/usr/share/topology/perl5/
+	sed '1s|^#!.*|#!$(PREFIX)/bin/perl|' perl/Topology/script/topology >debian/topology/usr/bin/topology
+	chmod 755 debian/topology/usr/bin/topology
+	install -m 755 perl/Topology/script/topology-askpass debian/topology/usr/libexec/topology/askpass
+	install -m 644 taxonomy/pillars.json debian/topology/usr/share/topology/taxonomy/
+	install -m 644 etc/topology.conf debian/topology/etc/topology/
+	install -m 644 etc/repos.d/README debian/topology/etc/topology/repos.d/
+	TOPOLOGY_LIB=perl/Topology/lib help2man --no-info --section=1 \
+	    --name='draw what you have, from the git repositories that describe it' \
+	    "$(TPERL) perl/Topology/script/topology" >debian/topology/usr/share/man/man1/topology.1
+	sed -i 's|$(TPERL) perl/Topology/script/topology|topology|g; s|\\fB$(TPERL)[^\\]*\\fR|topology|g' \
+	    debian/topology/usr/share/man/man1/topology.1
+	mkdir -p debian/topology-www/usr/share/topology debian/topology-www/usr/share/topology/nginx
+	cp -R $(B)/www debian/topology-www/usr/share/topology/www
+	install -m 644 etc/nginx-topology.conf debian/topology-www/usr/share/topology/nginx/topology.conf
+	ln -s /var/lib/topology/dist debian/topology-www/usr/share/topology/www/dist
+
+override_dh_installsystemd:
+	dh_installsystemd -ptopology --name=topology-api
+	dh_installsystemd -ptopology --name=topology-refresh
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_dwz:
+
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(TP)$(PREFIX)/lib/$(PERLVER)/x86_64-linux/CORE
+
+override_dh_auto_clean:
+	rm -rf $(B)
+	cd perl/Topology && [ ! -f Makefile ] || $(MAKE) distclean >/dev/null

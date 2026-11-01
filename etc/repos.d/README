@@ -1,0 +1,15 @@
+One file per git repository, named NAME.conf.  A file names a secret; it
+never holds one.
+
+  name   = c4
+  url    = git@github.com:inputloop/c4.git
+  branch = main
+  auth   = ssh-key /etc/topology/keys/c4_ed25519
+
+auth is one of:
+  none                public, or reached some other way
+  ssh-key FILE        a private key the topology user can read (ssh refuses keys others can read)
+  token-file FILE     an HTTPS token, first line of FILE; mode 0600, owner topology
+  netrc               the topology user's own ~/.netrc
+
+"topology repos" lists them and says what is wrong with any.

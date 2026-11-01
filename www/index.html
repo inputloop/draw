@@ -1,0 +1,131 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+     The front door.  Made by RECIPE.org, section "The front door"; edit it there or here and re-tangle. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>topology</title>
+<meta name="description" content="Draw what you have, from the files that describe it. Free software; runs in your browser first.">
+<link rel="stylesheet" href="css/topology.css">
+<script>
+  // the person's look, if they chose one in the app; nothing else is read here
+  try { const s = JSON.parse(localStorage.getItem('topology.state') || 'null');
+        if (s && s.treatment) document.documentElement.dataset.treatment = s.treatment; } catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the two ways in</a>
+<div class="wrap">
+<header class="mast">
+  <div class="name">topology</div>
+  <div class="muted">Draw what you have, from the files that describe it.</div>
+  <nav class="top" aria-label="Site">
+    <a href="#what">What it is</a>
+    <a href="#get">Download</a>
+    <a href="dist/src/">Source</a>
+    <a href="dist/debian/">Debian</a>
+    <a href="#ladder">Switch things off</a>
+    <a href="RECIPE.org">The recipe</a>
+    <a href="#yours">Make it yours</a>
+  </nav>
+</header>
+
+<main id="main">
+  <h1>Your systems, drawn by you.</h1>
+  <p>Point it at the repositories you keep. Each one can say what it is in a short
+  <code>TOPOLOGY.md</code>; topology reads them, sorts what they say by
+  <em>where</em>, <em>what</em>, <em>how</em> and <em>who</em>, and draws it. You move
+  the shapes. The drawing is yours.</p>
+
+  <div class="ways">
+    <div class="way">
+      <h2 style="margin-top:0;border:0">Zero Sharing</h2>
+      <p>Everything stays in this browser: settings, drawings, choices. Nothing is sent
+      anywhere until you add an address yourself, and you can take it all away as a file
+      at any time.</p>
+      <a class="btn" href="app.html#zero">Start now, share nothing</a>
+    </div>
+    <div class="way">
+      <h2 style="margin-top:0;border:0">Connect an API</h2>
+      <p>Your own server, ours, or anyone's that speaks the graph API. The address lives in
+      your browser; the server only sees what you ask it for.</p>
+      <a class="btn quiet" href="app.html#connect">Connect and draw</a>
+    </div>
+  </div>
+
+  <details class="more" id="what">
+    <summary>What it is</summary>
+    <p>A drawing app (TopoForge, a single-file network and diagram designer) with a small
+    server beside it. The server keeps a list of git repositories, reads the
+    <code>TOPOLOGY.md</code> files in them, and keeps what it learns as small files you can
+    read with <code>ls</code> and <code>cat</code>. The app asks it for a graph and lays the
+    graph out as shapes.</p>
+    <p>A drawing can be read three ways. It <strong>describes</strong> something you want to
+    exist. Drawn over something that already exists, it <strong>proposes</strong> a change, and
+    can hand you that change as a prompt to take anywhere. Where a server allows it and has
+    the tools, pressing <strong>go</strong> makes the change. Every server starts with go
+    switched off.</p>
+    <p>Private parts of a <code>TOPOLOGY.md</code> stay hidden unless the component says show,
+    or you do, and a server sends none at all until its operator allows it. You can set that per container or for everything, and the app always tells you
+    which setting decided.</p>
+    <p class="recipe-note"><a href="spec/TOPOLOGY-md.md">the format and the rule, in one page</a></p>
+  </details>
+
+  <details class="more" id="get">
+    <summary>Download</summary>
+    <p>Everything below is built by one file, <a href="RECIPE.org">RECIPE.org</a>, which is
+    itself in every package, so any copy can rebuild the rest.</p>
+    <table>
+      <thead><tr><th scope="col">Package</th><th scope="col">What you get</th></tr></thead>
+      <tbody>
+        <tr><td><code>topology-www</code></td><td>Just this site and the app, as files under <code>/usr/share/topology/www</code>. Nothing runs.</td></tr>
+        <tr><td><code>topology-perl</code></td><td>Perl 5.44.0, built for topology, with its CPAN modules inside, under <code>/opt/topology/perl</code>. Leaves your system perl alone.</td></tr>
+        <tr><td><code>topology</code></td><td>The command, the graph API service, and the settings in <code>/etc/topology</code>.</td></tr>
+      </tbody>
+    </table>
+    <p>Browse: <a href="dist/debian/">Debian packages</a> · <a href="dist/src/">source tarballs</a> ·
+    <a href="dist/SHA256SUMS">SHA256SUMS</a> · <a href="dist/vendor/">the CPAN sources we vendor</a></p>
+    <pre>sudo apt install ./topology-www_*.deb      # files only
+sudo apt install ./topology*.deb           # all of it</pre>
+  </details>
+
+  <details class="more" id="ladder">
+    <summary>Switch things off</summary>
+    <p>New features arrive switched on. Every one can be switched off in
+    <code>/etc/topology/topology.conf</code>, and one line takes the whole thing back to just
+    the files of this site:</p>
+    <pre>ceiling = spa      # spa | web | api | repos | write</pre>
+    <table>
+      <thead><tr><th scope="col">Ceiling</th><th scope="col">What runs</th></tr></thead>
+      <tbody>
+        <tr><td><code>spa</code></td><td>Nothing. The app is on disk where <code>topology where</code> says.</td></tr>
+        <tr><td><code>web</code></td><td>The site and downloads, served by your web server.</td></tr>
+        <tr><td><code>api</code></td><td>The graph API, read-only.</td></tr>
+        <tr><td><code>repos</code></td><td>It fetches the repositories you list, with the credentials you name.</td></tr>
+        <tr><td><code>write</code></td><td>Go is possible. Off by default, even under this ceiling.</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <details class="more" id="yours">
+    <summary>Make it yours</summary>
+    <p>Choose how it looks (classic, console, cards) and how a drawing is read (topology,
+    flowchart, BPMN, BPMN+) in the app's settings. Fork a drawing, keep both, compare.</p>
+    <p>Or start your own version. This one began from a single request, kept word for word
+    with everything we read beside it, so someone else can begin from the same place and see
+    where their setup takes it: <a href="context/FOR-OTHERS.md">how to start your own</a>.</p>
+    <p>The words it uses (place, part, path, person; describe, propose, effect) are defined in
+    one file, <a href="taxonomy/pillars.json">pillars.json</a>, which the app and the server
+    both read. Change a word there and both change.</p>
+  </details>
+</main>
+
+<footer>
+  Free software: code under the GNU GPL v3 or later or the GNU LGPL v3 or later, your choice;
+  words under CC BY-SA 4.0. <a href="COPYING">Licence texts</a> ·
+  <a href="dist/src/">Source</a> · Every page here has its source one click away.
+</footer>
+</div>
+</body>
+</html>

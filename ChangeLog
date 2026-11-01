@@ -1,0 +1,23 @@
+2026-10-31  Corwin Brust  <corwin@bru.st>
+
+	First version, on the corwin branch of inputloop/topology.
+
+	* context/: the request verbatim, the sources read, a review of the
+	2026-10-31 recording with Bridget and three ENHANCE pages for C4's
+	transcript tools, and FOR-OTHERS.md.
+	* perl/Topology/: Topology::Config, ::Doc, ::Repo, ::Graph,
+	::Taxonomy, ::Build, ::CSV, ::Server; script/topology,
+	script/topology-askpass; t/ (159 tests, under perl 5.44.0 and 5.38.2);
+	doc/CLASSIC-BRIDGE.pod.
+	* www/: the front door, the app, topology-core.js, the stylesheet, and
+	TopoForge 1.7 unchanged.
+	* spec/TOPOLOGY-md.md, spec/fixtures/showprivate.json: the format and
+	the show-private rule, with cases both languages run.
+	* taxonomy/pillars.json, design/TAXONOMY.org: four pillars, two axes,
+	six tensions.
+	* design/: DESIGN and LENS pages.
+	* RECIPE.org: tangles bin/, debian/, etc/, vendor/ORDER and
+	tests/recipe-check.sh.
+	* vendor/: sixteen CPAN tarballs, their sums, VENDOR.org.
+	* debian/: topology-www, topology-perl, topology.
+	* runcards/RUNCARD-2026-10-31-gw26.md.

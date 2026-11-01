@@ -1,0 +1,42 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: topology
+Source: https://github.com/inputloop/topology
+
+Files: *
+Copyright: 2026 Bryant Frankford <nathanielfrankford@gmail.com>
+           2026 Corwin Brust <corwin@bru.st>
+           and Contributors
+License: GPL-3.0-or-later or LGPL-3.0-or-later
+
+Files: *.md *.org
+Copyright: 2026 Bryant Frankford, Corwin Brust and Contributors
+License: CC-BY-SA-4.0
+
+Files: www/topoforge/index.html
+Copyright: 2026 Bryant Frankford <nathanielfrankford@gmail.com>
+           2026 Corwin Brust <corwin@bru.st>
+License: GPL-3.0-or-later or LGPL-3.0-or-later
+Comment: TopoForge 1.7, created by Bryant Frankford; copied unchanged.
+
+Files: vendor/perl/*
+Copyright: 1987-2026 Larry Wall and others
+License: GPL-1.0-or-later or Artistic-1.0-Perl
+
+Files: vendor/cpan/*
+Copyright: their authors, as each distribution states (vendor/VENDOR.org)
+License: GPL-1.0-or-later or Artistic-1.0-Perl
+
+License: GPL-3.0-or-later
+ On Debian systems, see /usr/share/common-licenses/GPL-3.
+
+License: LGPL-3.0-or-later
+ On Debian systems, see /usr/share/common-licenses/LGPL-3.
+
+License: CC-BY-SA-4.0
+ See LICENSES/CC-BY-SA-4.0.txt in the source.
+
+License: GPL-1.0-or-later
+ On Debian systems, see /usr/share/common-licenses/GPL-1.
+
+License: Artistic-1.0-Perl
+ On Debian systems, see /usr/share/common-licenses/Artistic.

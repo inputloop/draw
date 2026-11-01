@@ -1,0 +1,291 @@
+{
+ "about": "Shared cases for spec/TOPOLOGY-md.md. Read by perl/Topology/t/20-showprivate.t and tests/js/showprivate.test.mjs. Each case: files by name, the two settings, and what must come out.",
+ "files": {
+  "says-show": "---\nname: pub\nprivate: show\n---\n# pub\nopen words\n## Private\nsecret one\n",
+  "says-hide": "---\nname: lab\nprivate: hide   # keep it in\n---\n# lab\n## Private\nsecret two\n### deeper\nstill private\n## Next\npublic again\n",
+  "says-nothing": "# plain\nno front matter\n## private\nsecret three\n",
+  "bad-word": "---\nprivate: maybe\n---\nbody\n",
+  "fenced": "# f\n## Private\n```sh\n# reset it\npasswd hunter2\n```\n## Next\nopen\n",
+  "nested": "## Private\nA\n### Private\nB\n### Notes\nC\n## End\nD\n",
+  "odd-headings": "   ## Private ##\nsecret four\n# Out\nopen\n",
+  "empty": "",
+  "unclosed": "---\nname: a\nbody line\n",
+  "unicode-key": "---\ngröße: 1\n---\n"
+ },
+ "parse": [
+  {
+   "file": "says-hide",
+   "meta": {
+    "name": "lab",
+    "private": "hide"
+   },
+   "public": [
+    "# lab",
+    "## Next",
+    "public again",
+    ""
+   ],
+   "private": [
+    "secret two",
+    "### deeper",
+    "still private"
+   ],
+   "declared": "hide"
+  },
+  {
+   "file": "says-nothing",
+   "meta": {},
+   "public": [
+    "# plain",
+    "no front matter"
+   ],
+   "private": [
+    "secret three",
+    ""
+   ],
+   "declared": null
+  },
+  {
+   "file": "bad-word",
+   "meta": {
+    "private": "maybe"
+   },
+   "public": [
+    "body",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "fenced",
+   "meta": {},
+   "public": [
+    "# f",
+    "## Next",
+    "open",
+    ""
+   ],
+   "private": [
+    "```sh",
+    "# reset it",
+    "passwd hunter2",
+    "```"
+   ],
+   "declared": null
+  },
+  {
+   "file": "nested",
+   "meta": {},
+   "public": [
+    "## End",
+    "D",
+    ""
+   ],
+   "private": [
+    "A",
+    "B",
+    "### Notes",
+    "C"
+   ],
+   "declared": null
+  },
+  {
+   "file": "odd-headings",
+   "meta": {},
+   "public": [
+    "# Out",
+    "open",
+    ""
+   ],
+   "private": [
+    "secret four"
+   ],
+   "declared": null
+  },
+  {
+   "file": "empty",
+   "meta": {},
+   "public": [],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "unclosed",
+   "meta": {},
+   "public": [
+    "---",
+    "name: a",
+    "body line",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "unicode-key",
+   "meta": {
+    "größe": "1"
+   },
+   "public": [
+    ""
+   ],
+   "private": [],
+   "declared": null
+  }
+ ],
+ "resolve": [
+  {
+   "name": "container show beats all",
+   "container": "show",
+   "global": "never",
+   "docs": [
+    "says-hide"
+   ],
+   "show": true,
+   "by": "container",
+   "seam": false
+  },
+  {
+   "name": "container hide beats all",
+   "container": "hide",
+   "global": "always",
+   "docs": [
+    "says-show"
+   ],
+   "show": false,
+   "by": "container",
+   "seam": false
+  },
+  {
+   "name": "unset container, global always",
+   "container": "",
+   "global": "always",
+   "docs": [
+    "says-hide"
+   ],
+   "show": true,
+   "by": "global",
+   "seam": false
+  },
+  {
+   "name": "unset container, global never",
+   "container": "",
+   "global": "never",
+   "docs": [
+    "says-show"
+   ],
+   "show": false,
+   "by": "global",
+   "seam": false
+  },
+  {
+   "name": "container auto skips global",
+   "container": "auto",
+   "global": "always",
+   "docs": [
+    "says-hide"
+   ],
+   "show": false,
+   "by": "component",
+   "seam": false
+  },
+  {
+   "name": "global auto, component show",
+   "container": "",
+   "global": "auto",
+   "docs": [
+    "says-show"
+   ],
+   "show": true,
+   "by": "component",
+   "seam": false
+  },
+  {
+   "name": "auto, nobody says, hide",
+   "container": "auto",
+   "global": "auto",
+   "docs": [
+    "says-nothing"
+   ],
+   "show": false,
+   "by": "default",
+   "seam": false
+  },
+  {
+   "name": "auto, no files at all",
+   "container": "auto",
+   "global": "auto",
+   "docs": [],
+   "show": false,
+   "by": "default",
+   "seam": false
+  },
+  {
+   "name": "two files agree",
+   "container": "auto",
+   "global": "auto",
+   "docs": [
+    "says-show",
+    "says-show"
+   ],
+   "show": true,
+   "by": "component",
+   "seam": false
+  },
+  {
+   "name": "two files disagree: hide, seam",
+   "container": "auto",
+   "global": "auto",
+   "docs": [
+    "says-show",
+    "says-hide"
+   ],
+   "show": false,
+   "by": "component",
+   "seam": true
+  },
+  {
+   "name": "a bad word in the file is not a say",
+   "container": "auto",
+   "global": "auto",
+   "docs": [
+    "bad-word"
+   ],
+   "show": false,
+   "by": "default",
+   "seam": false
+  },
+  {
+   "name": "case-blind settings",
+   "container": "SHOW",
+   "global": "auto",
+   "docs": [],
+   "show": true,
+   "by": "container",
+   "seam": false
+  }
+ ],
+ "errors": [
+  {
+   "name": "bad container word",
+   "container": "maybe",
+   "global": "auto"
+  },
+  {
+   "name": "bad global word",
+   "container": "",
+   "global": "sometimes"
+  },
+  {
+   "name": "an inherited JS property is not a word",
+   "container": "constructor",
+   "global": "auto"
+  },
+  {
+   "name": "__proto__ is not a word",
+   "container": "",
+   "global": "__proto__"
+  }
+ ]
+}

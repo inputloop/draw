@@ -1,0 +1,6 @@
+topology (0.01) unstable; urgency=medium
+
+  * First packaging, on the corwin branch: topology-www, topology-perl
+    (perl 5.44.0 with vendored CPAN modules) and topology.
+
+ -- Corwin Brust <corwin@bru.st>  Sat, 31 Oct 2026 21:00:00 -0500

@@ -1,0 +1,9 @@
+Revision history for Perl extension Topology.
+
+0.01  2026-10-31
+	- original version; created by hand in the shape h2xs -X -n Topology
+	  gives, then filled in: Topology::Config (the feature ladder),
+	  Topology::Doc (TOPOLOGY.md and show private), Topology::Repo
+	  (repositories and credentials), Topology::Graph (k/v cells written
+	  twice), Topology::Taxonomy (four pillars), Topology::Build,
+	  Topology::CSV, Topology::Server (the graph API), script/topology.

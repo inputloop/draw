@@ -1,0 +1,71 @@
+#+TITLE: The CPAN distributions vendored into topology-perl
+#+LANGUAGE: en
+#+STARTUP: showall
+#+OPTIONS: toc:nil num:nil
+
+Sixteen distributions, installed in this order (=vendor/ORDER=) into
+=/opt/topology/perl= by =bin/vendor-install.sh=, each tested first and each
+checked against =vendor/cpan/SHA256SUMS=.  Versions, dates and authors were
+read from metacpan on 2026-10-31; the sums are of the tarballs in
+=vendor/cpan/=.
+
+* The table
+
+| distribution | version | released | maintainer (CPAN id) | tier | why it is here | sha256 (first 16) |
+|--------------+---------+----------+----------------------+------+----------------+-------------------|
+| Module-Build | 0.4234 | 2023-04-28 | LEONT (Leon Timmermans) | build | builds most of the above; left perl core in 5.22 | =66aeac6127418be5= |
+| ExtUtils-CChecker | 0.12 | 2024-03-04 | PEVANS (Paul Evans) | build | XS-Parse-Keyword's configure step needs it | =8b87d145337dec1e= |
+| File-ShareDir-Install | 0.14 | 2022-07-01 | ETHER (Karen Etheridge) | build | File-ShareDir's configure step needs it | =8f9533b198f2d4a9= |
+| Class-Inspector | 1.36 | 2019-07-19 | PLICEASE (Graham Ollis 🔥🐉) | build | File-ShareDir needs it | =cc295d23a472687c= |
+| File-ShareDir | 1.118 | 2020-10-21 | REHSACK (Jens Rehsack) | bridge, async | the XS-Parse modules find their headers through it | =3bb2a20ba35df958= |
+| XS-Parse-Keyword | 0.51 | 2026-09-24 | PEVANS (Paul Evans) | bridge, async | lets Object::Pad and Future::AsyncAwait add keywords | =9dcfdf4ca357caa6= |
+| XS-Parse-Sublike | 0.42 | 2026-09-16 | PEVANS (Paul Evans) | bridge, async | lets them add `method` and `async sub` | =4eeab874ac332856= |
+| Future | 0.54 | 2026-10-20 | PEVANS (Paul Evans) | core | the promise object everything async here is built on | =9af138ff632292bf= |
+| Struct-Dumb | 0.16 | 2025-09-27 | PEVANS (Paul Evans) | api | IO::Async needs it | =ebc9032640777a5b= |
+| Metrics-Any | 0.10 | 2023-07-07 | PEVANS (Paul Evans) | api (tests) | IO::Async's tests need it | =a90eadf9c8af24a5= |
+| Test-Metrics-Any | 0.02 | 2026-09-30 | PEVANS (Paul Evans) | api (tests) | IO::Async's tests need it | =5de545cbc57eee5c= |
+| Test-Future-IO-Impl | 0.21 | 2026-03-12 | PEVANS (Paul Evans) | api (tests) | IO::Async's tests need it | =b9318c526497b5cb= |
+| IO-Async | 0.805 | 2026-01-19 | PEVANS (Paul Evans) | api | the event loop topology-api runs on | =77f997b74953dbdf= |
+| Future-AsyncAwait | 0.71 | 2025-09-16 | PEVANS (Paul Evans) | async | `async` and `await` | =16caa557a3e7a95e= |
+| Object-Pad | 0.825 | 2026-03-25 | PEVANS (Paul Evans) | bridge | the proving ground of core `class`; lets 5.36-5.40 run the same code | =3fa84943b6505a5b= |
+| Feature-Compat-Class | 0.08 | 2025-12-08 | PEVANS (Paul Evans) | core | makes `class` work the same on core perl 5.42+ and, through Object::Pad, on older perls | =0ddf9a82841f10e3= |
+Tiers: *core* is what =Topology= needs to load at all; *bridge* is what lets
+the same code run on perl 5.36 to 5.40 (on 5.44 Feature::Compat::Class
+needs nothing); *async* is =async=/=await=; *api* is =topology serve=;
+*build* is what the others need to build.  The =ceiling= setting does not
+remove packages; it only decides what runs.
+
+* How they were chosen
+
+The prompt asked for modules that "appear well maintained from contributors
+that care of few things (but this well) or care for a larger number of
+things and also contribute regularly to perl, itself."
+
+OBSERVED (metacpan, 2026-10-31): eleven of the sixteen are by one author,
+Paul Evans (PEVANS); eight of those were released in 2025 or 2026.  The
+other five are toolchain pieces by Leon Timmermans (LEONT), Karen Etheridge
+(ETHER), Graham Ollis (PLICEASE) and Jens Rehsack (REHSACK), last released
+2019 to 2023: small, finished, and depended on by much of CPAN.
+
+JUDGED (mine; check before relying on it): Paul Evans wrote perl's core
+=class= feature (=perlclass= names him) and maintains Object::Pad, Future
+and IO::Async, so the class syntax, its bridge and the async stack come from
+the one person who has kept them in step: the "larger number of things, and
+perl itself" kind.  Leon Timmermans and Karen Etheridge are long-standing
+perl toolchain maintainers (the "perl itself" kind); Class::Inspector and
+File::ShareDir are the "few things, done well" kind: unchanged for years
+because they are done.  Falsifier: a dist here with open security reports
+and no maintainer response, or a newer release that changes behaviour we
+rely on; =bin/vendor-check.sh= is not written yet, so this is checked by
+hand at each perl upgrade.
+
+What we did not take, and why: Mojolicious (well maintained, but a whole
+web framework where four routes are needed); Moo and Moose (object systems
+the core =class= is meant to replace for new code); YAML::PP (TOPOLOGY.md
+front matter is kept simpler than YAML on purpose, see the spec).
+
+* Tests
+
+On 2026-10-31 every one of the sixteen passed its own test suite under
+perl 5.44.0 built for =/opt/topology/perl= (IO-Async: 1638 tests).  The
+Topology modules pass under 5.44.0 (core class) and 5.38.2 (Object::Pad).

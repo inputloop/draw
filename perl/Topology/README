@@ -1,0 +1,37 @@
+Topology version 0.01
+=====================
+
+Draw what you have, from the git repositories that describe it.  This is
+the Perl half of Topology: the command line (topology), the graph API
+(topology serve), and the modules they use.  The browser half lives in
+www/ at the top of the source tree.
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires perl 5.36 or later and these other modules:
+
+  Feature::Compat::Class   (no further needs on perl 5.42 or later)
+  Future
+  IO::Async, Future::AsyncAwait   (only for "topology serve")
+
+The Debian packages carry a perl 5.44.0 built for Topology with all of
+them vendored in, under /opt/topology/perl; see ../../RECIPE.org.
+
+READING THE CODE
+
+doc/CLASSIC-BRIDGE.pod maps perl's new class syntax onto the
+package-and-bless Perl many of us learned first.
+
+COPYRIGHT AND LICENCE
+
+Copyright 2026 Bryant Frankford and Corwin Brust and Contributors.
+GPL-3.0-or-later OR LGPL-3.0-or-later, your choice.

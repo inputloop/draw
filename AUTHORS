@@ -1,0 +1,14 @@
+topology -- authors and makers
+
+Bryant Frankford <nathanielfrankford@gmail.com>   created TopoForge, which topology draws with
+Corwin Brust <corwin@bru.st>                      the request, the objectives, this branch
+
+Makers (the AI help each author worked with):
+  Mentat (for Corwin; claude-opus-5-5)    this branch: the Perl, the app, the packaging,
+                                          the recipe, the taxonomy and the context pages
+
+TopoForge (www/topoforge/) is Bryant's, copied unchanged; Bryant is listed
+first on it and on everything that grows from it.
+
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors

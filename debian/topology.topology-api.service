@@ -1,0 +1,20 @@
+[Unit]
+Description=topology graph API (read-only unless write is on)
+Documentation=man:topology(1)
+After=network.target
+
+[Service]
+User=topology
+Group=topology
+# The feature ladder decides: with ceiling below api, or feature.api = off,
+# the unit is skipped, not failed.
+ExecCondition=/usr/bin/topology need api
+ExecStart=/usr/bin/topology serve
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/topology
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

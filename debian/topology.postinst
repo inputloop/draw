@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+    if ! getent passwd topology >/dev/null; then
+        adduser --system --group --home /var/lib/topology --no-create-home topology >/dev/null
+    fi
+    mkdir -p /var/lib/topology/repos /var/lib/topology/graph /var/lib/topology/dist
+    chown topology:topology /var/lib/topology /var/lib/topology/repos /var/lib/topology/graph
+fi
+#DEBHELPER#
+exit 0

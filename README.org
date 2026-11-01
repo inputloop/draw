@@ -1,0 +1,55 @@
+#+TITLE: topology
+#+SUBTITLE: Draw what you have, from the files that describe it
+#+LANGUAGE: en
+#+OPTIONS: toc:nil num:nil
+#+STARTUP: showall
+
+Point topology at the git repositories you keep.  Each can say what it is in
+a short =TOPOLOGY.md=; topology reads them, sorts what they say by where,
+what, how and who, and draws it with TopoForge.  You move the shapes; the
+drawing is yours.
+
+The browser app works with no server at all ("Zero Sharing": everything
+stays in your browser).  With a server, every feature can be switched off,
+down to just the app's files on disk.
+
+* This branch
+
+This is the =corwin= branch: one of several versions being made from the
+same conversations, to be compared later.  It starts from a request kept
+word for word in [[file:context/PROMPT-2026-10-31-topology-corwin.md][context/]], with what was read beside it.  To start your
+own, see [[file:context/FOR-OTHERS.md][context/FOR-OTHERS.md]].
+
+* Try it
+
+- No install: open =www/index.html= after =sh bin/stage-www.sh /tmp/site=,
+  or serve =/tmp/site= with any web server.
+- Packages: =sh bin/fetch-sources.sh && dpkg-buildpackage -us -uc=, then
+  =apt install= the three =.deb= files (or only =topology-www=).
+- Check a copy: =sh bin/test.sh=.
+
+* Where things are
+
+| =RECIPE.org=            | the source of =bin/=, =debian/= and =etc/=; tangle it to rebuild them  |
+| =www/=                  | the front door, the app, TopoForge 1.7 (unchanged)                     |
+| =perl/Topology/=        | the command, the graph API and their modules (h2xs-shaped)             |
+| =spec/=                 | TOPOLOGY.md and the show-private rule, with shared test cases          |
+| =taxonomy/pillars.json= | the four pillars; =design/TAXONOMY.org= reads it in prose              |
+| =design/=               | what it should be (DESIGN), and the two questions answered (LENS)      |
+| =context/=              | the starting request, the sources, the transcript review, ENHANCE pages |
+| =vendor/=               | the CPAN sources inside =topology-perl=, and who maintains them        |
+| =debian/=, =etc/=       | packaging and settings (tangled from the recipe)                       |
+| =runcards/=             | putting it on gw26 by hand                                             |
+
+* Reading the Perl
+
+The data modules use perl's new =class= syntax; the parts an operator reads
+are classic Perl.  =perl/Topology/doc/CLASSIC-BRIDGE.pod= maps one onto the
+other.  The tests run under perl 5.44.0 (core =class=) and perl 5.38
+(Object::Pad, through Feature::Compat::Class).
+
+* Licences
+
+Code: GPL-3.0-or-later OR LGPL-3.0-or-later, your choice.  Prose:
+CC-BY-SA-4.0.  =REUSE.toml= says which covers which file.  TopoForge is
+Bryant Frankford's, under the same terms.

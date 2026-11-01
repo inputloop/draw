@@ -1,0 +1,681 @@
+#+TITLE: topology: the recipe
+#+SUBTITLE: How topology is fetched, built, packaged, tested, published, and built again from what it installs
+#+LANGUAGE: en
+#+STARTUP: showall
+#+OPTIONS: toc:nil num:nil
+#+PROPERTY: header-args :tangle no :mkdirp yes
+
+#+begin_example
+topology -- draw what you have, from the git repositories that describe it.
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors
+
+Code (every source block below that tangles to a file):
+  SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+Prose (this text):
+  SPDX-License-Identifier: CC-BY-SA-4.0
+#+end_example
+
+This file is the source.  The scripts in =bin/=, the Debian packaging in
+=debian/=, and the settings in =etc/= are written out ("tangled") from the
+blocks below; =tests/recipe-check.sh= says whether the tree still agrees
+with it.  Edit here, then tangle.
+
+* The circle
+
+The recipe is circular on purpose, so that any copy can make the others:
+
+#+begin_example
+   source tree ──(this recipe)──▶ three .deb packages + a source package
+        ▲                                   │
+        │                                   ▼ apt install
+   dpkg-source -x  ◀── /dist/src/ ◀── an installed system
+        ▲                                   │
+        └──── RECIPE.org, installed at /usr/share/topology/www/RECIPE.org
+              and linked from the front door it built
+#+end_example
+
+From an installed machine: =topology where= names the recipe's place; the
+front door's Download section links the source package; =dpkg-source -x=
+unpacks it; =sh bin/tangle.sh= (or =C-c C-v t= in Emacs) writes the scripts;
+=dpkg-buildpackage= builds the packages again.  Section [[*Closing the circle]]
+is the same thing as commands.
+
+* What goes in
+
+| input                         | where it comes from                         | how it is checked                         |
+|-------------------------------+---------------------------------------------+-------------------------------------------|
+| perl 5.44.0 source            | =https://www.cpan.org/src/5.0/= (not in git: 21 MB) | the sum in =bin/fetch-sources.sh=  |
+| 16 CPAN distributions         | metacpan, kept in =vendor/cpan/= (1.4 MB)    | =vendor/cpan/SHA256SUMS=; =vendor/VENDOR.org= says who and why |
+| TopoForge 1.7                 | Bryant's, unchanged, =www/topoforge/index.html= | sha256 =c6c0fbc0e2ba99fd47068471acb7095090faa39ab680a02c25a1f6f2f14519f7= |
+| the Topology modules          | =perl/Topology/= (h2xs-shaped)              | =perl/Topology/t/= under two perls        |
+| the browser app               | =www/=                                      | =tests/js/=, =tests/browser/=             |
+| the taxonomy                  | =taxonomy/pillars.json=                     | read by both halves; =t/40-taxonomy.t=    |
+
+* Tangle
+
+With Emacs: =C-c C-v t= (=org-babel-tangle=).  Without Emacs: =sh bin/tangle.sh=
+writes every block below that names =:tangle PATH=.  To make =bin/tangle.sh=
+the first time from nothing but this file:
+
+#+begin_example
+sed -n '/^#+begin_src sh :tangle bin\/tangle.sh/,/^#+end_src/p' RECIPE.org | sed '1d;$d' > bin/tangle.sh
+#+end_example
+
+This tangler is TopoForge's, taken over unchanged (its recipe is where it
+was written and tested against a second reader in Python).
+
+#+begin_src sh :tangle bin/tangle.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+# Tangled from RECIPE.org; edit it there.
+#
+# tangle.sh -- write each source block that names ":tangle PATH" to PATH.
+# usage: sh bin/tangle.sh [-d DIR] [FILE.org]   (defaults: DIR ., RECIPE.org)
+# exit:  0 written, 2 usage error, missing file, bad path or a path named twice
+set -u
+dir=.
+if [ "${1-}" = -d ]; then
+  [ $# -ge 2 ] || { echo "tangle.sh: -d needs a directory" >&2; exit 2; }
+  dir=$2; shift 2
+fi
+org=${1:-RECIPE.org}
+[ -f "$org" ] || { echo "tangle.sh: no such file: $org" >&2; exit 2; }
+[ -d "$dir" ] || { echo "tangle.sh: no such directory: $dir" >&2; exit 2; }
+awk -v dir="$dir" '
+function bad(m) { print "tangle.sh: " FILENAME ":" NR ": " m > "/dev/stderr"; err = 2; exit 2 }
+BEGIN { inblk = 0; err = 0 }
+{
+  low = tolower($0)
+  if (!inblk && low ~ /^#\+begin_src[ \t]/) {
+    path = ""; sheb = ""
+    if (match($0, /:tangle[ \t]+[^ \t]+/)) {
+      path = substr($0, RSTART, RLENGTH); sub(/^:tangle[ \t]+/, "", path)
+    }
+    if (match($0, /:shebang[ \t]+"[^"]*"/)) {
+      sheb = substr($0, RSTART, RLENGTH); sub(/^:shebang[ \t]+"/, "", sheb); sub(/"$/, "", sheb)
+    }
+    inblk = 1
+    if (path == "" || path == "no") { out = ""; next }
+    if (path ~ /^\// || path ~ /\.\./ || path ~ /["'"'"'\\$`]/) bad("refusing path " path)
+    if (path in seen) bad("path named twice: " path)
+    seen[path] = 1
+    out = dir "/" path
+    d = out; sub(/\/[^\/]*$/, "", d)
+    if (d != out && system("mkdir -p \"" d "\"") != 0) bad("cannot make " d)
+    printf "" > out
+    if (sheb != "") print sheb > out
+    n++; names[n] = path
+    next
+  }
+  if (inblk && low ~ /^#\+end_src/) { if (out != "") close(out); inblk = 0; out = ""; next }
+  if (inblk && out != "") {
+    line = $0
+    if (line ~ /^,(\*|#\+)/) line = substr(line, 2)
+    print line > out
+  }
+}
+END {
+  if (err) exit err
+  if (inblk) { print "tangle.sh: unclosed source block" > "/dev/stderr"; exit 2 }
+  for (i = 1; i <= n; i++) print "tangled " names[i]
+}' "$org"
+#+end_src
+
+* Fetch the one input git does not keep
+
+#+begin_src sh :tangle bin/fetch-sources.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Tangled from RECIPE.org; edit it there.
+#
+# fetch-sources.sh -- put perl's source tarball into vendor/perl/, checked
+# against the sum written here.  It is the one input not kept in git (21 MB);
+# the source package carries it.  The CPAN tarballs are in git already.
+# usage: sh bin/fetch-sources.sh
+set -eu
+case "${1-}" in
+  --help) echo "Usage: sh bin/fetch-sources.sh"; exit 0 ;;
+  --version) echo "fetch-sources.sh 0.01"; exit 0 ;;
+esac
+v=5.44.0
+sum=3b855066b92491cb40e86affb1ca57d1a388aa43e51b91c7806a32c2f65f96c3
+f=vendor/perl/perl-$v.tar.gz
+mkdir -p vendor/perl
+if [ ! -f "$f" ]; then
+  (curl --version) >/dev/null 2>&1 || { echo "fetch-sources.sh: needs curl, or put $f there by hand" >&2; exit 2; }
+  curl -fsSL -o "$f.tmp.$$~" "https://www.cpan.org/src/5.0/perl-$v.tar.gz"
+  mv "$f.tmp.$$~" "$f"
+fi
+echo "$sum  $f" | sha256sum -c --quiet || { echo "fetch-sources.sh: $f does not match the sum in this script" >&2; exit 1; }
+echo "ok $f"
+#+end_src
+
+* Build perl by hand (for development; the packages do this themselves)
+
+#+begin_example
+tar xzf vendor/perl/perl-5.44.0.tar.gz && cd perl-5.44.0
+sh Configure -des -Dprefix=/opt/topology/perl
+make -j"$(nproc)" && make install            # about six minutes on two cores
+cd .. && sh bin/vendor-install.sh /opt/topology/perl/bin/perl vendor/cpan /tmp/vendor-build
+#+end_example
+
+The packages add =-Duserelocatableinc=, so the perl they build can install
+its modules while it still sits under =debian/topology-perl/=.
+
+* The vendored CPAN distributions
+
+In this order; each one's own tests run before it is installed, unless the
+build says =nocheck=.
+
+#+begin_src text :tangle vendor/ORDER
+Module-Build
+ExtUtils-CChecker
+File-ShareDir-Install
+Class-Inspector
+File-ShareDir
+XS-Parse-Keyword
+XS-Parse-Sublike
+Future
+Struct-Dumb
+Metrics-Any
+Test-Metrics-Any
+Test-Future-IO-Impl
+IO-Async
+Future-AsyncAwait
+Object-Pad
+Feature-Compat-Class
+#+end_src
+
+#+begin_src sh :tangle bin/vendor-install.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Tangled from RECIPE.org; edit it there.
+#
+# vendor-install.sh -- build, test and install the vendored CPAN
+# distributions with a given perl, in the order vendor/ORDER gives.
+# Each tarball is checked against vendor/cpan/SHA256SUMS first.
+# usage: sh bin/vendor-install.sh PERL CPANDIR WORKDIR
+# TOPOLOGY_TEST=no skips each distribution's own tests.
+set -eu
+case "${1-}" in
+  --help) echo "Usage: sh bin/vendor-install.sh PERL CPANDIR WORKDIR"; exit 0 ;;
+  --version) echo "vendor-install.sh 0.01"; exit 0 ;;
+esac
+[ $# -eq 3 ] || { echo "vendor-install.sh: give PERL CPANDIR WORKDIR" >&2; exit 2; }
+perl=$1 cpan=$2 work=$3
+here=$(pwd)
+order=$here/vendor/ORDER
+( cd "$cpan" && sha256sum -c --quiet SHA256SUMS ) || { echo "vendor-install.sh: a tarball does not match SHA256SUMS" >&2; exit 1; }
+mkdir -p "$work"
+while read -r dist; do
+  case $dist in ''|'#'*) continue ;; esac
+  tgz=$(ls "$cpan"/"$dist"-[0-9v]*.tar.gz 2>/dev/null | head -n 1)
+  [ -n "$tgz" ] || { echo "vendor-install.sh: no tarball for $dist" >&2; exit 1; }
+  tar -C "$work" -xzf "$tgz"
+  dir=$work/$(basename "$tgz" .tar.gz)
+  (
+    cd "$dir"
+    if [ -f Build.PL ]; then
+      "$perl" Build.PL >build.log 2>&1 && ./Build >>build.log 2>&1
+      [ "${TOPOLOGY_TEST:-yes}" = no ] || ./Build test >test.log 2>&1 || { tail -n 20 test.log >&2; exit 1; }
+      ./Build install >>build.log 2>&1
+    else
+      "$perl" Makefile.PL >build.log 2>&1 && make >>build.log 2>&1
+      [ "${TOPOLOGY_TEST:-yes}" = no ] || make test >test.log 2>&1 || { tail -n 20 test.log >&2; exit 1; }
+      make install >>build.log 2>&1
+    fi
+  ) || { echo "vendor-install.sh: $dist failed; see $dir/build.log" >&2; exit 1; }
+  echo "installed $dist"
+done < "$order"
+#+end_src
+
+* The front door and the app, as installed files
+
+=www/= plus the files the front door links to, so that the site carries its
+own recipe, spec, taxonomy, and the context of the branch it came from.
+
+#+begin_src sh :tangle bin/stage-www.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Tangled from RECIPE.org; edit it there.
+#
+# stage-www.sh -- assemble the site as it is installed: www/ plus the
+# files the front door links to (the recipe, the spec, the taxonomy, the
+# context of this branch, the licences).  Writes into a temporary folder
+# beside DEST and renames it into place.
+# usage: sh bin/stage-www.sh DEST
+set -eu
+case "${1-}" in
+  --help) echo "Usage: sh bin/stage-www.sh DEST"; exit 0 ;;
+  --version) echo "stage-www.sh 0.01"; exit 0 ;;
+  '') echo "stage-www.sh: give a destination folder" >&2; exit 2 ;;
+esac
+dest=$1
+tmp=$dest.tmp.$$~
+trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$tmp"
+cp -R www/. "$tmp/"
+mkdir -p "$tmp/spec" "$tmp/taxonomy" "$tmp/context" "$tmp/design"
+cp RECIPE.org COPYING COPYING.LESSER "$tmp/"
+cp spec/TOPOLOGY-md.md "$tmp/spec/"
+cp taxonomy/pillars.json "$tmp/taxonomy/"
+cp context/*.md "$tmp/context/"
+cp design/*.md design/*.org "$tmp/design/" 2>/dev/null || :
+rm -rf "$dest"
+mv "$tmp" "$dest"
+trap - EXIT
+echo "staged $dest"
+#+end_src
+
+* The settings
+
+The ladder lives in one file.  =Topology::Config= reads it; =topology config=
+prints it with the line that decided each feature.
+
+#+begin_src conf :tangle etc/topology.conf
+# /etc/topology/topology.conf -- what topology does on this machine.
+#
+# Every feature can be switched off.  New features arrive switched on;
+# "write" (letting go make changes) is the one that arrives off.
+# "topology config" prints what is on and which line decided.
+#
+# The ladder, from least to most.  Each rung needs the ones below it.
+#   spa    the browser app's files under /usr/share/topology/www; nothing runs
+#   web    serve the app and the downloads (include /usr/share/topology/nginx/topology.conf)
+#   api    run topology-api, the graph API, read-only, on 127.0.0.1
+#   repos  fetch the repositories in repos.d, with the credentials named there
+#   write  accept "go"
+#
+# One line takes everything back to just the files:
+#ceiling = spa
+ceiling = write
+
+# Switch single features off (or write on):
+#feature.downloads     = off
+#feature.api.taxonomy  = off
+#feature.repos.private = off   # never send private parts of TOPOLOGY.md
+#feature.write         = on
+
+# The graph API.
+#api.port    = 8740
+#api.cors    = *              # which web pages may ask; * lets Zero Sharing browsers anywhere connect
+# Private parts of TOPOLOGY.md.  "never" (the default): none leaves this
+# machine, whatever a browser asks.  "auto": each asker's own settings
+# decide, and anyone who can reach the API can ask to see them, so use auto
+# only where the API is reachable by people you trust (a VPN, a login).
+#api.private = never
+
+# Credentials.  A token file others can read is not used while this is on.
+#credentials.strict = on
+#+end_src
+
+#+begin_src text :tangle etc/repos.d/README
+One file per git repository, named NAME.conf.  A file names a secret; it
+never holds one.
+
+  name   = c4
+  url    = git@github.com:inputloop/c4.git
+  branch = main
+  auth   = ssh-key /etc/topology/keys/c4_ed25519
+
+auth is one of:
+  none                public, or reached some other way
+  ssh-key FILE        a private key the topology user can read (ssh refuses keys others can read)
+  token-file FILE     an HTTPS token, first line of FILE; mode 0600, owner topology
+  netrc               the topology user's own ~/.netrc
+
+"topology repos" lists them and says what is wrong with any.
+#+end_src
+
+#+begin_src nginx :tangle etc/nginx-topology.conf
+# /usr/share/topology/nginx/topology.conf -- include this in a server { } block:
+#     include /usr/share/topology/nginx/topology.conf;
+# It serves the front door and app, the downloads, and the graph API.
+root /usr/share/topology/www;
+index index.html;
+location /dist/ { alias /var/lib/topology/dist/; autoindex on; }
+location /api/  { proxy_pass http://127.0.0.1:8740; proxy_set_header Host $host; }
+location ~ \.(org|md)$ { default_type text/plain; charset utf-8; }
+#+end_src
+
+* The Debian packaging
+
+Three binary packages from one source package: =topology-www= (files only),
+=topology-perl= (perl and the vendored modules), =topology= (the command,
+the API, the settings).  The format is =3.0 (native)=: this project is its
+own upstream, and the source package carries the perl tarball, so it builds
+with no network.
+
+#+begin_src text :tangle debian/control
+Source: topology
+Section: misc
+Priority: optional
+Maintainer: Corwin Brust <corwin@bru.st>
+Build-Depends: debhelper-compat (= 13), gcc, make, libc6-dev, help2man, git <!nocheck>
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://gw26.bru.st/
+Vcs-Git: https://github.com/inputloop/topology.git -b corwin
+
+Package: topology-www
+Architecture: all
+Depends: ${misc:Depends}
+Suggests: nginx | httpd
+Description: draw what you have -- the browser app, as files
+ The front door, the drawing app (TopoForge) and its settings pages, under
+ /usr/share/topology/www.  Nothing runs: open index.html in a browser, or
+ serve the folder.  This is all of topology that a "ceiling = spa"
+ machine uses.
+
+Package: topology-perl
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: perl 5.44.0 built for topology, with its CPAN modules
+ A perl of its own under /opt/topology/perl, so topology does not depend
+ on, or change, the system perl.  Vendored in: Feature::Compat::Class,
+ Object::Pad, Future, Future::AsyncAwait, IO::Async and what they need
+ (vendor/VENDOR.org in the source says who maintains each, and why it
+ was chosen).
+
+Package: topology
+Architecture: all
+Depends: topology-perl (>= ${source:Version}), adduser, ${misc:Depends}
+Recommends: git, topology-www
+Description: draw what you have, from the git repositories that describe it
+ The topology command, the graph API service (topology-api) and the
+ settings in /etc/topology.  It fetches the repositories listed in
+ /etc/topology/repos.d, reads their TOPOLOGY.md files, and keeps what it
+ learns as small files under /var/lib/topology/graph.  Every feature can
+ be switched off in /etc/topology/topology.conf.
+#+end_src
+
+#+begin_src makefile :tangle debian/rules :shebang "#!/usr/bin/make -f"
+# Tangled from RECIPE.org; edit it there.
+# topology's debian/rules: build perl 5.44.0 into topology-perl, install
+# the vendored CPAN distributions with that perl, then the Topology
+# modules into topology and the site into topology-www.
+
+PERLVER := 5.44.0
+PREFIX  := /opt/topology/perl
+TP      := $(CURDIR)/debian/topology-perl
+TPERL   := $(TP)$(PREFIX)/bin/perl
+B       := $(CURDIR)/debian/build
+JOBS    := $(or $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS))),1)
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	mkdir -p $(B)
+	tar -C $(B) -xzf vendor/perl/perl-$(PERLVER).tar.gz
+	cd $(B)/perl-$(PERLVER) && sh Configure -des -Dprefix=$(PREFIX) \
+	    -Duserelocatableinc -Dman1dir=$(PREFIX)/man/man1 -Dman3dir=$(PREFIX)/man/man3 \
+	    -Dinstallusrbinperl=undef -Dcf_email=corwin@bru.st >$(B)/configure.log
+
+override_dh_auto_build:
+	$(MAKE) -C $(B)/perl-$(PERLVER) -j$(JOBS) >$(B)/make.log
+	sh bin/stage-www.sh $(B)/www
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	if node --version >/dev/null 2>&1; then node --test tests/js/*.test.mjs; \
+	else echo "node not found: the JavaScript half is not tested in this build"; fi
+endif
+
+override_dh_auto_install:
+	$(MAKE) -C $(B)/perl-$(PERLVER) install DESTDIR=$(TP) >$(B)/install.log
+	# the vendored CPAN distributions, in the order vendor/ORDER gives
+	TOPOLOGY_TEST=$(if $(filter nocheck,$(DEB_BUILD_OPTIONS)),no,yes) \
+	    sh bin/vendor-install.sh $(TPERL) vendor/cpan $(B)/vendor
+	# Topology itself, tested with the perl it will run under
+	cd perl/Topology && $(TPERL) Makefile.PL >/dev/null && $(MAKE) >/dev/null
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	cd perl/Topology && $(MAKE) test
+endif
+	mkdir -p debian/topology/usr/share/topology/perl5 debian/topology/usr/bin \
+	         debian/topology/usr/libexec/topology debian/topology/usr/share/topology/taxonomy \
+	         debian/topology/etc/topology/repos.d debian/topology/usr/share/man/man1
+	cp -R perl/Topology/lib/. debian/topology/usr/share/topology/perl5/
+	sed '1s|^#!.*|#!$(PREFIX)/bin/perl|' perl/Topology/script/topology >debian/topology/usr/bin/topology
+	chmod 755 debian/topology/usr/bin/topology
+	install -m 755 perl/Topology/script/topology-askpass debian/topology/usr/libexec/topology/askpass
+	install -m 644 taxonomy/pillars.json debian/topology/usr/share/topology/taxonomy/
+	install -m 644 etc/topology.conf debian/topology/etc/topology/
+	install -m 644 etc/repos.d/README debian/topology/etc/topology/repos.d/
+	TOPOLOGY_LIB=perl/Topology/lib help2man --no-info --section=1 \
+	    --name='draw what you have, from the git repositories that describe it' \
+	    "$(TPERL) perl/Topology/script/topology" >debian/topology/usr/share/man/man1/topology.1
+	sed -i 's|$(TPERL) perl/Topology/script/topology|topology|g; s|\\fB$(TPERL)[^\\]*\\fR|topology|g' \
+	    debian/topology/usr/share/man/man1/topology.1
+	mkdir -p debian/topology-www/usr/share/topology debian/topology-www/usr/share/topology/nginx
+	cp -R $(B)/www debian/topology-www/usr/share/topology/www
+	install -m 644 etc/nginx-topology.conf debian/topology-www/usr/share/topology/nginx/topology.conf
+	ln -s /var/lib/topology/dist debian/topology-www/usr/share/topology/www/dist
+
+override_dh_installsystemd:
+	dh_installsystemd -ptopology --name=topology-api
+	dh_installsystemd -ptopology --name=topology-refresh
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_dwz:
+
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(TP)$(PREFIX)/lib/$(PERLVER)/x86_64-linux/CORE
+
+override_dh_auto_clean:
+	rm -rf $(B)
+	cd perl/Topology && [ ! -f Makefile ] || $(MAKE) distclean >/dev/null
+#+end_src
+
+The services skip, rather than fail, when the ladder says no:
+=ExecCondition= runs =topology need api= (or =repos=), which exits 3 and
+says why when the feature is off.
+
+#+begin_src conf :tangle debian/topology.topology-api.service
+[Unit]
+Description=topology graph API (read-only unless write is on)
+Documentation=man:topology(1)
+After=network.target
+
+[Service]
+User=topology
+Group=topology
+# The feature ladder decides: with ceiling below api, or feature.api = off,
+# the unit is skipped, not failed.
+ExecCondition=/usr/bin/topology need api
+ExecStart=/usr/bin/topology serve
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/topology
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
+#+end_src
+
+#+begin_src conf :tangle debian/topology.topology-refresh.service
+[Unit]
+Description=topology: fetch the repositories in repos.d and rebuild the graph
+Documentation=man:topology(1)
+
+[Service]
+Type=oneshot
+User=topology
+Group=topology
+ExecCondition=/usr/bin/topology need repos
+ExecStart=/usr/bin/topology fetch
+ExecStart=/usr/bin/topology build
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/topology
+#+end_src
+
+#+begin_src conf :tangle debian/topology.topology-refresh.timer
+[Unit]
+Description=topology: refresh the graph from the repositories
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target
+#+end_src
+
+#+begin_src sh :tangle debian/topology.postinst :shebang "#!/bin/sh"
+set -e
+if [ "$1" = configure ]; then
+    if ! getent passwd topology >/dev/null; then
+        adduser --system --group --home /var/lib/topology --no-create-home topology >/dev/null
+    fi
+    mkdir -p /var/lib/topology/repos /var/lib/topology/graph /var/lib/topology/dist
+    chown topology:topology /var/lib/topology /var/lib/topology/repos /var/lib/topology/graph
+fi
+#DEBHELPER#
+exit 0
+#+end_src
+
+* Test
+
+#+begin_src sh :tangle bin/test.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Tangled from RECIPE.org; edit it there.
+#
+# test.sh -- every test this tree carries that needs no network and no
+# browser: the Perl modules (with the perl given, default /opt/topology/perl
+# or perl), the JavaScript rules (node), and the recipe check.
+# usage: sh bin/test.sh [PERL]
+# exit: 0 all green, 1 something red, 2 a needed tool missing
+set -u
+case "${1-}" in
+  --help) echo "Usage: sh bin/test.sh [PERL]"; exit 0 ;;
+  --version) echo "test.sh 0.01"; exit 0 ;;
+esac
+perl=${1:-}
+[ -n "$perl" ] || { [ -x /opt/topology/perl/bin/perl ] && perl=/opt/topology/perl/bin/perl || perl=perl; }
+red=0
+echo "== Perl ($($perl -e 'print $^V'))"
+( cd perl/Topology && prove -e "$perl" -l t/ ) || red=1
+echo "== JavaScript"
+if (node --version) >/dev/null 2>&1; then node --test tests/js/*.test.mjs >/dev/null 2>&1 && echo "tests/js: ok" || { node --test tests/js/*.test.mjs; red=1; }
+else echo "node not found: the JavaScript half was not tested"; red=2; fi
+echo "== The recipe makes this tree"
+sh tests/recipe-check.sh || red=1
+[ $red -eq 0 ] && echo GREEN || echo RED
+exit $red
+#+end_src
+
+#+begin_src sh :tangle tests/recipe-check.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Tangled from RECIPE.org; edit it there.
+#
+# recipe-check.sh -- tangle RECIPE.org into a scratch folder and compare
+# every file it writes with the file of that name in this tree.  The
+# recipe is the source; this says whether the tree still agrees with it.
+# usage: sh tests/recipe-check.sh [--prove-red]
+# exit: 0 agree, 1 differ, 2 could not run
+set -u
+d=$(mktemp -d) || exit 2
+trap 'rm -rf "$d"' EXIT
+if [ "${1-}" = --prove-red ]; then
+  # plant: change one line of the recipe's copy; the check must turn red
+  sed 's/^ceiling = write$/ceiling = api/' RECIPE.org > "$d/RECIPE.org"
+  mkdir -p "$d/out"
+  sh bin/tangle.sh -d "$d/out" "$d/RECIPE.org" >/dev/null || exit 2
+  cmp -s "$d/out/etc/topology.conf" etc/topology.conf && { echo "prove-red: the plant was NOT caught"; exit 1; }
+  echo "prove-red: a changed recipe line is caught"; exit 0
+fi
+mkdir -p "$d/out"
+list=$(sh bin/tangle.sh -d "$d/out" RECIPE.org) || exit 2
+n=0 bad=0
+for p in $(printf '%s\n' "$list" | sed -n 's/^tangled //p'); do
+  n=$((n + 1))
+  if ! cmp -s "$d/out/$p" "$p"; then
+    # the tangler adds the shebang line; mode bits are not compared
+    echo "differs: $p"; bad=$((bad + 1))
+  fi
+done
+[ $n -gt 0 ] || { echo "recipe-check: the recipe tangled nothing"; exit 2; }
+[ $bad -eq 0 ] && echo "recipe-check: $n files, all as the recipe makes them" || echo "recipe-check: $bad of $n differ"
+[ $bad -eq 0 ]
+#+end_src
+
+The browser test needs Playwright and a Chromium, a running API, and the
+staged site served over HTTP:
+
+#+begin_example
+sh bin/stage-www.sh /tmp/site && (cd /tmp/site && python3 -m http.server 8000 &)
+topology serve 8741 &                    # with a graph built from tests/fixtures/repo-lab
+node tests/browser/app.browser.mjs http://127.0.0.1:8000 http://127.0.0.1:8741/api/v1
+#+end_example
+
+* Build the packages
+
+#+begin_example
+sh bin/fetch-sources.sh
+dpkg-buildpackage -us -uc                 # DEB_BUILD_OPTIONS=nocheck to skip the tests
+#+end_example
+
+* Publish (what the front door's Download section lists)
+
+#+begin_src sh :tangle bin/publish-dist.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Tangled from RECIPE.org; edit it there.
+#
+# publish-dist.sh -- put the built packages, the source package, the
+# vendored CPAN sources and their sums where the front door's Download
+# links point (/var/lib/topology/dist by default), with an index.json the
+# page can read.  Writes into a temporary folder and renames it into place.
+# usage: sh bin/publish-dist.sh BUILDDIR [DEST]
+#   BUILDDIR holds the .deb, .dsc, .tar.* and .buildinfo files dpkg-buildpackage left
+set -eu
+case "${1-}" in
+  --help) echo "Usage: sh bin/publish-dist.sh BUILDDIR [DEST]"; exit 0 ;;
+  --version) echo "publish-dist.sh 0.01"; exit 0 ;;
+  '') echo "publish-dist.sh: give the folder dpkg-buildpackage wrote into" >&2; exit 2 ;;
+esac
+src=$1 dest=${2:-/var/lib/topology/dist}
+tmp=$dest.tmp.$$~
+trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$tmp/debian" "$tmp/src" "$tmp/vendor"
+cp "$src"/*.deb "$tmp/debian/"
+cp "$src"/*.dsc "$src"/*.tar.* "$tmp/src/"
+cp "$src"/*.buildinfo "$src"/*.changes "$tmp/src/" 2>/dev/null || :
+cp vendor/cpan/*.tar.gz vendor/cpan/SHA256SUMS vendor/VENDOR.org "$tmp/vendor/"
+cp RECIPE.org "$tmp/"
+( cd "$tmp" && find debian src vendor RECIPE.org -type f ! -name SHA256SUMS | sort | xargs sha256sum > SHA256SUMS )
+( cd "$tmp" && printf '{"made":"%s","files":[' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  first=1
+  while read -r sum path; do
+    [ $first -eq 1 ] || printf ','; first=0
+    printf '{"path":"%s","sha256":"%s","bytes":%s}' "$path" "$sum" "$(wc -c < "$path" | tr -d ' ')"
+  done < SHA256SUMS
+  printf ']}\n' ) > "$tmp/index.json.tmp" && mv "$tmp/index.json.tmp" "$tmp/index.json"
+rm -rf "$dest.old"
+[ ! -d "$dest" ] || mv "$dest" "$dest.old"
+mv "$tmp" "$dest"
+rm -rf "$dest.old"
+trap - EXIT
+echo "published $(wc -l < "$dest/SHA256SUMS") files to $dest"
+#+end_src
+
+* On gw26
+
+The steps for the host, by hand, with what to check after each:
+=runcards/RUNCARD-2026-10-31-gw26.md=.
+
+* Closing the circle
+
+From a machine with topology installed and nothing else:
+
+#+begin_example
+topology where                                   # where the recipe and downloads are
+curl -O https://gw26.bru.st/dist/src/topology_0.01.tar.xz    # or copy it from /var/lib/topology/dist/src/
+curl -O https://gw26.bru.st/dist/src/topology_0.01.dsc
+dpkg-source -x topology_0.01.dsc && cd topology-0.01
+sh bin/tangle.sh && sh tests/recipe-check.sh     # the tree agrees with its recipe
+dpkg-buildpackage -us -uc                        # and makes the packages again
+#+end_example

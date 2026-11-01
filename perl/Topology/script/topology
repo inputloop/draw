@@ -1,0 +1,173 @@
+#!/usr/bin/perl
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+#
+# topology -- the command line of Topology.
+#
+# --help and --version come first and need nothing else, so help2man can
+# run them at build time and any user can read them (the medley idiom).
+
+use strict;
+use warnings;
+# The Debian package keeps the modules here; a source checkout uses -Ilib.
+use lib ($ENV{TOPOLOGY_LIB} || '/usr/share/topology/perl5');
+
+my $VERSION = '0.01';
+my $ETC  = $ENV{TOPOLOGY_ETC}  || '/etc/topology';
+my $VAR  = $ENV{TOPOLOGY_VAR}  || '/var/lib/topology';
+my $SHARE = $ENV{TOPOLOGY_SHARE} || '/usr/share/topology';
+
+sub usage {
+    print <<"EOT";
+Usage: topology COMMAND [ARGS]
+
+Draw what you have, from the git repositories that describe it.
+
+Commands:
+  config              say which features are on, and which line decided
+  repos               list the repositories in $ETC/repos.d and any problem
+  fetch               clone or update them under $VAR/repos
+  build               read their TOPOLOGY.md files into $VAR/graph
+  check               read every graph cell from both sides; report any difference
+  graph [--csv]       print the graph as JSON (or as TopoForge CSV)
+  private DIR [C [G]] say whether DIR's private part shows, for container
+                      setting C (show|hide|auto) and global G (always|never|auto)
+  serve [PORT]        run the graph API on 127.0.0.1 (default port 8740)
+  where               say where the browser app and the downloads are on disk
+  need FEATURE        exit 0 if FEATURE is on, else say why and exit 3
+                      (systemd units use this as ExecCondition)
+
+Options:
+  --help              show this help and exit
+  --version           show the version and exit
+
+Settings live in $ETC/topology.conf; its comments say what each line does.
+Report bugs to: corwin\@bru.st
+Home page: https://gw26.bru.st/
+EOT
+}
+
+if (@ARGV && $ARGV[0] eq '--help')    { usage(); exit 0 }
+if (@ARGV && $ARGV[0] eq '--version') {
+    print "topology $VERSION\nCopyright 2026 Bryant Frankford and Corwin Brust and Contributors\n",
+          "License GPLv3+ or LGPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n",
+          "This is free software: you are free to change and redistribute it.\n",
+          "There is NO WARRANTY, to the extent permitted by law.\n";
+    exit 0;
+}
+
+my $cmd = shift @ARGV or do { usage(); exit 2 };
+
+require Topology::Config;
+my $config = Topology::Config->new(file => "$ETC/topology.conf");
+
+sub need {
+    my ($f) = @_;
+    my ($on, $why) = $config->why($f);
+    return if $on;
+    print STDERR "topology: '$f' is off ($why); see $ETC/topology.conf\n";
+    exit 3;
+}
+
+sub repos {
+    require Topology::Repo;
+    my $strict = ($config->get('credentials.strict') // 'on') !~ /^(off|no|false|0)$/i;
+    my ($r, $bad) = Topology::Repo::read_dir("$ETC/repos.d", strict => $strict);
+    print STDERR "topology: $_\n" for @$bad;
+    return @$r;
+}
+
+sub taxonomy {
+    require Topology::Taxonomy;
+    return Topology::Taxonomy->new(file => "$SHARE/taxonomy/pillars.json");
+}
+
+sub graph {
+    require Topology::Graph;
+    return Topology::Graph->new(root => "$VAR/graph");
+}
+
+if ($cmd eq 'config') {
+    print "$_\n" for $config->report;
+}
+elsif ($cmd eq 'repos') {
+    for my $r (repos()) {
+        my @p = $r->problems;
+        printf "%-20s %-10s %-11s %s\n", $r->name, $r->branch, $r->auth_kind,
+            @p ? ($r->usable ? 'warning: ' : 'NOT USED: ') . join('; ', @p) : 'ok';
+    }
+}
+elsif ($cmd eq 'fetch') {
+    need('repos');
+    my $fail = 0;
+    for my $r (repos()) {
+        my ($ok, $what) = $r->update("$VAR/repos", $ENV{TOPOLOGY_ASKPASS} || '/usr/libexec/topology/askpass');
+        printf "%-20s %s\n", $r->name, $ok ? $what : "not updated: $what";
+        $fail++ unless $ok;
+    }
+    exit($fail ? 1 : 0);
+}
+elsif ($cmd eq 'build') {
+    need('repos');
+    require Topology::Build;
+    # Build a fresh graph beside the old one and swap it in, so nothing a
+    # repository no longer says (a moved secret, a removed folder) survives.
+    require Topology::Graph;
+    my $new = "$VAR/graph.new.$$";
+    my @dirs = Topology::Build::from_checkouts(graph => Topology::Graph->new(root => $new),
+        taxonomy => taxonomy(), root => "$VAR/repos", repos => [ map { $_->name } repos() ]);
+    rename "$VAR/graph", "$VAR/graph.old.$$" if -d "$VAR/graph";
+    rename $new, "$VAR/graph" or die "topology: rename $new: $!\n";
+    system('rm', '-rf', '--', "$VAR/graph.old.$$");
+    print "read ", scalar(@dirs), " folder(s) with a TOPOLOGY.md\n";
+}
+elsif ($cmd eq 'check') {
+    my @bad = graph()->check;
+    print "$_\n" for @bad;
+    print @bad ? scalar(@bad) . " difference(s)\n" : "every cell agrees on both sides\n";
+    exit(@bad ? 1 : 0);
+}
+elsif ($cmd eq 'graph') {
+    require JSON::PP;
+    my $d = graph()->as_data;
+    if (@ARGV && $ARGV[0] eq '--csv') { require Topology::CSV; print Topology::CSV::graph_to_csv($d) }
+    else { print JSON::PP->new->canonical->pretty->encode($d) }
+}
+elsif ($cmd eq 'private') {
+    require Topology::Doc;
+    my ($dir, $c, $g) = @ARGV;
+    defined $dir or do { usage(); exit 2 };
+    my $r = Topology::Doc::resolve(container => $c // '', global => $g // 'auto',
+        docs => [ Topology::Doc::read_dir($dir) ]);
+    print $r->{show} ? "shown" : "kept back", " (decided by: $r->{by})\n";
+    print "seam: $r->{seam}\n" if defined $r->{seam};
+}
+elsif ($cmd eq 'serve') {
+    need('api');
+    require Topology::Server;
+    require IO::Async::Loop;
+    my $loop = IO::Async::Loop->new;
+    my $s = Topology::Server->new(graph => graph(), taxonomy => taxonomy(),
+        config => $config, repos => [ $config->is_on('repos') ? repos() : () ]);
+    $s->serve(loop => $loop, port => $ARGV[0] || $config->get('api.port') || 8740,
+        on_listen => sub { print "topology-api listening on 127.0.0.1:", $_[0]->read_handle->sockport, "\n" })->get;
+    $loop->run;
+}
+elsif ($cmd eq 'need') {
+    my $f = shift @ARGV or do { usage(); exit 2 };
+    Topology::Config::known($f) or do { print STDERR "topology: no feature '$f'\n"; exit 2 };
+    need($f);
+    exit 0;
+}
+elsif ($cmd eq 'where') {
+    print "browser app: $SHARE/www/index.html\n",
+          "downloads:   $SHARE/www/dist/\n",
+          "taxonomy:    $SHARE/taxonomy/pillars.json\n",
+          "settings:    $ETC/topology.conf\n",
+          "graph:       $VAR/graph/  (r/ and c/)\n";
+}
+else {
+    print STDERR "topology: no command '$cmd'; try --help\n";
+    exit 2;
+}

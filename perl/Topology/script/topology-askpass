@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# topology-askpass -- git's GIT_ASKPASS helper: print the token in
+# $TOPOLOGY_TOKEN_FILE.  git asks for a username first and a password
+# second; the token answers both (GitHub and Forgejo accept that).
+# The token goes to git's stdin pipe only, never onto a command line.
+case "$1" in
+  --help) echo "Usage: GIT_ASKPASS=$0 TOPOLOGY_TOKEN_FILE=FILE git ..."; exit 0 ;;
+  --version) echo "topology-askpass 0.01"; exit 0 ;;
+esac
+test -n "$TOPOLOGY_TOKEN_FILE" || { echo "topology-askpass: TOPOLOGY_TOKEN_FILE is not set" >&2; exit 1; }
+case "$1" in
+  Username*) case "$TOPOLOGY_TOKEN_USER" in '') head -n 1 "$TOPOLOGY_TOKEN_FILE" ;; *) printf '%s\n' "$TOPOLOGY_TOKEN_USER" ;; esac ;;
+  *) head -n 1 "$TOPOLOGY_TOKEN_FILE" ;;
+esac

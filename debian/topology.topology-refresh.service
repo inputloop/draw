@@ -1,0 +1,14 @@
+[Unit]
+Description=topology: fetch the repositories in repos.d and rebuild the graph
+Documentation=man:topology(1)
+
+[Service]
+Type=oneshot
+User=topology
+Group=topology
+ExecCondition=/usr/bin/topology need repos
+ExecStart=/usr/bin/topology fetch
+ExecStart=/usr/bin/topology build
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/topology

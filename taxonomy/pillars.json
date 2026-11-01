@@ -1,0 +1,64 @@
+{
+  "about": "Topology's four-pillar taxonomy, as data. Read by Topology::Taxonomy (Perl) and www/js/topology-core.js. The prose reading is design/TAXONOMY.org. Every word the app shows a person resolves to one row here or is reported as a gap (perl/Topology/t/40-taxonomy.t).",
+  "version": 1,
+  "pillars": [
+    { "id": "place",  "name": "Place",  "asks": "Where is it?",
+      "holds": "hosts, sites, racks, rooms, folders, repositories as places, URLs, mirrors",
+      "shapes": ["site", "rack", "zone", "vpc", "server", "vm", "storage", "cloud", "internet"] },
+    { "id": "part",   "name": "Part",   "asks": "What is it, and what is it made of?",
+      "holds": "components, packages, modules, versions, containment, the kind of a thing",
+      "shapes": ["container", "database", "rect", "rounded", "hexagon"] },
+    { "id": "path",   "name": "Path",   "asks": "How does it connect, flow or happen?",
+      "holds": "links, transports, processes (BPMN and BPMN+), flowcharts, logic, data and control flow",
+      "shapes": ["router", "switch", "l3switch", "lb", "wan", "vpn", "diamond", "parallelogram", "ellipse", "triangle"] },
+    { "id": "person", "name": "Person", "asks": "Who may see it, change it, or answer for it?",
+      "holds": "people and roles, consent, privacy, credentials, sharing, attribution, the act of saying go",
+      "shapes": ["user", "users", "firewall", "ids"] }
+  ],
+  "axes": [
+    { "id": "layer", "name": "Layer", "asks": "At what level is this drawn?",
+      "values": [
+        { "id": "abstract",    "says": "an idea or a design; nothing need exist" },
+        { "id": "operational", "says": "how it runs: processes, services, schedules" },
+        { "id": "physical",    "says": "what you could touch or ping: boxes, cables, disks" } ] },
+    { "id": "act", "name": "Act", "asks": "What does drawing it do?",
+      "values": [
+        { "id": "describe", "says": "shapes or words describe something buildable" },
+        { "id": "propose",  "says": "over an existing thing, the drawing is a proposed change, or asks for a prompt to make it" },
+        { "id": "effect",   "says": "press go, and tools that can make the change make it" } ],
+      "source": "Bridget, recording of 2026-10-31 at 00:01:51 to 00:02:28 (context/REVIEW-2026-10-31-topography-transcript.md)" }
+  ],
+  "tensions": [
+    { "between": ["place", "path"],   "name": "where it sits / how it moves",
+      "says": "a host is a place, its link a path; a mirror is both. Draw it once and show both readings rather than choosing." },
+    { "between": ["part", "person"],  "name": "what it is / who answers for it",
+      "says": "a package is a part; its maintainer, its licence and who may push are person. Keep them on separate rows that link." },
+    { "between": ["place", "person"], "name": "where it is / who may see that",
+      "says": "a location can itself be private; show-private applies to places too." },
+    { "between": ["part", "path"],    "name": "what it is / what it does",
+      "says": "a service is a part when packaged and a path when running; the layer axis tells which reading is drawn." },
+    { "between": ["place", "part"],   "name": "the box / what is in the box",
+      "says": "containment: a repository is a place you can clone and a part you can package." },
+    { "between": ["path", "person"],  "name": "the flow / the hand on it",
+      "says": "a BPMN lane is a person; a task in it is a path. Go is a path step that only a person may take." }
+  ],
+  "words": [
+    { "word": "container",   "pillar": "place",  "sense": "anything the drawing can hold other things in; may carry a TOPOLOGY.md" },
+    { "word": "repository",  "pillar": "place",  "sense": "a git repository named in repos.d; also a part when packaged", "also": ["part"] },
+    { "word": "host",        "pillar": "place",  "sense": "a machine with a name, such as gw26" },
+    { "word": "mirror",      "pillar": "place",  "sense": "a second place holding the same parts", "also": ["path"] },
+    { "word": "component",   "pillar": "part",   "sense": "a thing inside a container that is described on its own" },
+    { "word": "package",     "pillar": "part",   "sense": "a Debian package or a CPAN distribution" },
+    { "word": "feature",     "pillar": "part",   "sense": "one switchable thing the server does; see etc/topology.conf" },
+    { "word": "link",        "pillar": "path",   "sense": "a line between two shapes; it may name a medium" },
+    { "word": "process",     "pillar": "path",   "sense": "an ordered set of steps, drawn in a notation (BPMN, BPMN+, flowchart)" },
+    { "word": "notation",    "pillar": "path",   "sense": "a set of rules for what shapes mean; chosen by the person" },
+    { "word": "go",          "pillar": "person", "sense": "the act of letting tools effect a proposed change", "also": ["path"] },
+    { "word": "private",     "pillar": "person", "sense": "the part of a TOPOLOGY.md under a Private heading" },
+    { "word": "credential",  "pillar": "person", "sense": "a key, token or password file named (never held) in repos.d" },
+    { "word": "consent",     "pillar": "person", "sense": "a person's yes, given at the step where it applies (the upgrade wizard's ACCEPT)" },
+    { "word": "treatment",   "pillar": "person", "sense": "how the app looks and moves for this person (classic, console, cards ...)" },
+    { "word": "endpoint",    "pillar": "place",  "sense": "a Topology API the browser may talk to: none, your own, ours, or any" },
+    { "word": "zero sharing","pillar": "person", "sense": "a way of using the app where every setting and drawing stays in this browser" }
+  ]
+}

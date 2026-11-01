@@ -1,0 +1,6 @@
+# This is a private perl under /opt/topology/perl; its own scripts use it, by design.
+topology-perl: wrong-path-for-interpreter /opt/topology/perl/bin/perl != /usr/bin/perl [opt/topology/perl/bin/*]
+# Upstream perl and CPAN files, installed as their own installers make them.
+topology-perl: national-encoding [opt/topology/perl/lib/*]
+topology-perl: executable-not-elf-or-script [opt/topology/perl/lib/*]
+topology-perl: shared-library-lacks-prerequisites [opt/topology/perl/lib/*]

@@ -1,0 +1,40 @@
+Source: topology
+Section: misc
+Priority: optional
+Maintainer: Corwin Brust <corwin@bru.st>
+Build-Depends: debhelper-compat (= 13), gcc, make, libc6-dev, help2man, git <!nocheck>
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://gw26.bru.st/
+Vcs-Git: https://github.com/inputloop/topology.git -b corwin
+
+Package: topology-www
+Architecture: all
+Depends: ${misc:Depends}
+Suggests: nginx | httpd
+Description: draw what you have -- the browser app, as files
+ The front door, the drawing app (TopoForge) and its settings pages, under
+ /usr/share/topology/www.  Nothing runs: open index.html in a browser, or
+ serve the folder.  This is all of topology that a "ceiling = spa"
+ machine uses.
+
+Package: topology-perl
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: perl 5.44.0 built for topology, with its CPAN modules
+ A perl of its own under /opt/topology/perl, so topology does not depend
+ on, or change, the system perl.  Vendored in: Feature::Compat::Class,
+ Object::Pad, Future, Future::AsyncAwait, IO::Async and what they need
+ (vendor/VENDOR.org in the source says who maintains each, and why it
+ was chosen).
+
+Package: topology
+Architecture: all
+Depends: topology-perl (>= ${source:Version}), adduser, ${misc:Depends}
+Recommends: git, topology-www
+Description: draw what you have, from the git repositories that describe it
+ The topology command, the graph API service (topology-api) and the
+ settings in /etc/topology.  It fetches the repositories listed in
+ /etc/topology/repos.d, reads their TOPOLOGY.md files, and keeps what it
+ learns as small files under /var/lib/topology/graph.  Every feature can
+ be switched off in /etc/topology/topology.conf.

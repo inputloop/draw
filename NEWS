@@ -1,0 +1,22 @@
+topology NEWS -- user-visible changes
+
+Copyright 2026 Bryant Frankford and Corwin Brust and Contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+
+Version 0.01 (2026-10-31; the corwin branch; built and tested, not yet deployed)
+
+- Draw what you have: topology reads the git repositories you list, the
+  TOPOLOGY.md (and .topology.md) files in them, and draws the result with
+  TopoForge.
+- Zero Sharing: the browser app works with no server; settings and
+  drawings stay in the browser; export them at any time.  When saved
+  settings need an upgrade, each change is shown, Accept all jumps to a
+  summary grouped by where, what, how and who, and nothing changes before
+  ACCEPT.  Export before, and after by ticking a box.
+- Private parts of TOPOLOGY.md: show, hide or auto per container;
+  always, never or auto everywhere; auto asks the component's own file;
+  when its two files disagree, the part stays hidden and the app says so.
+- Three Debian packages: topology-www (files only), topology-perl (perl
+  5.44.0 with sixteen CPAN modules), topology (command, API, settings).
+- Every feature can be switched off; "ceiling = spa" leaves only the app's
+  files.  Go (letting tools make a change) is off by default.

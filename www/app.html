@@ -1,0 +1,274 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+     The app.  Zero Sharing: every setting and drawing lives in this browser's localStorage under one key. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>topology: draw</title>
+<link rel="stylesheet" href="css/topology.css">
+</head>
+<body>
+<a class="skip" href="#canvas">Skip to the drawing</a>
+<div class="wide">
+<header class="mast" style="padding:.6rem 0 .4rem">
+  <a href="./" class="name" style="font-size:1.4rem;text-decoration:none;color:inherit">topology</a>
+  <span class="muted" id="where-settings">settings: this browser only</span>
+</header>
+
+<div id="wizard" hidden></div>
+
+<div class="app" id="app">
+  <div class="side">
+    <section aria-labelledby="h-api">
+      <h2 id="h-api">Where the graph comes from</h2>
+      <label for="endpoint">Use</label>
+      <select id="endpoint"></select>
+      <details style="margin-top:.5em"><summary>Add an address</summary>
+        <label for="ep-name">Name</label><input id="ep-name" type="text" placeholder="my server">
+        <label for="ep-url">Address of a graph API</label><input id="ep-url" type="url" placeholder="https://example.org/api/v1">
+        <label for="ep-kind">It is</label>
+        <select id="ep-kind"><option value="own">mine</option><option value="ours">the topology project's</option><option value="other">someone else's</option></select>
+        <p><button class="btn quiet" id="ep-add" type="button">Add</button></p>
+      </details>
+      <p class="muted" style="font-size:.85rem">The address stays in this browser. The server sees only the requests you make.</p>
+    </section>
+
+    <section aria-labelledby="h-priv">
+      <h2 id="h-priv">Private parts</h2>
+      <label for="priv-global">Everywhere, unless a container says otherwise</label>
+      <select id="priv-global">
+        <option value="auto">auto: as each component's TOPOLOGY.md says (hidden if it says nothing)</option>
+        <option value="always">always show</option>
+        <option value="never">never show</option>
+      </select>
+      <div id="priv-containers"></div>
+    </section>
+
+    <section aria-labelledby="h-look">
+      <h2 id="h-look">How it looks and reads</h2>
+      <label for="treatment">Look</label>
+      <select id="treatment"><option value="classic">classic</option><option value="console">console</option><option value="cards">cards</option></select>
+      <label for="notation">Read drawings as</label>
+      <select id="notation"></select>
+      <p class="muted" id="notation-about" style="font-size:.85rem"></p>
+      <label><input type="checkbox" id="still"> less motion</label>
+    </section>
+
+    <section aria-labelledby="h-keep">
+      <h2 id="h-keep">Keep it</h2>
+      <p><button class="btn quiet" id="export" type="button">Export my settings and drawings</button></p>
+      <label for="import">Bring back an export</label>
+      <input id="import" type="file" accept="application/json">
+    </section>
+  </div>
+
+  <div class="canvas" id="canvas">
+    <div class="acts" role="toolbar" aria-label="What the drawing does">
+      <button class="btn quiet" id="act-load" type="button">Draw the graph</button>
+      <button class="btn quiet" id="act-prompt" type="button" title="describe or propose">Copy as a prompt</button>
+      <button class="btn" id="act-go" type="button">Go</button>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <iframe id="tf" title="TopoForge, the drawing" src="topoforge/index.html"></iframe>
+  </div>
+</div>
+</div>
+
+<script type="module">
+import * as T from './js/topology-core.js';
+
+const $ = id => document.getElementById(id);
+const say = msg => { $('status').textContent = msg; };
+const OURS = { name: 'topology project (gw26)', url: new URL('api/v1', location.href).href, kind: 'ours' };  // same place the app came from
+
+let taxonomy = null;
+try { taxonomy = await (await fetch('taxonomy/pillars.json')).json(); } catch (e) { /* the tree still works, with ids for names */ }
+
+function readRaw() { try { return localStorage.getItem(T.STORAGE_KEY); } catch (e) { return null; } }
+function persist(s) { try { localStorage.setItem(T.STORAGE_KEY, JSON.stringify(s)); return true; } catch (e) { say('This browser would not keep the settings (private window?). They last until you close the page.'); return false; } }
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name; document.body.append(a); a.click(); a.remove();
+}
+const exportNow = tag => download(`topology-settings-${tag}-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.json`,
+  T.exportState({ getItem: k => readRaw() }));
+
+let raw = readRaw(), state;
+var readOnly;
+try { state = raw ? JSON.parse(raw) : null; } catch (e) { state = null; readOnly = true; say('The saved settings could not be read; they are left as they are, and nothing is saved until you export them and start fresh.'); }
+
+// ------------------------------------------------------------------ the upgrade wizard
+function wizard(plan) {
+  return new Promise(resolve => {
+    const w = $('wizard'); w.hidden = false; $('app').inert = true;
+    const changes = plan.changes; let i = -1;
+    const pill = id => (taxonomy?.pillars || []).find(p => p.id === id)?.name || id;
+    const render = () => {
+      w.innerHTML = '';
+      const box = document.createElement('div'); box.className = 'wizard'; box.setAttribute('role', 'region'); box.setAttribute('aria-label', 'Changes to your saved settings');
+      if (i === -1) {
+        box.innerHTML = `<h1>Your saved settings need an update</h1>
+          <p>This version of topology keeps settings a little differently. ${changes.length} change${changes.length === 1 ? '' : 's'}
+          will be made, one at a time, and nothing changes until you press ACCEPT at the end.</p>
+          <p>Before anything changes, you can keep a copy of everything as it is now.</p>
+          <div class="row"><button class="btn quiet" id="w-export">Export my settings now</button>
+          <button class="btn" id="w-next">Show me the changes</button>
+          <button class="btn quiet" id="w-all">Accept all: show the summary</button>
+          <button class="btn quiet" id="w-cancel">Not now</button></div>`;
+      } else if (i < changes.length) {
+        const c = changes[i];
+        const tension = c.tension ? `<p class="tension muted">This pulls between ${pill(c.tension[0])} and ${pill(c.tension[1])}.</p>` : '';
+        box.innerHTML = `<p class="stepno">Change ${i + 1} of ${changes.length} · ${pill(c.pillar)} <span class="tag">${c.category}</span></p>
+          <h1>${c.title}</h1><p>${c.detail}</p>${tension}
+          <div class="row"><button class="btn quiet" id="w-back">Back</button>
+          <button class="btn" id="w-next">${i + 1 === changes.length ? 'To the summary' : 'Next'}</button>
+          <button class="btn quiet" id="w-all">Accept all: show the summary</button></div>`;
+      } else {
+        const tree = T.summaryTree(changes, taxonomy);
+        const ul = nodes => '<ul>' + nodes.map(n => n.change
+          ? `<li>${n.label}${n.category ? ` <span class="tag">${n.category}</span>` : ''}${n.change.tension ? ` <span class="tension">(pulls between ${pill(n.change.tension[0])} and ${pill(n.change.tension[1])})</span>` : ''}</li>`
+          : `<li><span class="${n.pillar ? '' : 'cat'}">${n.label}</span>${ul(n.children)}</li>`).join('') + '</ul>';
+        box.innerHTML = `<h1>Summary</h1><p>These changes are made together when you press ACCEPT.
+          They are grouped by what they touch: where (place), what (part), how (path) and who (person).</p>
+          <div class="tree">${ul(tree)}</div>
+          <p><label><input type="checkbox" id="w-after"> Also export my settings after accepting</label></p>
+          <div class="row"><button class="btn quiet" id="w-back">Back</button>
+          <button class="btn quiet" id="w-export">Export my settings now (as they are)</button>
+          <button class="btn" id="w-accept">ACCEPT</button>
+          <button class="btn quiet" id="w-cancel">Not now</button></div>`;
+      }
+      w.append(box);
+      const on = (id, f) => { const b = box.querySelector('#' + id); if (b) b.onclick = f; };
+      on('w-export', () => exportNow('before'));
+      on('w-next', () => { i++; render(); });
+      on('w-back', () => { i = Math.max(-1, i - 1); render(); });
+      on('w-all', () => { i = changes.length; render(); });
+      on('w-cancel', () => { w.hidden = true; $('app').inert = false; resolve(null); });
+      on('w-accept', () => {
+        const after = box.querySelector('#w-after').checked;
+        const next = T.applyUpgrade(state);
+        persist(next);
+        if (after) exportNow('after');
+        w.hidden = true; $('app').inert = false; resolve(next);
+      });
+      box.querySelector('h1').tabIndex = -1; box.querySelector('h1').focus();
+    };
+    render();
+  });
+}
+
+if (state) {
+  let plan;
+  try { plan = T.planUpgrade(state); } catch (e) { say(e.message + ' This page will not save over them.'); plan = { steps: [] }; state = null; readOnly = true; }
+  if (plan.steps.length) {
+    const up = await wizard(plan);
+    if (up) state = up;
+    else { say('Your settings were left as they were. This page runs on fresh settings until you accept; nothing is saved meanwhile.'); state = null; readOnly = true; }
+  }
+}
+if (!state) state = T.freshState();
+const save = s => readOnly ? false : persist(s);
+if (!T.NOTATIONS[state.notation]) { say(`Notation "${state.notation}" is not one this page knows; reading drawings as topology.`); state.notation = 'topology'; }
+if (!['classic', 'console', 'cards'].includes(state.treatment)) state.treatment = 'classic';
+
+// ------------------------------------------------------------------ settings panels
+function fillEndpoints() {
+  const sel = $('endpoint'); sel.innerHTML = '';
+  const opts = [{ name: '(none: draw by hand, nothing is fetched)', url: '' }, OURS, ...state.endpoints];
+  for (const e of opts) { const o = new Option(e.url ? `${e.name}` : e.name, e.name === OURS.name ? '@ours' : (e.url ? e.name : '')); sel.add(o); }
+  sel.value = state.active || '';
+}
+fillEndpoints();
+$('endpoint').onchange = e => { state.active = e.target.value || null; save(state); };
+$('ep-add').onclick = () => {
+  const name = $('ep-name').value.trim(), url = $('ep-url').value.trim();
+  if (!name || !/^https?:\/\//.test(url)) { say('An address needs a name and an http(s) address.'); return; }
+  state.endpoints = state.endpoints.filter(e => e.name !== name).concat({ name, url, kind: $('ep-kind').value });
+  state.active = name; save(state); fillEndpoints(); say(`Added ${name}. It is kept in this browser only.`);
+};
+const activeURL = () => state.active === '@ours' ? OURS.url : (state.endpoints.find(e => e.name === state.active) || {}).url;
+
+$('priv-global').value = state.showPrivate.global;
+$('priv-global').onchange = e => { state.showPrivate.global = e.target.value; save(state); };
+function fillPrivate(nodes) {
+  const box = $('priv-containers'); box.innerHTML = '';
+  for (const n of nodes.filter(n => n.private_by !== undefined)) {
+    const id = 'pc-' + n.id.replace(/\W/g, '_');
+    const l = document.createElement('label'); l.htmlFor = id; l.textContent = n.name || n.id;
+    const s = document.createElement('select'); s.id = id;
+    for (const v of ['', 'show', 'hide', 'auto']) s.add(new Option(v || 'as everywhere', v));
+    s.value = state.showPrivate.containers[n.id] || '';
+    s.onchange = () => { if (s.value) state.showPrivate.containers[n.id] = s.value; else delete state.showPrivate.containers[n.id]; save(state); };
+    const k = document.createElement('div'); k.className = 'kept';
+    k.textContent = n.private_kept_back ? `kept back (decided by: ${n.private_by})${n.private_seam ? '; the two files disagree: ' + n.private_seam : ''}` : `shown (decided by: ${n.private_by})`;
+    box.append(l, s, k);
+  }
+}
+
+const applyLook = () => {
+  document.documentElement.dataset.treatment = state.treatment;
+  if ($('still').checked) document.documentElement.dataset.still = ''; else delete document.documentElement.dataset.still;
+};
+$('treatment').value = state.treatment; $('treatment').onchange = e => { state.treatment = e.target.value; save(state); applyLook(); };
+for (const [k, n] of Object.entries(T.NOTATIONS)) $('notation').add(new Option(n.name, k));
+const showNotation = () => { $('notation-about').textContent = T.NOTATIONS[state.notation].about; };
+$('notation').value = state.notation; showNotation();
+$('notation').onchange = e => { state.notation = e.target.value; save(state); showNotation(); };
+$('still').onchange = applyLook; applyLook();
+
+$('export').onclick = () => exportNow('now');
+$('import').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text()); const s = JSON.parse(j.raw);
+    say(`This file holds settings from schema ${s.schema || 1}. Reload the page after bringing it back; any upgrade will be shown first.`);
+    localStorage.setItem(T.STORAGE_KEY, j.raw);
+  } catch (err) { say('That file is not a topology export; nothing was changed.'); }
+};
+
+// ------------------------------------------------------------------ the drawing
+const tf = $('tf');
+const hook = () => { const w = tf.contentWindow; if (w && w.TopoForge) w.TopoForge.integration = T.makeIntegration(state, save); };
+tf.addEventListener('load', hook);
+hook();   // the frame may have loaded while this script waited for the taxonomy
+
+let lastGraph = null;
+$('act-load').onclick = async () => {
+  const base = activeURL();
+  if (!base) { say('No address in use: draw by hand, or add an address on the left.'); return; }
+  const q = new URLSearchParams({ global: state.showPrivate.global });
+  for (const [k, v] of Object.entries(state.showPrivate.containers)) q.set('c.' + k, v);
+  try {
+    const g = await (await fetch(`${base}/graph?${q}`)).json();
+    lastGraph = g; fillPrivate(g.nodes);
+    const csv = T.graphToCSV({ nodes: g.nodes.map(n => ({ ...n, connects: g.links.filter(l => l.from === n.id && l.rel === 'connects').map(l => (g.nodes.find(m => m.id === l.to) || {}).name || l.to) })) });
+    const w = tf.contentWindow;
+    if (w && w.TopoForge && w.TopoForge.importCSV) { w.TopoForge.importCSV(csv); say(`Drew ${g.nodes.length} things from ${base}.`); }
+    else say('The drawing app did not load; the graph was fetched but not drawn.');
+  } catch (err) { say(`Could not reach ${base}: ${err.message}. Nothing was changed.`); }
+};
+
+$('act-prompt').onclick = async () => {
+  const facts = lastGraph ? lastGraph.nodes.map(n => `- ${n.name || n.id} (${n.kind}; ${n.pillar || 'no pillar'})`).join('\n') : '(no graph loaded: the drawing alone)';
+  const text = `Here is a drawing made in topology, read as ${T.NOTATIONS[state.notation].name}.\n` +
+    `It ${lastGraph ? 'is drawn over an existing graph, so read it as a proposed change' : 'describes something I want to build'}.\n` +
+    `Things it names:\n${facts}\n\nTreat anything the drawing does not say as unknown and ask me.`;
+  try { await navigator.clipboard.writeText(text); say('Copied the prompt. Paste it to whichever tools you trust.'); }
+  catch (e) { say('This browser would not copy; the prompt is in the console.'); console.log(text); }
+};
+
+$('act-go').onclick = async () => {
+  const base = activeURL();
+  if (!base) { say('Go needs a server that allows it. With no address, copy the prompt instead.'); return; }
+  try {
+    const r = await fetch(`${base}/go`, { method: 'POST' }); const j = await r.json();
+    say(j.done ? 'Done.' : `Not done: ${j.why}. ${j.instead || ''}`);
+  } catch (err) { say(`Could not reach ${base}: ${err.message}.`); }
+};
+
+if (location.hash === '#connect') $('endpoint').focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+vendor/perl/*.tar.gz
+debian/build/
+debian/.debhelper/
+debian/files
+debian/*.substvars
+debian/*.debhelper.log
+debian/topology/
+debian/topology-perl/
+debian/topology-www/
+debian/debhelper-build-stamp
+perl/Topology/Makefile
+perl/Topology/MYMETA.*
+perl/Topology/blib/
+perl/Topology/pm_to_blib
+out-*/
