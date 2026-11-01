@@ -1,3 +1,25 @@
+2026-11-01  Corwin Brust  <corwin@bru.st>
+
+	Coverage of inputloop, accessibility, and egad.
+
+	* AGENTS.md: who commits, where work lands.
+	* examples/inputloop/: 37 TOPOLOGY.md files (eight hosts, the two
+	forges, twelve projects with components and tools, three paths, three
+	people); four private projects say private: hide.
+	* spec/fixtures/examples.json, tests/make-examples-fixture.mjs,
+	tests/js/examples.test.mjs, perl/Topology/t/70-examples.t: the shared
+	test of the examples under both readers.
+	* www/css/egad.css: egad's tokens (light, dark).  www/css/topology.css:
+	maps them (the default palette), adds --control and --focus, keeps the
+	first palette as data-palette="original", adds a reduced-motion rule.
+	* www/js/look.js: applies the person's look before the page draws.
+	* www/app.html: main, h1, aside, second skip link, noscript, palette
+	and light/dark choices, wizard headings under the h1, focus returned.
+	* www/index.html: skip target takes focus, pre blocks reachable.
+	* tests/a11y-check.mjs: WCAG 2.1 AA rules, 13 planted faults.
+	* RECIPE.org, bin/test.sh: run the new checks.
+	* README.org, spec/TOPOLOGY-md.md, REUSE.toml, perl/Topology/MANIFEST.
+
 2026-10-31  Corwin Brust  <corwin@bru.st>
 
 	First version, on the corwin branch of inputloop/topology.

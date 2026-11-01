@@ -32,14 +32,42 @@ own, see [[file:context/FOR-OTHERS.md][context/FOR-OTHERS.md]].
 
 | =RECIPE.org=            | the source of =bin/=, =debian/= and =etc/=; tangle it to rebuild them  |
 | =www/=                  | the front door, the app, TopoForge 1.7 (unchanged)                     |
+| =www/css/egad.css=      | egad's colours and type, the default palette (see below)               |
+| =examples/inputloop/=   | the shop drawn: hosts, projects, tools, paths, people (37 files)        |
+| =AGENTS.md=             | who commits, where work lands, what to run before a push               |
 | =perl/Topology/=        | the command, the graph API and their modules (h2xs-shaped)             |
 | =spec/=                 | TOPOLOGY.md and the show-private rule, with shared test cases          |
+| =tests/=                | JS tests, =a11y-check.mjs= (WCAG rules, with planted faults), recipe check |
 | =taxonomy/pillars.json= | the four pillars; =design/TAXONOMY.org= reads it in prose              |
 | =design/=               | what it should be (DESIGN), and the two questions answered (LENS)      |
 | =context/=              | the starting request, the sources, the transcript review, ENHANCE pages |
 | =vendor/=               | the CPAN sources inside =topology-perl=, and who maintains them        |
 | =debian/=, =etc/=       | packaging and settings (tangled from the recipe)                       |
 | =runcards/=             | putting it on gw26 by hand                                             |
+
+* Colours: egad
+
+The pages use the egad design system's colours and type by default (black on
+white or white on black, text at 7:1 or better).  The app's settings offer
+"the first palette" and a light or dark choice; both are kept in this browser
+only.  =www/css/egad.css= is copied from egad's =dist/css/egad-tokens.css=
+and says so; =tests/a11y-check.mjs= measures every pair the stylesheet draws.
+
+* Accessibility
+
+=node tests/a11y-check.mjs= checks the two pages against the WCAG 2.1 AA
+rules we promise (language, one h1, heading order, landmarks, skip links,
+labels, names, keyboard reach, contrast in five palettes);
+=node tests/a11y-check.mjs --plant= breaks a copy thirteen ways and each must
+be caught.  =sh bin/test.sh= runs both.  It does not replace trying the app
+with a screen reader and a keyboard; please report what it misses.
+
+* Examples
+
+=examples/inputloop/= describes inputloop's own projects as =TOPOLOGY.md= files,
+one folder each.  Four are private and say =private: hide=; what they hold is
+under =## Private=.  After changing one, run =node tests/make-examples-fixture.mjs=
+and read the diff; Perl and JavaScript must both still agree with it.
 
 * Reading the Perl
 

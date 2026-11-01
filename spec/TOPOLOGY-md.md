@@ -44,6 +44,12 @@ Lines from here to the next heading at the same level or above are the private p
 - A `TOPOLOGY.md` or `.topology.md` that is a symbolic link is not read.
 - Unknown keys are kept and shown; they become columns in the graph (see `design/`).
 
+## Examples
+
+`examples/inputloop/` holds a `TOPOLOGY.md` for each host, project, component, path and person of the
+shop that wrote this. `spec/fixtures/examples.json` records how they read; the Perl and JavaScript
+readers must both agree with it. A public example carries no `## Private` part.
+
 ## Show private
 
 Three settings take part. The first that decides, decides.

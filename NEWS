@@ -3,6 +3,17 @@ topology NEWS -- user-visible changes
 Copyright 2026 Bryant Frankford and Corwin Brust and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
+Version 0.02 (2026-11-01; the corwin branch; unreleased)
+
+- The pages use the egad design system's colours by default, light and dark;
+  the app can switch back to the first palette or fix light or dark.
+- Both pages were audited against WCAG 2.1 AA: a main landmark and heading
+  in the app, skip links that land on something that takes focus, labelled
+  fields, keyboard-reachable code blocks, input edges at 3:1, less motion.
+  tests/a11y-check.mjs keeps them that way.
+- examples/inputloop/ draws inputloop's own hosts, projects, tools, paths
+  and people, with the four private projects hidden by the show-private rule.
+
 Version 0.01 (2026-10-31; the corwin branch; built and tested, not yet deployed)
 
 - Draw what you have: topology reads the git repositories you list, the
