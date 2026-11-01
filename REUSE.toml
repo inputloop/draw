@@ -6,7 +6,7 @@ SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> a
 SPDX-License-Identifier = "GPL-3.0-or-later OR LGPL-3.0-or-later"
 
 [[annotations]]
-path = ["*.org", "*.md", "context/**", "design/**", "spec/**", "runcards/**", "NEWS", "ChangeLog", "AUTHORS", "INSTALL", "vendor/*.org"]
+path = ["*.org", "*.md", "examples/**", "spec/fixtures/**", "context/**", "design/**", "spec/**", "runcards/**", "NEWS", "ChangeLog", "AUTHORS", "INSTALL", "vendor/*.org"]
 SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
 

@@ -1,0 +1,815 @@
+{
+ "about": "Shared by perl/Topology/t/70-examples.t and tests/js/examples.test.mjs. Made by tests/make-examples-fixture.mjs; review the diff when it changes.",
+ "private_projects": [
+  "obsmage-corwin",
+  "about-corwin",
+  "gitcha",
+  "c4"
+ ],
+ "files": [
+  {
+   "file": "examples/inputloop/TOPOLOGY.md",
+   "meta": {
+    "name": "inputloop",
+    "kind": "zone",
+    "pillar": "place",
+    "layer": "operational",
+    "contains": "avalon, code.bru.st, github.com/inputloop, gw4, gw7, gw10, gw15, gw19, gw26, gw33, obsmage, obsmage-corwin, topology, corwin.cloud, about-corwin, vibrobeast, vibrobeast-skills, NextTime-Dev, quantum3d5, fourSwordsFromThePast, gitcha, c4, corwin, bryant, definitelynotaspren",
+    "home": "https://github.com/inputloop"
+   },
+   "public": [
+    "# inputloop",
+    "",
+    "The shop Corwin Brust and Bryant Frankford keep together, with Brigidt (GitHub: definitelynotaspren)",
+    "as a lab partner. This folder draws it the way topology wants to: one `TOPOLOGY.md` per thing, in four",
+    "kinds of container.",
+    "",
+    "| pillar | what it holds here | folder |",
+    "|---|---|---|",
+    "| place | the hosts the work runs and lives on | `hosts/` |",
+    "| part | projects, components, files and tools | `projects/` |",
+    "| path | how work moves: mirroring, tangling, the atoms round trip | `paths/` |",
+    "| person | who answers for what | `people/` |",
+    "",
+    "Four projects are private (`obsmage-corwin`, `about-corwin`, `gitcha`, `c4`). Each says `private: hide`",
+    "and keeps what it holds under a `## Private` heading, so the drawing names them and nothing more until",
+    "someone chooses to show them. The rule is in `spec/TOPOLOGY-md.md`.",
+    "",
+    "Where a fact is not yet written down, the file says so instead of guessing.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/avalon/TOPOLOGY.md",
+   "meta": {
+    "name": "avalon",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# avalon",
+    "",
+    "Corwin's workstation, and the machine most of the shop's work is started and signed on. The Windows side of the shop (Emacs for Windows builds, MSYS2 shells, the folder the agents land work in) lives here.",
+    "",
+    "The app can draw it as a `server`. It is not reachable from outside; nothing here depends on that changing.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/code.bru.st/TOPOLOGY.md",
+   "meta": {
+    "name": "code.bru.st",
+    "kind": "site",
+    "pillar": "place",
+    "layer": "operational"
+   },
+   "public": [
+    "# code.bru.st",
+    "",
+    "Corwin's self-hosted Forgejo, the primary place his projects are published. The canonical copy of a",
+    "project lives here; GitHub mirrors it.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/github.com-inputloop/TOPOLOGY.md",
+   "meta": {
+    "name": "github.com/inputloop",
+    "kind": "site",
+    "pillar": "place",
+    "layer": "operational"
+   },
+   "public": [
+    "# github.com/inputloop",
+    "",
+    "The inputloop organisation on GitHub: the shop's shared home, and where people who work in GitHub terms",
+    "can reach what is published. A repository there may be public or private; each says which.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw10/TOPOLOGY.md",
+   "meta": {
+    "name": "gw10",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# gw10",
+    "",
+    "The ghostwheel host behind ghostwheel.cloud and the literate façade.",
+    "",
+    "The lab is close to taking on its management.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw15/TOPOLOGY.md",
+   "meta": {
+    "name": "gw15",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# gw15",
+    "",
+    "A ghostwheel host named in the shop's host list. What it does is not yet described here; add it when someone writes it down.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw19/TOPOLOGY.md",
+   "meta": {
+    "name": "gw19",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# gw19",
+    "",
+    "A ghostwheel host named in the shop's host list. What it does is not yet described here; add it when someone writes it down.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw26/TOPOLOGY.md",
+   "meta": {
+    "name": "gw26",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical",
+    "contains": "topology-www, topology-command",
+    "connects": "gw33"
+   },
+   "public": [
+    "# gw26",
+    "",
+    "The host topology is put on first: Debian 13, answering over HTTPS. The by-hand steps are in",
+    "`runcards/RUNCARD-2026-10-31-gw26.md`. Nothing has been run there from this repository yet.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw33/TOPOLOGY.md",
+   "meta": {
+    "name": "gw33",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# gw33",
+    "",
+    "The ghostwheel host for the development site dev.ghostwheel.chat, where the `vibrobeast` account works.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw4/TOPOLOGY.md",
+   "meta": {
+    "name": "gw4",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# gw4",
+    "",
+    "A small ghostwheel host that mainly runs one thing: Corwin's IRC bouncer (ZNC), with a healer project (`znc-healer`) that grew there.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/hosts/gw7/TOPOLOGY.md",
+   "meta": {
+    "name": "gw7",
+    "kind": "server",
+    "pillar": "place",
+    "layer": "physical"
+   },
+   "public": [
+    "# gw7",
+    "",
+    "The ghostwheel host Corwin and Bryant share for the garden runtime.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/paths/atoms-roundtrip/TOPOLOGY.md",
+   "meta": {
+    "name": "atoms-roundtrip",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": "obsmage"
+   },
+   "public": [
+    "# atoms-roundtrip",
+    "",
+    "An OBS configuration is split into atoms, rolled up into `STAGES.md`, edited by a person or a tool, and",
+    "unrolled back. If both sides changed since the pin, the tool stops and names the atoms in conflict.",
+    "It never picks a side.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/paths/mirror/TOPOLOGY.md",
+   "meta": {
+    "name": "mirror",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": "code.bru.st, github.com/inputloop"
+   },
+   "public": [
+    "# mirror",
+    "",
+    "How work moves out: everything is mirrored. The self-hosted forge at code.bru.st holds the canonical",
+    "copy (first push; merges go through Corwin), and GitHub, under the inputloop org, is where people can",
+    "reach it. A project that is private stays private in both places.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/paths/recipe-tangle/TOPOLOGY.md",
+   "meta": {
+    "name": "recipe-tangle",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": "topology"
+   },
+   "public": [
+    "# recipe-tangle",
+    "",
+    "`RECIPE.org` is tangled by `sh bin/tangle.sh` into `bin/`, `debian/` and `etc/`; `tests/recipe-check.sh`",
+    "says whether the tree still agrees with the recipe. Edit the recipe, then tangle; never edit a tangled file alone.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/people/bryant/TOPOLOGY.md",
+   "meta": {
+    "name": "bryant",
+    "kind": "user",
+    "pillar": "person",
+    "layer": "abstract",
+    "connects": "quantum3d5, topoforge"
+   },
+   "public": [
+    "# bryant",
+    "",
+    "Bryant Frankford. Made TopoForge and quantum3d5.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/people/corwin/TOPOLOGY.md",
+   "meta": {
+    "name": "corwin",
+    "kind": "user",
+    "pillar": "person",
+    "layer": "abstract",
+    "connects": "topology, obsmage, vibrobeast"
+   },
+   "public": [
+    "# corwin",
+    "",
+    "Corwin Brust, `corwin@bru.st`. Commits are authored as him, unsigned; signing is his act, by hand.",
+    "The agent's part in a commit is a byline on its last line.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/people/definitelynotaspren/TOPOLOGY.md",
+   "meta": {
+    "name": "definitelynotaspren",
+    "kind": "user",
+    "pillar": "person",
+    "layer": "abstract",
+    "connects": "NextTime-Dev"
+   },
+   "public": [
+    "# definitelynotaspren",
+    "",
+    "Credited by this GitHub handle. A lab partner in inputloop since 2026-10-25; NextTime-Dev is her work.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/NextTime-Dev/TOPOLOGY.md",
+   "meta": {
+    "name": "NextTime-Dev",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "definitelynotaspren",
+    "repo": "https://github.com/inputloop/NextTime-Dev",
+    "runs-in": "Nextcloud 29 to 35"
+   },
+   "public": [
+    "# NextTime-Dev",
+    "",
+    "Community time banking for Nextcloud: post a request, volunteer, earn hours. An hour of help is worth",
+    "an hour whoever gives it. An admin, or a three-vote community process, approves hours, and every",
+    "movement of hours lands in a public ledger. It is Brigidt's work (GitHub: definitelynotaspren), tested",
+    "on seven Nextcloud versions as of 2026-10-29. A browser demo is in `demo/index.html`.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/about-corwin/TOPOLOGY.md",
+   "meta": {
+    "name": "about-corwin",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "private": "hide"
+   },
+   "public": [
+    "# about-corwin",
+    "",
+    "The source of a personal website. The repository is private: this page says only that it exists.",
+    ""
+   ],
+   "private": [
+    "",
+    "The source of aboutcorwin.com: `content/` (one text file per card), `src/`, `build.py` (Python standard",
+    "library only), `tests/` with `run.sh --prove-red`, and `DESIGN.md`, `ACCESSIBILITY.md` and `BUILDING.md`.",
+    "It links only public repositories. It builds in several places and is put on Dreamhost by hand.",
+    ""
+   ],
+   "declared": "hide"
+  },
+  {
+   "file": "examples/inputloop/projects/c4/TOPOLOGY.md",
+   "meta": {
+    "name": "c4",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "private": "hide",
+    "connects": "gw33"
+   },
+   "public": [
+    "# c4",
+    "",
+    "A project of the shop. It is private: this page says only that it exists.",
+    ""
+   ],
+   "private": [
+    "",
+    "Kept on the self-hosted forge at code.bru.st, where the canonical copy lives. Holds the C4_ROOT idea",
+    "(registers read by path) and the tools around it; its tree is built out on gw33 under `/c4`.",
+    ""
+   ],
+   "declared": "hide"
+  },
+  {
+   "file": "examples/inputloop/projects/corwin.cloud/TOPOLOGY.md",
+   "meta": {
+    "name": "corwin.cloud",
+    "kind": "site",
+    "pillar": "place",
+    "layer": "abstract",
+    "connects": "topology-www"
+   },
+   "public": [
+    "# corwin.cloud",
+    "",
+    "A website that will use topology as its front door: the first thing a visitor sees is the drawing,",
+    "and the drawing links to the things it shows. Not built yet. Which host serves it is not decided.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/fourSwordsFromThePast/TOPOLOGY.md",
+   "meta": {
+    "name": "fourSwordsFromThePast",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "repo": "https://github.com/inputloop/fourSwordsFromThePast",
+    "built-on": "snesrev/zelda3 (MIT), vendored at 45a149d8"
+   },
+   "public": [
+    "# fourSwordsFromThePast",
+    "",
+    "A Link to the Past as a native PC game with up to four players, same PC, LAN or internet, from your own",
+    "cartridge. You bring your own US ROM; none of the game is in the repository. Who made it, and its",
+    "credit line, are not yet written in its README; add them when they are.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/gitcha/TOPOLOGY.md",
+   "meta": {
+    "name": "gitcha",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "private": "hide"
+   },
+   "public": [
+    "# gitcha",
+    "",
+    "A project of the shop. It is private: this page says only that it exists.",
+    ""
+   ],
+   "private": [
+    "",
+    "A self-hosted package registry Bryant made at inputloop, with a scan kit. Corwin calls it the first",
+    "serious free-software-as-commercial-platform offering.",
+    ""
+   ],
+   "declared": "hide"
+  },
+  {
+   "file": "examples/inputloop/projects/obsmage/TOPOLOGY.md",
+   "meta": {
+    "name": "obsmage",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "contains": "omg-atoms, omg-compose, omg-heal, obsmage-core",
+    "connects": "avalon",
+    "repo": "https://github.com/inputloop/obsmage",
+    "code-licence": "GPL-3.0-or-later OR LGPL-3.0-or-later",
+    "prose-licence": "CC-BY-SA-4.0",
+    "files": "README.md, CONVENTIONS.md, MODEL.md, STAGES.md, AGENTS.md, docs/REQUIREMENTS.md, docs/AR-CONTROL.md, docs/COMPOSER.md, docs/PACKAGING.md"
+   },
+   "public": [
+    "# obsmage",
+    "",
+    "OBS Studio kept as a living, literate configuration, with plugins that sense the room. A downstream",
+    "build of OBS whose whole configuration is split into key/value atoms that a person or a tool can read,",
+    "diff, version and change, with credentials kept out of everything published.",
+    "",
+    "## Parts",
+    "",
+    "- `omg-atoms` splits an OBS configuration into atoms and joins it back (INI byte-exact, JSON parse-equal).",
+    "- `omg-compose` audits and rebinds multi-monitor captures by stable id.",
+    "- `omg-heal` plans, builds and heals Debian and source builds.",
+    "- `obsmage-core` is the plugin skeleton (designed, not built).",
+    "",
+    "## Files that say what it is",
+    "",
+    "| file | says |",
+    "|---|---|",
+    "| `README.md` | what works today, what is only designed, how to try it |",
+    "| `CONVENTIONS.md` | atoms and their classes, the `STAGES.md` seam, why nothing is reorganized automatically |",
+    "| `MODEL.md` | the direction, for a brand-new reader |",
+    "| `STAGES.md` | the one-file roll-up of every atom (two readers, two writers, a pin) |",
+    "| `AGENTS.md` | who commits, and what must be green before a push |",
+    "| `docs/REQUIREMENTS.md` | the requirements R1 to R8 and where each stands |",
+    "",
+    "Personal recipes live in their own repositories that consume this one; `obsmage-corwin` is the first.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/obsmage/plugin/obsmage-core/TOPOLOGY.md",
+   "meta": {
+    "name": "obsmage-core",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "abstract",
+    "file": "plugin/obsmage-core/",
+    "state": "skeleton"
+   },
+   "public": [
+    "# obsmage-core",
+    "",
+    "The core plugin skeleton: where AR desktop control and camera calibration will attach",
+    "(`docs/AR-CONTROL.md`). Designed, not built.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/obsmage/tools/omg-atoms/TOPOLOGY.md",
+   "meta": {
+    "name": "omg-atoms",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "tools/omg_atoms.py",
+    "state": "built"
+   },
+   "public": [
+    "# omg-atoms",
+    "",
+    "`tools/omg_atoms.py`: `find`, `verify`, `split`, `join`, `rollup`, `unroll` over an OBS configuration.",
+    "Secret atoms go to a local vault (mode 600) and appear in anything published only as `@secret(len=N)`.",
+    "Tests: `tests/test_atoms.py`, `tests/e2e.sh` with `--prove-red`.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/obsmage/tools/omg-compose/TOPOLOGY.md",
+   "meta": {
+    "name": "omg-compose",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "tools/omg_compose.py",
+    "state": "built; plugin wiring open"
+   },
+   "public": [
+    "# omg-compose",
+    "",
+    "`tools/omg_compose.py`: audits which captures bind to a display by index (fragile) or by stable id,",
+    "rebinds them, keeps screen-map scenes current. Never deletes; hides and reports. Every write is behind",
+    "`--write` and leaves a dated backup. See `docs/COMPOSER.md`. Tests: `tests/test_compose.py`.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/obsmage/tools/omg-heal/TOPOLOGY.md",
+   "meta": {
+    "name": "omg-heal",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "packaging/healer/omg-heal",
+    "state": "built"
+   },
+   "public": [
+    "# omg-heal",
+    "",
+    "`packaging/healer/omg-heal`: the build healer. Follows `main` (the default), project meta, tags, or",
+    "signed tags only. Test: `tests/e2e-healer.sh`.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/obsmage-corwin/TOPOLOGY.md",
+   "meta": {
+    "name": "obsmage-corwin",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "private": "hide",
+    "connects": "obsmage"
+   },
+   "public": [
+    "# obsmage-corwin",
+    "",
+    "A personal recipe repository that consumes `obsmage`. It is private: this page says only that it exists.",
+    ""
+   ],
+   "private": [
+    "",
+    "One person's OBS rig, as recipe and atoms: `RECIPE.md`, `SCENES.md`, `STAGES.md`, `atoms/`, `journal/`,",
+    "and `hosts/avalon` and `hosts/giza` (the giza port is parked). Credentials are `secret` atoms and never",
+    "appear in the tree. Read `CONVENTIONS.md` of obsmage and `RECIPE.md` here before changing how things are kept.",
+    ""
+   ],
+   "declared": "hide"
+  },
+  {
+   "file": "examples/inputloop/projects/quantum3d5/TOPOLOGY.md",
+   "meta": {
+    "name": "quantum3d5",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "bryant",
+    "repo": "https://github.com/inputloop/quantum3d5"
+   },
+   "public": [
+    "# quantum3d5",
+    "",
+    "A 3D particle, atom and molecule simulator for learning chemistry and physics in the browser, offline.",
+    "Bryant's. Needs a browser and nothing else: no account, no server, 0 network connections as of",
+    "2026-10-29. A Realism page says which parts are real physics, simplified, or faked.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/topology/TOPOLOGY.md",
+   "meta": {
+    "name": "topology",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "contains": "topology-command, topology-www, topology-core, topoforge",
+    "connects": "gw26, obsmage, vibrobeast",
+    "repo": "https://github.com/inputloop/topology",
+    "branch": "corwin",
+    "files": "README.org, RECIPE.org, AGENTS.md, spec/TOPOLOGY-md.md, taxonomy/pillars.json, design/TAXONOMY.org, www/index.html, www/app.html, www/css/egad.css, tests/a11y-check.mjs"
+   },
+   "public": [
+    "# topology",
+    "",
+    "Draw what you have, from the files that describe it. Reads `TOPOLOGY.md` from the git repositories you",
+    "keep, sorts what they say by place, part, path and person, and draws it with TopoForge.",
+    "",
+    "## Files that say what it is",
+    "",
+    "| file | says |",
+    "|---|---|",
+    "| `README.org` | what it is, how to try it, where things are |",
+    "| `RECIPE.org` | the source of `bin/`, `debian/` and `etc/`; tangle it to rebuild them |",
+    "| `spec/TOPOLOGY-md.md` | the file format and the show-private rule |",
+    "| `taxonomy/pillars.json` | the four pillars, two axes, six tensions, as data |",
+    "| `AGENTS.md` | who commits and where work lands |",
+    "| `examples/inputloop/` | this drawing of the shop |",
+    "",
+    "Private parts of any `TOPOLOGY.md` stay hidden until the component or the person says show.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/topology/topology-command/TOPOLOGY.md",
+   "meta": {
+    "name": "topology-command",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "perl/Topology/script/topology",
+    "connects": "gw26"
+   },
+   "public": [
+    "# topology-command",
+    "",
+    "`perl/Topology/script/topology`: reads `repos.d`, fetches the repositories listed, builds the graph as",
+    "small files (`r/` and `c/`, written twice) and serves it read-only. Modules: `Config`, `Doc`, `Repo`,",
+    "`Graph`, `Taxonomy`, `Build`, `CSV`, `Server`. Every feature can be switched off in",
+    "`/etc/topology/topology.conf`; `ceiling = spa` leaves only the app's files.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/topology/www/TOPOLOGY.md",
+   "meta": {
+    "name": "topology-www",
+    "kind": "site",
+    "pillar": "place",
+    "layer": "operational",
+    "contains": "topology-core, topoforge",
+    "file": "www/",
+    "connects": "gw26"
+   },
+   "public": [
+    "# topology-www",
+    "",
+    "`www/`: the front door (`index.html`), the app (`app.html`), the stylesheets (`css/topology.css`, with",
+    "egad's tokens in `css/egad.css`) and TopoForge. Works with no server (Zero Sharing). Checked for",
+    "accessibility by `tests/a11y-check.mjs`.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/topology/www/topoforge/TOPOLOGY.md",
+   "meta": {
+    "name": "topoforge",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "www/topoforge/index.html"
+   },
+   "public": [
+    "# topoforge",
+    "",
+    "TopoForge, the single-file network and diagram designer Bryant Frankford made. It is kept in this",
+    "repository unchanged; improvements to it belong in Bryant's own copy first.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/topology/www/topology-core/TOPOLOGY.md",
+   "meta": {
+    "name": "topology-core",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "www/js/topology-core.js"
+   },
+   "public": [
+    "# topology-core",
+    "",
+    "`www/js/topology-core.js`: the rules, not the pictures: reading `TOPOLOGY.md`, deciding what private parts",
+    "show, the settings kept in the browser, and the CSV TopoForge opens. The same rules are written a second",
+    "time in Perl (`Topology::Doc`), and both run against `spec/fixtures/`.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/vibrobeast/TOPOLOGY.md",
+   "meta": {
+    "name": "vibrobeast",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "contains": "vibrobeast-skills",
+    "connects": "gw33, avalon",
+    "repo": "https://github.com/inputloop/vibrobeast",
+    "canonical": "code.bru.st/corwin/vibrobeast"
+   },
+   "public": [
+    "# vibrobeast",
+    "",
+    "A memory Claude keeps on your own computer in plain files, with the skills, persona sheets and shared",
+    "rooms built around it. Ships as a plugin carrying three stdio MCP servers, and works as a plugin",
+    "marketplace for people who add the repository. Its skills are kept in their own repository,",
+    "`vibrobeast-skills`, so a person can take the skills without the servers.",
+    "",
+    "A commit to vibrobeast is not complete unless its shelf on inputloop is correct.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/vibrobeast-skills/TOPOLOGY.md",
+   "meta": {
+    "name": "vibrobeast-skills",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "vibrobeast",
+    "repo": "https://github.com/inputloop/vibrobeast-skills",
+    "code-licence": "GPL-3.0-or-later",
+    "prose-licence": "CC-BY-SA-4.0",
+    "files": "skills/"
+   },
+   "public": [
+    "# vibrobeast-skills",
+    "",
+    "Written ways of working that Claude reads when a task calls for them; each skill is also a slash",
+    "command. 78 skills, counted 2026-10-30. Installs into Claude Desktop or Claude Code as a plugin. Each",
+    "skill says when it applies, what it does, how it can fail and how to switch it off; several carry",
+    "checks that are shown able to fail before anyone trusts them.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  }
+ ]
+}

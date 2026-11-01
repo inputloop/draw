@@ -21,6 +21,8 @@ echo "== Perl ($($perl -e 'print $^V'))"
 echo "== JavaScript"
 if (node --version) >/dev/null 2>&1; then node --test tests/js/*.test.mjs >/dev/null 2>&1 && echo "tests/js: ok" || { node --test tests/js/*.test.mjs; red=1; }
 else echo "node not found: the JavaScript half was not tested"; red=2; fi
+echo "== The examples agree with their fixture"
+if (node --version) >/dev/null 2>&1; then node tests/make-examples-fixture.mjs --check || red=1; fi
 echo "== Accessibility (WCAG 2.1 AA rules, and the planted faults it must catch)"
 if (node --version) >/dev/null 2>&1; then
   node tests/a11y-check.mjs || red=1

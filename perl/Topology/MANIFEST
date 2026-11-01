@@ -21,3 +21,4 @@ t/30-graph.t
 t/40-taxonomy.t
 t/50-server.t
 t/60-repo.t
+t/70-examples.t
