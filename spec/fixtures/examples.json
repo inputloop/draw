@@ -474,10 +474,10 @@
     "name": "obsmage",
     "kind": "container",
     "pillar": "part",
+    "private": "hide",
     "layer": "operational",
     "contains": "omg-atoms, omg-compose, omg-heal, obsmage-core",
     "connects": "avalon",
-    "repo": "https://github.com/inputloop/obsmage",
     "code-licence": "GPL-3.0-or-later OR LGPL-3.0-or-later",
     "prose-licence": "CC-BY-SA-4.0",
     "files": "README.md, CONVENTIONS.md, MODEL.md, STAGES.md, AGENTS.md, docs/REQUIREMENTS.md, docs/AR-CONTROL.md, docs/COMPOSER.md, docs/PACKAGING.md"
@@ -510,8 +510,12 @@
     "Personal recipes live in their own repositories that consume this one; `obsmage-corwin` is the first.",
     ""
    ],
-   "private": [],
-   "declared": null
+   "private": [
+    "",
+    "The repository is not public yet: https://github.com/inputloop/obsmage",
+    ""
+   ],
+   "declared": "hide"
   },
   {
    "file": "examples/inputloop/projects/obsmage/plugin/obsmage-core/TOPOLOGY.md",
@@ -647,10 +651,10 @@
     "name": "topology",
     "kind": "container",
     "pillar": "part",
+    "private": "hide",
     "layer": "operational",
     "contains": "topology-command, topology-www, topology-core, topoforge",
     "connects": "gw26, obsmage, vibrobeast",
-    "repo": "https://github.com/inputloop/topology",
     "branch": "corwin",
     "files": "README.org, RECIPE.org, AGENTS.md, spec/TOPOLOGY-md.md, taxonomy/pillars.json, design/TAXONOMY.org, www/index.html, www/app.html, www/css/egad.css, tests/a11y-check.mjs"
    },
@@ -674,8 +678,12 @@
     "Private parts of any `TOPOLOGY.md` stay hidden until the component or the person says show.",
     ""
    ],
-   "private": [],
-   "declared": null
+   "private": [
+    "",
+    "The repository is not public yet: https://github.com/inputloop/topology",
+    ""
+   ],
+   "declared": "hide"
   },
   {
    "file": "examples/inputloop/projects/topology/topology-command/TOPOLOGY.md",

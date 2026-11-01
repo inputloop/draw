@@ -2,10 +2,10 @@
 name: obsmage
 kind: container
 pillar: part
+private: hide
 layer: operational
 contains: omg-atoms, omg-compose, omg-heal, obsmage-core
 connects: avalon
-repo: https://github.com/inputloop/obsmage
 code-licence: GPL-3.0-or-later OR LGPL-3.0-or-later
 prose-licence: CC-BY-SA-4.0
 files: README.md, CONVENTIONS.md, MODEL.md, STAGES.md, AGENTS.md, docs/REQUIREMENTS.md, docs/AR-CONTROL.md, docs/COMPOSER.md, docs/PACKAGING.md
@@ -35,3 +35,7 @@ diff, version and change, with credentials kept out of everything published.
 | `docs/REQUIREMENTS.md` | the requirements R1 to R8 and where each stands |
 
 Personal recipes live in their own repositories that consume this one; `obsmage-corwin` is the first.
+
+## Private
+
+The repository is not public yet: https://github.com/inputloop/obsmage
