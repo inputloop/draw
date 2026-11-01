@@ -4,3 +4,5 @@ topology-perl: wrong-path-for-interpreter /opt/topology/perl/bin/perl != /usr/bi
 topology-perl: national-encoding [opt/topology/perl/lib/*]
 topology-perl: executable-not-elf-or-script [opt/topology/perl/lib/*]
 topology-perl: shared-library-lacks-prerequisites [opt/topology/perl/lib/*]
+# perl's own Configure sets these RUNPATHs for its DBM and HiRes modules.
+topology-perl: custom-library-search-path RUNPATH /usr/lib/x86_64-linux-gnu [opt/topology/perl/lib/*]

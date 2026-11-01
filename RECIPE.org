@@ -350,7 +350,7 @@ Source: topology
 Section: misc
 Priority: optional
 Maintainer: Corwin Brust <corwin@bru.st>
-Build-Depends: debhelper-compat (= 13), gcc, make, libc6-dev, help2man, git <!nocheck>
+Build-Depends: debhelper-compat (= 13), help2man, git <!nocheck>
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Homepage: https://gw26.bru.st/
