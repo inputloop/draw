@@ -13,7 +13,7 @@
     "kind": "zone",
     "pillar": "place",
     "layer": "operational",
-    "contains": "avalon, code.bru.st, github.com/inputloop, gw4, gw7, gw10, gw15, gw19, gw26, gw33, obsmage, obsmage-corwin, topology, corwin.cloud, about-corwin, vibrobeast, vibrobeast-skills, NextTime-Dev, quantum3d5, fourSwordsFromThePast, gitcha, c4, corwin, bryant, definitelynotaspren",
+    "contains": "avalon, code.bru.st, github.com/inputloop, gw4, gw7, gw10, gw15, gw19, gw26, gw33, obsmage, obsmage-corwin, topology, corwin.cloud, about-corwin, vibrobeast, vibrobeast-skills, NextTime-Dev, quantum3d5, fourSwordsFromThePast, gitcha, c4, card-games.el, .github, ta, three-phase-transcription, journal, pubs, suit-crm-6-5-php-sec-backport, egad, hello-taxgnomes, corwin, bryant, definitelynotaspren",
     "home": "https://github.com/inputloop"
    },
    "public": [
@@ -240,6 +240,27 @@
    "declared": null
   },
   {
+   "file": "examples/inputloop/paths/egad-emit/TOPOLOGY.md",
+   "meta": {
+    "name": "egad-emit",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": "egad"
+   },
+   "public": [
+    "# egad-emit",
+    "",
+    "How one set of tokens reaches every surface: `emit/emit.py` derives CSS custom properties, an Org HTML",
+    "export theme, two Emacs themes packaged for ELPA, and adapters for platforms that can be themed",
+    "(Nextcloud, Element, KDE). `make` writes them into `dist/`; `make check` measures every promised colour",
+    "pair first.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
    "file": "examples/inputloop/paths/mirror/TOPOLOGY.md",
    "meta": {
     "name": "mirror",
@@ -260,6 +281,46 @@
    "declared": null
   },
   {
+   "file": "examples/inputloop/paths/profile-build/TOPOLOGY.md",
+   "meta": {
+    "name": "profile-build",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": ".github"
+   },
+   "public": [
+    "# profile-build",
+    "",
+    "How the organisation's front page is made: the catalog lives with its builder and its check in a",
+    "members' repository; the public rows are cut from it into `profile/catalog.tsv`, the builder writes",
+    "the page between two marked lines, and the check refuses the page when it names anything private.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/paths/pubs-refresh/TOPOLOGY.md",
+   "meta": {
+    "name": "pubs-refresh",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": "pubs"
+   },
+   "public": [
+    "# pubs-refresh",
+    "",
+    "How writing reaches the reading room: `sh refresh.sh`, run on the machine that holds the publication",
+    "shelf, copies the shelf into the `pubs` repository. The shelf is the working copy; the repository is",
+    "its copy, refreshed.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
    "file": "examples/inputloop/paths/recipe-tangle/TOPOLOGY.md",
    "meta": {
     "name": "recipe-tangle",
@@ -273,6 +334,26 @@
     "",
     "`RECIPE.org` is tangled by `sh bin/tangle.sh` into `bin/`, `debian/` and `etc/`; `tests/recipe-check.sh`",
     "says whether the tree still agrees with the recipe. Edit the recipe, then tangle; never edit a tangled file alone.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/paths/transcript-sync/TOPOLOGY.md",
+   "meta": {
+    "name": "transcript-sync",
+    "kind": "parallelogram",
+    "pillar": "path",
+    "layer": "operational",
+    "connects": "three-phase-transcription"
+   },
+   "public": [
+    "# transcript-sync",
+    "",
+    "How the transcription tools travel: `PATHS` lists what belongs to the repository, and `sync.sh` moves",
+    "those paths both ways: `diff` says what differs in words, `into` unpacks them into a working tree, and",
+    "`from` rebuilds the repository from one. The recordings themselves never travel.",
     ""
    ],
    "private": [],
@@ -349,7 +430,7 @@
     "",
     "Community time banking for Nextcloud: post a request, volunteer, earn hours. An hour of help is worth",
     "an hour whoever gives it. An admin, or a three-vote community process, approves hours, and every",
-    "movement of hours lands in a public ledger. It is Brigidt's work (GitHub: definitelynotaspren), tested",
+    "movement of hours lands in a public ledger. It is definitelynotaspren's work (Brigidt), tested",
     "on seven Nextcloud versions as of 2026-10-29. A browser demo is in `demo/index.html`.",
     ""
    ],
@@ -403,19 +484,104 @@
    "declared": "hide"
   },
   {
+   "file": "examples/inputloop/projects/card-games.el/TOPOLOGY.md",
+   "meta": {
+    "name": "card-games.el",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "corwin",
+    "repo": "https://github.com/mplscorwin/card-games.el",
+    "runs-in": "GNU Emacs 26.1 or later"
+   },
+   "public": [
+    "# card-games.el",
+    "",
+    "About thirty card games for GNU Emacs, from Klondike and FreeCell to Hearts, 500, Gin, Cribbage and",
+    "two-player Russian Bank against the computer. Every game plays from the keyboard, and with the mouse on a",
+    "graphical display. Cards are drawn as SVG on a graphical display and as Unicode glyphs in a terminal; a",
+    "menu switches the treatment and the computer's skill. 500 can be played live over the network. It ships",
+    "an Info manual.",
+    "",
+    "Corwin's own, kept under his own GitHub account (mplscorwin) rather than the inputloop org. Installed",
+    "from MELPA: `M-x package-install RET card-games RET`. Code GPL-3.0-or-later; manual CC-BY-4.0, as its",
+    "README gives them (read 2026-11-01).",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
    "file": "examples/inputloop/projects/corwin.cloud/TOPOLOGY.md",
    "meta": {
     "name": "corwin.cloud",
     "kind": "site",
     "pillar": "place",
     "layer": "abstract",
-    "connects": "topology-www"
+    "connects": "topology-www, gw33"
    },
    "public": [
     "# corwin.cloud",
     "",
-    "A website that will use topology as its front door: the first thing a visitor sees is the drawing,",
-    "and the drawing links to the things it shows. Not built yet. Which host serves it is not decided.",
+    "Corwin's personal site, and the shop's showcase. Its front door is TopoForge itself, opened on a drawing",
+    "of the shop: one page per project the directory lists, made at build time from these files. It also has",
+    "a directory of the repositories, the packages, and demos of every inputloop app that can run in a",
+    "browser, staged from their public repositories. Served from gw33 since 2026-11-01. The repository is",
+    "public: https://github.com/inputloop/corwin.cloud.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/dot-github/TOPOLOGY.md",
+   "meta": {
+    "name": ".github",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "corwin, bryant, github.com/inputloop",
+    "repo": "https://github.com/inputloop/.github"
+   },
+   "public": [
+    "# .github",
+    "",
+    "The inputloop organisation's public profile page (`profile/README.md`) and the community files GitHub",
+    "uses for every inputloop repository that has none of its own: how we treat each other",
+    "(`CODE_OF_CONDUCT.md`), how to get help (`SUPPORT.md`), how to report a security problem",
+    "(`SECURITY.md`) and what we hold ourselves to on accessibility (`ACCESSIBILITY.md`).",
+    "",
+    "The profile page is built, not typed: `profile/catalog.tsv` holds one row per public repository, and",
+    "`profile/tiles/` a light and a dark picture for each (see the path `profile-build`). Corwin and Bryant",
+    "made it together; prose CC-BY-SA-4.0.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/egad/TOPOLOGY.md",
+   "meta": {
+    "name": "egad",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "corwin, github.com/inputloop",
+    "repo": "https://github.com/inputloop/egad"
+   },
+   "public": [
+    "# egad",
+    "",
+    "The house design system: one set of design tokens (`tokens/egad-tokens.json`: colours, type, spacing,",
+    "radii), rooted in GNU Emacs's Modus themes, which were built to clear WCAG AAA (7:1) for text. The gate",
+    "in the repository measures that claim rather than repeating it; corwin.cloud's demo of egad measures it",
+    "again, each time the site is built.",
+    "",
+    "Emitters derive everything else from the tokens (see the path `egad-emit`). An archive node serves the",
+    "derivations the way ELPA serves packages: plain files, signed, found through `/.well-known/egad`.",
+    "egadjit is literate tooling: an Org file that tangles with or without Emacs, and a test that insists",
+    "the two agree. Corwin's; the colour values come from the Modus themes (Protesilaos Stavrou). Code",
+    "GPL-3.0-or-later; prose CC BY-SA 4.0.",
     ""
    ],
    "private": [],
@@ -459,6 +625,58 @@
     "front door of inputloop.com; the software is called Gitcha, which is why its commands and settings say",
     "`gitcha`. Made by Bryant and Corwin. The repository is public (since 2026-11-01); its README says",
     "which parts have been tested only against stand-ins.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/hello-taxgnomes/TOPOLOGY.md",
+   "meta": {
+    "name": "hello-taxgnomes",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "corwin, egad, github.com/inputloop",
+    "repo": "https://github.com/inputloop/hello-taxgnomes"
+   },
+   "public": [
+    "# hello-taxgnomes",
+    "",
+    "The Gnemonic Word Mines: a reading component built from a taxonomy at build time. Pick a word from the",
+    "word game's four tables and move a four-way slider: north simpler, south denser, east moodier, west",
+    "drier; the centre is the plain gloss. Every sentence says who wrote it: a dictionary, the game's pooled",
+    "sentences, a template, or a local model.",
+    "",
+    "A worked example for egad: its egad hooks are suggestions, and the page works alone. `make` builds one",
+    "page, `build/hello-taxgnomes.html`, that runs in any browser; `make check` has two unfolders agree and a",
+    "second reader check the build. By Corwin Brust and Contributors. Code GPL-3.0-or-later; prose",
+    "CC BY-SA 4.0; the readings quote WordNet 3.1, GCIDE 0.53 and SCOWL under their own terms.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/journal/TOPOLOGY.md",
+   "meta": {
+    "name": "journal",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "abstract",
+    "connects": "corwin, github.com/inputloop",
+    "repo": "https://github.com/inputloop/journal"
+   },
+   "public": [
+    "# journal",
+    "",
+    "The open shelf: essays, one Markdown file each, named by date. It starts with two companion accounts of",
+    "the 2026 GNU Savannah forensic review, the discovery account and the second account written from the",
+    "record. Both are PGP-clearsigned: the signature is the integrity guarantee, the licence is the freedom",
+    "grant. `corwin.asc` is the signing key; good signatures bind to the fingerprint",
+    "ECE7 7CF4 17C7 6C1A CFCE 7C2B 5B61 3551 1580 F007.",
+    "",
+    "Corwin's. The two Savannah essays are CC BY 4.0, as the shelf's README declares.",
     ""
    ],
    "private": [],
@@ -621,6 +839,31 @@
    "declared": "hide"
   },
   {
+   "file": "examples/inputloop/projects/pubs/TOPOLOGY.md",
+   "meta": {
+    "name": "pubs",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "abstract",
+    "connects": "corwin, github.com/inputloop",
+    "repo": "https://github.com/inputloop/pubs"
+   },
+   "public": [
+    "# pubs",
+    "",
+    "The reading room: a copy of the publication shelf, where finished writing lands. It holds `papers/`,",
+    "`posts/`, `persona/` sheets, the `canon/` and the `books/`. The repository is named `pubs` and the",
+    "shelf `pub`; both spellings are meant.",
+    "",
+    "It carries no history of its own beyond refreshes (see the path `pubs-refresh`). A site's tree and the",
+    "shelf's working sets are left out on purpose. Corwin's. Code GPL-3.0-or-later OR LGPL-3.0-or-later;",
+    "writing CC-BY-SA-4.0, unless an item says otherwise.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
    "file": "examples/inputloop/projects/quantum3d5/TOPOLOGY.md",
    "meta": {
     "name": "quantum3d5",
@@ -636,6 +879,88 @@
     "A 3D particle, atom and molecule simulator for learning chemistry and physics in the browser, offline.",
     "Bryant's. Needs a browser and nothing else: no account, no server, 0 network connections as of",
     "2026-10-29. A Realism page says which parts are real physics, simplified, or faked.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/suit-crm-6-5-php-sec-backport/TOPOLOGY.md",
+   "meta": {
+    "name": "suit-crm-6-5-php-sec-backport",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "corwin, gw19, github.com/inputloop",
+    "repo": "https://github.com/inputloop/suit-crm-6-5-php-sec-backport"
+   },
+   "public": [
+    "# suit-crm-6-5-php-sec-backport",
+    "",
+    "Patched PHP 7.4, 8.0 and 8.1 for SuiteCRM (the SugarCRM CE 6.5 lineage), against CVE-2026-109618 and",
+    "CVE-2026-109619. It builds PHP from the end-of-life mitigation commits the PHP project published on",
+    "2026-10-18 and 2026-10-21, pinned by full SHA (the build refuses to go on if a branch head moves),",
+    "proves that SuiteCRM 7.13 installs and logs in on each build, and publishes the binaries together with",
+    "the complete sources they were built from.",
+    "",
+    "It is a build-and-prove apparatus: no exploit and no vulnerable code of its own; the patches are the PHP",
+    "project's, unchanged. `RUNBOOK.md` is what was run by hand on gw19 on 2026-10-21, in containers; CI runs",
+    "the same scripts. Corwin's. Scripts and documents GPL-3.0-or-later (one script Expat); PHP stays under",
+    "the PHP License 3.01 and SuiteCRM under AGPL-3.0.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/ta/TOPOLOGY.md",
+   "meta": {
+    "name": "ta",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "abstract",
+    "connects": "corwin, github.com/inputloop",
+    "repo": "https://github.com/inputloop/ta"
+   },
+   "public": [
+    "# ta",
+    "",
+    "Technology architecture: a portable, host-agnostic operating-model kit for AI help. The shippable is one",
+    "file, `AGENTS.md`, identified by the SHA-256 of its bytes (`AGENTS.md.sha256`): drop it at the top of a",
+    "new project, or attach it to a session, with a short instruction, and the AI grounds itself in that",
+    "host's public identity and prefers the host's own words and standards over its own.",
+    "",
+    "`RECIPE.org` is the front door and the build. The rest is lineage, kept as it was: earlier models,",
+    "decision records, papers, a guide of techniques by kind of AI reader with what would show each one",
+    "wrong, and the run behind it. It uses public sources only. Corwin's; it works for its makers and has",
+    "not yet been reviewed by anyone else. Prose CC BY 4.0, scripts GPL-3.0-or-later, as its README gives them.",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/three-phase-transcription/TOPOLOGY.md",
+   "meta": {
+    "name": "three-phase-transcription",
+    "kind": "container",
+    "pillar": "part",
+    "layer": "operational",
+    "connects": "corwin, github.com/inputloop",
+    "repo": "https://github.com/inputloop/three-phase-transcription"
+   },
+   "public": [
+    "# three-phase-transcription",
+    "",
+    "Recorded talk, in three layers that each cite the one below: quotes by time (`tr1qt`), subjects drawn",
+    "from the quotes (`tr2sm`), and a result (`tr3rm`) that names each seam and the pin that holds it, or",
+    "says it is still open. Every sentence in a result can be followed back to the second it was said.",
+    "`tr2vs` holds a subject layer against another reader's findings.",
+    "",
+    "What can be checked is checked twice, by two readers written in different languages from the same",
+    "rules (`tests/tr-spec.sh` re-reads a set in sh and awk). The recordings stay where they were made; only",
+    "the tools travel (see the path `transcript-sync`). Corwin's. Code GPL-3.0-or-later (or",
+    "LGPL-3.0-or-later where a file says so); prose CC-BY-SA-4.0.",
     ""
    ],
    "private": [],

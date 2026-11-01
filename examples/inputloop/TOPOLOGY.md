@@ -3,7 +3,7 @@ name: inputloop
 kind: zone
 pillar: place
 layer: operational
-contains: avalon, code.bru.st, github.com/inputloop, gw4, gw7, gw10, gw15, gw19, gw26, gw33, obsmage, obsmage-corwin, topology, corwin.cloud, about-corwin, vibrobeast, vibrobeast-skills, NextTime-Dev, quantum3d5, fourSwordsFromThePast, gitcha, c4, corwin, bryant, definitelynotaspren
+contains: avalon, code.bru.st, github.com/inputloop, gw4, gw7, gw10, gw15, gw19, gw26, gw33, obsmage, obsmage-corwin, topology, corwin.cloud, about-corwin, vibrobeast, vibrobeast-skills, NextTime-Dev, quantum3d5, fourSwordsFromThePast, gitcha, c4, card-games.el, .github, ta, three-phase-transcription, journal, pubs, suit-crm-6-5-php-sec-backport, egad, hello-taxgnomes, corwin, bryant, definitelynotaspren
 home: https://github.com/inputloop
 ---
 # inputloop

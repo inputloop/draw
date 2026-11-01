@@ -3,9 +3,12 @@ name: corwin.cloud
 kind: site
 pillar: place
 layer: abstract
-connects: topology-www
+connects: topology-www, gw33
 ---
 # corwin.cloud
 
-A website that will use topology as its front door: the first thing a visitor sees is the drawing,
-and the drawing links to the things it shows. Not built yet. Which host serves it is not decided.
+Corwin's personal site, and the shop's showcase. Its front door is TopoForge itself, opened on a drawing
+of the shop: one page per project the directory lists, made at build time from these files. It also has
+a directory of the repositories, the packages, and demos of every inputloop app that can run in a
+browser, staged from their public repositories. Served from gw33 since 2026-11-01. The repository is
+public: https://github.com/inputloop/corwin.cloud.
