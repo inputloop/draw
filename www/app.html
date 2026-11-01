@@ -26,6 +26,9 @@
 
 <div class="app" id="app">
   <aside class="side" id="settings" tabindex="-1" aria-label="Settings">
+    <details class="settings" id="settings-box">
+    <summary>Settings: where the graph comes from, private parts, look, keeping a copy (all kept in this browser only)</summary>
+    <div class="settings-body">
     <section aria-labelledby="h-api">
       <h2 id="h-api">Where the graph comes from</h2>
       <label for="endpoint">Use</label>
@@ -71,13 +74,15 @@
       <label for="import">Bring back an export</label>
       <input id="import" type="file" accept="application/json">
     </section>
+    </div>
+    </details>
   </aside>
 
   <div class="canvas" id="canvas" tabindex="-1" role="region" aria-label="The drawing">
     <div class="acts" role="group" aria-label="What the drawing does">
-      <button class="btn quiet" id="act-load" type="button">Draw the graph</button>
-      <button class="btn quiet" id="act-prompt" type="button" title="describe or propose">Copy as a prompt</button>
-      <button class="btn" id="act-go" type="button">Go</button>
+      <button class="btn quiet" id="act-load" type="button" hidden>Draw the graph</button>
+      <button class="btn quiet" id="act-prompt" type="button" title="the drawing's own story, as a prompt to take to any tool you trust">Copy as a prompt</button>
+      <button class="btn" id="act-go" type="button" hidden>Go</button>
     </div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
     <iframe id="tf" title="TopoForge, the drawing" src="topoforge/index.html"></iframe>
@@ -191,15 +196,19 @@ function fillEndpoints() {
   for (const e of opts) { const o = new Option(e.url ? `${e.name}` : e.name, e.name === OURS.name ? '@ours' : (e.url ? e.name : '')); sel.add(o); }
   sel.value = state.active || '';
 }
+// Draw and Go need a server; with no address in use they would only say so, so they are not shown.
+const showActs = () => { const on = !!activeURL(); $('act-load').hidden = !on; $('act-go').hidden = !on; };
 fillEndpoints();
-$('endpoint').onchange = e => { state.active = e.target.value || null; save(state); };
+$('endpoint').onchange = e => { state.active = e.target.value || null; save(state); showActs(); };
 $('ep-add').onclick = () => {
   const name = $('ep-name').value.trim(), url = $('ep-url').value.trim();
   if (!name || !/^https?:\/\//.test(url)) { say('An address needs a name and an http(s) address.'); return; }
   state.endpoints = state.endpoints.filter(e => e.name !== name).concat({ name, url, kind: $('ep-kind').value });
-  state.active = name; save(state); fillEndpoints(); say(`Added ${name}. It is kept in this browser only.`);
+  state.active = name; save(state); fillEndpoints(); showActs(); say(`Added ${name}. It is kept in this browser only.`);
 };
-const activeURL = () => state.active === '@ours' ? OURS.url : (state.endpoints.find(e => e.name === state.active) || {}).url;
+function activeURL() { return state.active === '@ours' ? OURS.url : (state.endpoints.find(e => e.name === state.active) || {}).url; }
+showActs();
+if (location.hash === '#connect' || location.hash === '#settings') $('settings-box').open = true;
 
 $('priv-global').value = state.showPrivate.global;
 $('priv-global').onchange = e => { state.showPrivate.global = e.target.value; save(state); };
@@ -276,9 +285,13 @@ $('act-load').onclick = async () => {
 
 $('act-prompt').onclick = async () => {
   const facts = lastGraph ? lastGraph.nodes.map(n => `- ${n.name || n.id} (${n.kind}; ${n.pillar || 'no pillar'})`).join('\n') : '(no graph loaded: the drawing alone)';
+  // the drawing's own story, as TopoForge writes it (its Story panel), so the prompt carries the drawing itself
+  let story = '';
+  try { const w = tf.contentWindow; if (w && w.TopoForge && w.TopoForge.story) story = (await w.TopoForge.story.storyMarkdown(w.TopoForge.doc)).text; } catch (e) { story = ''; }
   const text = `Here is a drawing made in topology, read as ${T.NOTATIONS[state.notation].name}.\n` +
     `It ${lastGraph ? 'is drawn over an existing graph, so read it as a proposed change' : 'describes something I want to build'}.\n` +
-    `Things it names:\n${facts}\n\nTreat anything the drawing does not say as unknown and ask me.`;
+    `Things it names:\n${facts}\n\n` + (story ? `What the drawing shows, in TopoForge's own words:\n\n${story}\n\n` : '') +
+    `Treat anything the drawing does not say as unknown and ask me.`;
   try { await navigator.clipboard.writeText(text); say('Copied the prompt. Paste it to whichever tools you trust.'); }
   catch (e) { say('This browser would not copy; the prompt is in the console.'); console.log(text); }
 };

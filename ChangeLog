@@ -1,5 +1,22 @@
 2026-11-01  Corwin Brust  <corwin@bru.st>
 
+	The drawing first: TopoForge gets the width, and nothing on the page
+	offers what it cannot do.  From the UI audit of 2026-11-01 (in
+	corwin.cloud, docs/UI-AUDIT-2026-11-01.md).
+
+	* www/app.html: the settings sit in one closed <details id="settings-box">
+	above the drawing, opened by #connect or #settings.  "Draw the graph" and
+	"Go" are hidden until an address is in use (showActs).  "Copy as a
+	prompt" carries TopoForge's own story of the drawing
+	(TopoForge.story.storyMarkdown).
+	* www/css/topology.css: one column; the frame at least 80vh; .wide is
+	wider; .acts [hidden] stays hidden (.btn sets display).
+	* tests/a11y-check.mjs: rules and four planted faults for the above.
+	* tests/browser/app.browser.mjs: checks for the above (a first visit
+	shows no Draw or Go; the prompt holds the story; settings closed).
+
+2026-11-01  Corwin Brust  <corwin@bru.st>
+
 	topology, about-corwin and gitcha are public.
 
 	* examples/inputloop/projects/{topology,about-corwin,gitcha}/TOPOLOGY.md:

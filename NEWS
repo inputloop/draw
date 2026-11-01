@@ -5,6 +5,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- The app gives the drawing the whole width.  Its settings are one closed
+  line above it; Draw and Go appear only once a graph server is chosen;
+  Copy as a prompt now carries the drawing's own story, as TopoForge writes it.
+
 - The pages use the egad design system's colours by default, light and dark;
   the app can switch back to the first palette or fix light or dark.
 - Both pages were audited against WCAG 2.1 AA: a main landmark and heading

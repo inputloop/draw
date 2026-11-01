@@ -21,7 +21,14 @@ check(await page.getByRole('link', { name: 'Start now, share nothing' }).isVisib
 check(await page.getByRole('link', { name: 'Connect and draw' }).isVisible(), 'front door: the Connect way in is visible');
 check(!(await page.locator('#ladder table').isVisible()), 'front door: the rest waits behind a link');
 
-// 2. old settings in this browser, then the app
+// 2. a first visit: no address in use, so no button that needs a server
+await page.evaluate(() => localStorage.clear());
+await page.goto(site + '/app.html#zero');
+await page.getByRole('button', { name: 'Copy as a prompt' }).waitFor();
+check(!(await page.getByRole('button', { name: 'Draw the graph' }).isVisible()) && !(await page.getByRole('button', { name: 'Go' }).isVisible()), 'acts: Draw and Go are not shown with no address in use');
+await page.goto(site + '/index.html');
+
+// 3. old settings in this browser, then the app
 await page.evaluate(() => localStorage.setItem('topology.state', JSON.stringify({ schema: 1, api: 'http://example.invalid/api/v1', drawing: { pages: [] } })));
 await page.goto(site + '/app.html#zero');
 await page.getByRole('heading', { name: 'Your saved settings need an update' }).waitFor();
@@ -44,15 +51,27 @@ check(JSON.parse(JSON.parse(fs.readFileSync(after, 'utf8')).raw).schema === 3, '
 const s = JSON.parse(await page.evaluate(() => localStorage.getItem('topology.state')));
 check(s.schema === 3 && s.endpoints[0].url === 'http://example.invalid/api/v1' && s.drawings['my drawing'], 'ACCEPT: settings upgraded, nothing lost');
 
-// 3. connect an API and draw
+// 4. the drawing first: settings closed, and no button that needs a server until one is chosen
+check(!(await page.locator('#settings-box').evaluate(d => d.open)), 'settings: closed until asked for, so TopoForge has the width');
+await page.frameLocator('#tf').locator('body').waitFor();
+await page.waitForFunction(() => document.getElementById('tf').contentWindow.TopoForge);
+await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+await page.getByRole('button', { name: 'Copy as a prompt' }).click();
+await page.getByText('Copied the prompt').waitFor();
+const clip = await page.evaluate(() => navigator.clipboard.readText());
+check(/in TopoForge's own words:[\s\S]*what this drawing shows/.test(clip), "prompt: carries the drawing's own story" + (process.env.DEBUG ? ': ' + clip.slice(0, 400) : ''));
+
+// 5. connect an API and draw
+await page.locator('summary', { hasText: 'Settings:' }).click();
 await page.locator('summary', { hasText: 'Add an address' }).click();
 await page.getByLabel('Name').fill('test api');
 await page.getByLabel('Address of a graph API').fill(api);
 await page.getByRole('button', { name: 'Add' }).click();
 await page.frameLocator('#tf').locator('body').waitFor();
 await page.waitForFunction(() => document.getElementById('tf').contentWindow.TopoForge);
+check(await page.getByRole('button', { name: 'Draw the graph' }).isVisible(), 'acts: Draw is shown once an address is in use');
 await page.getByRole('button', { name: 'Draw the graph' }).click();
-await page.getByText(/Drew \d+ things/).waitFor({ timeout: 10000 });
+await page.getByText(/Drew \d+ things/).waitFor({ timeout: 10000 }).catch(async (e) => { console.log('status:', await page.locator('#status').innerText()); throw e; });
 check(true, 'draw: the graph reached TopoForge');
 const kept = await page.locator('#priv-containers').innerText();
 check(/the two files disagree/.test(kept), 'private: the seam between TOPOLOGY.md and .topology.md is shown');

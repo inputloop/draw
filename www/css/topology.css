@@ -48,7 +48,7 @@
 html, body { margin: 0; background: var(--bg); color: var(--fg); }
 body { font: 17px/1.55 var(--body); padding: 0 16px; }
 .wrap { max-width: 46rem; margin: 0 auto; }
-.wide { max-width: 72rem; margin: 0 auto; }
+.wide { max-width: 96rem; margin: 0 auto; padding: 0 1rem; }
 a { color: var(--link); } a:visited { color: var(--visited); }
 a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, input:focus-visible,
 pre:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
@@ -88,14 +88,16 @@ details.more > summary { cursor: pointer; padding: .7em 0; font-family: var(--sa
 .recipe-note::before { content: "\2192\00a0"; }
 
 /* the app */
-.app { display: grid; grid-template-columns: 20rem 1fr; gap: var(--gap); min-height: 80vh; padding: 1rem 0; }
-@media (max-width: 52rem) { .app { grid-template-columns: 1fr; } }
+/* The drawing takes the whole width; the settings are one click above it, closed until asked for. */
+.app { display: grid; grid-template-columns: 1fr; gap: var(--gap); min-height: 80vh; padding: 1rem 0; }
+.settings > summary { cursor: pointer; font: .95rem var(--sans); padding: .4rem 0; min-height: 24px; }
+.settings-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--gap); padding-top: .5rem; }
 .side section { border: 1px solid var(--rule); border-radius: var(--radius); padding: .7rem; margin-bottom: .8rem; background: var(--panel); }
 .side h2 { margin: 0 0 .4em; font-size: 1rem; border: 0; }
 .side label { display: block; font: .9rem var(--sans); margin: .3em 0; }
 .side select, .side input[type=url], .side input[type=text] { width: 100%; font: .95rem var(--sans); padding: .3em; background: var(--bg); color: var(--fg); border: 1px solid var(--control); }
 .canvas { border: 1px solid var(--rule); border-radius: var(--radius); min-height: 70vh; display: flex; flex-direction: column; }
-.canvas iframe { flex: 1; border: 0; width: 100%; min-height: 70vh; background: #fff; }
+.canvas iframe { flex: 1; border: 0; width: 100%; min-height: 80vh; background: #fff; }
 .acts { display: flex; flex-wrap: wrap; gap: .5rem; padding: .5rem; border-bottom: 1px solid var(--rule); font-family: var(--sans); }
 .status { font: .9rem var(--sans); padding: .4rem .6rem; min-height: 1.6em; }
 .kept { color: var(--warn); font-family: var(--sans); font-size: .9rem; }
@@ -129,3 +131,4 @@ header.mast-app { padding: .6rem 0 .4rem; }
 header.mast-app .name { font-size: 1.4rem; text-decoration: none; color: inherit; }
 .add { margin-top: .5em; }
 .skip2:focus { top: 3.2rem; }
+.acts [hidden] { display: none; }

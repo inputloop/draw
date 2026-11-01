@@ -128,6 +128,15 @@ export function check(files) {
       for (const id of (e.attrs[k] || '').split(/\s+/).filter(Boolean)) if (!ids.has(id)) fail(f, `${k}="${id}" names nothing on the page`);
     // 2.1.1 keyboard: nothing leaves the tab order wrongly; scrollable pre is reachable
     for (const e of els) if (+e.attrs.tabindex > 0) fail(f, 'tabindex above 0 reorders the keyboard path');
+    // the drawing first (2026-11-01): the settings stay closed until asked for, so TopoForge has the
+    // width; no button that needs a server is shown before one is chosen; the prompt carries the story
+    if (f === 'app.html') {
+      const box = els.find(e => e.attrs.id === 'settings-box');
+      if (!box || box.tag !== 'details' || 'open' in box.attrs) fail(f, 'the settings are not a closed <details id="settings-box">');
+      for (const id of ['act-load', 'act-go']) { const b = els.find(e => e.attrs.id === id); if (!b || !('hidden' in b.attrs)) fail(f, `#${id} is shown before an address is in use`); }
+      if (!/storyMarkdown\(/.test(src)) fail(f, "Copy as a prompt does not carry the drawing's own story");
+      if (!/\.acts \[hidden\] \{ display: none; \}/.test(files['www/css/topology.css'])) fail(f, 'a hidden act button would still show (.btn sets display)');
+    }
     for (const p of by('pre')) if (p.attrs.tabindex !== '0') fail(f, 'a <pre> that can scroll cannot be reached by keyboard (needs tabindex="0")');
     for (const e of els) if (e.attrs.onclick !== undefined && !['a', 'button', 'input', 'select', 'summary'].includes(e.tag)) fail(f, `<${e.tag}> has onclick but is not a control`);
   }
@@ -168,6 +177,10 @@ const PLANTS = [
   ['muted text too pale', f => { f['www/css/topology.css'] = f['www/css/topology.css'].replace('--muted: var(--egad-text-dim);', '--muted: #bbbbbb;'); }],
   ['focus ring removed', f => { f['www/css/topology.css'] = f['www/css/topology.css'].replace(/outline: 3px solid var\(--focus\)/g, 'outline: 0 solid var(--focus)'); }],
   ['reduced motion ignored', f => { f['www/css/topology.css'] = f['www/css/topology.css'].replace('prefers-reduced-motion: reduce', 'prefers-reduced-motion: no-preference-x'); }],
+  ['settings open from the start', f => { f['www/app.html'] = f['www/app.html'].replace('<details class="settings" id="settings-box">', '<details class="settings" id="settings-box" open>'); }],
+  ['Go shown with no server', f => { f['www/app.html'] = f['www/app.html'].replace('id="act-go" type="button" hidden', 'id="act-go" type="button"'); }],
+  ['the prompt loses the story', f => { f['www/app.html'] = f['www/app.html'].replace(/storyMarkdown\(/g, 'storyMarkdownX('); }],
+  ['hidden acts still displayed', f => { f['www/css/topology.css'] = f['www/css/topology.css'].replace('.acts [hidden] { display: none; }', ''); }],
   ['egad colour changed to fail', f => { f['www/css/egad.css'] = f['www/css/egad.css'].replace('--egad-fg-dim: #595959;', '--egad-fg-dim: #999999;'); }],
 ];
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
