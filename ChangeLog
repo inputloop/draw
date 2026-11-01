@@ -1,5 +1,17 @@
 2026-11-01  Corwin Brust  <corwin@bru.st>
 
+	topology, about-corwin and gitcha are public.
+
+	* examples/inputloop/projects/{topology,about-corwin,gitcha}/TOPOLOGY.md:
+	no `private: hide` and no `## Private` part (a public example carries
+	none, per spec/TOPOLOGY-md.md); each gains a `repo:` line.
+	* examples/inputloop/TOPOLOGY.md, README.org: three private projects
+	(obsmage, obsmage-corwin, c4), not four.
+	* tests/make-examples-fixture.mjs, spec/fixtures/examples.json:
+	private_projects is those three; fixture regenerated.
+
+2026-11-01  Corwin Brust  <corwin@bru.st>
+
 	Coverage of inputloop, accessibility, and egad.
 
 	* AGENTS.md: who commits, where work lands.

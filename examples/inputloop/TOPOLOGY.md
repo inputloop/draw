@@ -19,7 +19,7 @@ kinds of container.
 | path | how work moves: mirroring, tangling, the atoms round trip | `paths/` |
 | person | who answers for what | `people/` |
 
-Four projects are private (`obsmage-corwin`, `about-corwin`, `gitcha`, `c4`). Each says `private: hide`
+Three projects are private (`obsmage`, `obsmage-corwin`, `c4`). Each says `private: hide`
 and keeps what it holds under a `## Private` heading, so the drawing names them and nothing more until
 someone chooses to show them. The rule is in `spec/TOPOLOGY-md.md`.
 

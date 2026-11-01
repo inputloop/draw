@@ -3,10 +3,7 @@
  "private_projects": [
   "obsmage",
   "obsmage-corwin",
-  "about-corwin",
-  "gitcha",
-  "c4",
-  "topology"
+  "c4"
  ],
  "files": [
   {
@@ -33,7 +30,7 @@
     "| path | how work moves: mirroring, tangling, the atoms round trip | `paths/` |",
     "| person | who answers for what | `people/` |",
     "",
-    "Four projects are private (`obsmage-corwin`, `about-corwin`, `gitcha`, `c4`). Each says `private: hide`",
+    "Three projects are private (`obsmage`, `obsmage-corwin`, `c4`). Each says `private: hide`",
     "and keeps what it holds under a `## Private` heading, so the drawing names them and nothing more until",
     "someone chooses to show them. The rule is in `spec/TOPOLOGY-md.md`.",
     "",
@@ -366,22 +363,20 @@
     "kind": "container",
     "pillar": "part",
     "layer": "operational",
-    "private": "hide"
+    "repo": "https://github.com/inputloop/about-corwin"
    },
    "public": [
     "# about-corwin",
     "",
-    "The source of a personal website. The repository is private: this page says only that it exists.",
-    ""
-   ],
-   "private": [
+    "The source of aboutcorwin.com, a personal page. The repository is public (since 2026-11-01).",
     "",
-    "The source of aboutcorwin.com: `content/` (one text file per card), `src/`, `build.py` (Python standard",
-    "library only), `tests/` with `run.sh --prove-red`, and `DESIGN.md`, `ACCESSIBILITY.md` and `BUILDING.md`.",
-    "It links only public repositories. It builds in several places and is put on Dreamhost by hand.",
+    "What it holds: `content/` (one text file per card), `src/`, `build.py` (Python standard library only),",
+    "`tests/` with `run.sh --prove-red`, and `DESIGN.md`, `ACCESSIBILITY.md` and `BUILDING.md`. It links only",
+    "public repositories. It builds in several places and is put on its host by hand.",
     ""
    ],
-   "declared": "hide"
+   "private": [],
+   "declared": null
   },
   {
    "file": "examples/inputloop/projects/c4/TOPOLOGY.md",
@@ -454,21 +449,20 @@
     "kind": "container",
     "pillar": "part",
     "layer": "operational",
-    "private": "hide"
+    "repo": "https://github.com/inputloop/gitcha"
    },
    "public": [
     "# gitcha",
     "",
-    "A project of the shop. It is private: this page says only that it exists.",
+    "A free, self-hosted forge for people and their agents: packages, git hosting, site hosting, CI and",
+    "functions, with two-factor sign-in on every account and a Claude extension that speaks it. It is the",
+    "front door of inputloop.com; the software is called Gitcha, which is why its commands and settings say",
+    "`gitcha`. Made by Bryant and Corwin. The repository is public (since 2026-11-01); its README says",
+    "which parts have been tested only against stand-ins.",
     ""
    ],
-   "private": [
-    "",
-    "A self-hosted package registry Bryant made at inputloop, with a scan kit. Corwin calls it the first",
-    "serious free-software-as-commercial-platform offering.",
-    ""
-   ],
-   "declared": "hide"
+   "private": [],
+   "declared": null
   },
   {
    "file": "examples/inputloop/projects/obsmage/TOPOLOGY.md",
@@ -653,11 +647,11 @@
     "name": "topology",
     "kind": "container",
     "pillar": "part",
-    "private": "hide",
     "layer": "operational",
     "contains": "topology-command, topology-www, topology-core, topoforge",
     "connects": "gw26, obsmage, vibrobeast",
     "branch": "corwin",
+    "repo": "https://github.com/inputloop/topology",
     "files": "README.org, RECIPE.org, AGENTS.md, spec/TOPOLOGY-md.md, taxonomy/pillars.json, design/TAXONOMY.org, www/index.html, www/app.html, www/css/egad.css, tests/a11y-check.mjs"
    },
    "public": [
@@ -678,14 +672,12 @@
     "| `examples/inputloop/` | this drawing of the shop |",
     "",
     "Private parts of any `TOPOLOGY.md` stay hidden until the component or the person says show.",
-    ""
-   ],
-   "private": [
     "",
-    "The repository is not public yet: https://github.com/inputloop/topology",
+    "The repository is public, on the `corwin` branch (public since 2026-11-01).",
     ""
    ],
-   "declared": "hide"
+   "private": [],
+   "declared": null
   },
   {
    "file": "examples/inputloop/projects/topology/topology-command/TOPOLOGY.md",

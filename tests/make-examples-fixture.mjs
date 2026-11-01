@@ -28,7 +28,7 @@ export function build() {
   });
   return {
     about: 'Shared by perl/Topology/t/70-examples.t and tests/js/examples.test.mjs. Made by tests/make-examples-fixture.mjs; review the diff when it changes.',
-    private_projects: ['obsmage', 'obsmage-corwin', 'about-corwin', 'gitcha', 'c4', 'topology'],
+    private_projects: ['obsmage', 'obsmage-corwin', 'c4'],
     files,
   };
 }

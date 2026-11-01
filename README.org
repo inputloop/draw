@@ -65,7 +65,7 @@ with a screen reader and a keyboard; please report what it misses.
 * Examples
 
 =examples/inputloop/= describes inputloop's own projects as =TOPOLOGY.md= files,
-one folder each.  Four are private and say =private: hide=; what they hold is
+one folder each.  Three are private and say =private: hide=; what they hold is
 under =## Private=.  After changing one, run =node tests/make-examples-fixture.mjs=
 and read the diff; Perl and JavaScript must both still agree with it.
 

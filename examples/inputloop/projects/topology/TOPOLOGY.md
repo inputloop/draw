@@ -2,11 +2,11 @@
 name: topology
 kind: container
 pillar: part
-private: hide
 layer: operational
 contains: topology-command, topology-www, topology-core, topoforge
 connects: gw26, obsmage, vibrobeast
 branch: corwin
+repo: https://github.com/inputloop/topology
 files: README.org, RECIPE.org, AGENTS.md, spec/TOPOLOGY-md.md, taxonomy/pillars.json, design/TAXONOMY.org, www/index.html, www/app.html, www/css/egad.css, tests/a11y-check.mjs
 ---
 # topology
@@ -27,6 +27,4 @@ keep, sorts what they say by place, part, path and person, and draws it with Top
 
 Private parts of any `TOPOLOGY.md` stay hidden until the component or the person says show.
 
-## Private
-
-The repository is not public yet: https://github.com/inputloop/topology
+The repository is public, on the `corwin` branch (public since 2026-11-01).
