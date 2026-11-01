@@ -426,6 +426,10 @@ override_dh_auto_install:
 	# the vendored CPAN distributions, in the order vendor/ORDER gives
 	TOPOLOGY_TEST=$(if $(filter nocheck,$(DEB_BUILD_OPTIONS)),no,yes) \
 	    sh bin/vendor-install.sh $(TPERL) vendor/cpan $(B)/vendor
+	# scripts a CPAN installer wrote name the perl by its build path; point them home
+	for f in $(TP)$(PREFIX)/bin/*; do \
+	  if head -n 1 "$$f" | grep -q '^#!.*debian/topology-perl'; then \
+	    sed -i '1s|^#!.*|#!$(PREFIX)/bin/perl|' "$$f"; fi; done
 	# Topology itself, tested with the perl it will run under
 	cd perl/Topology && $(TPERL) Makefile.PL >/dev/null && $(MAKE) >/dev/null
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))

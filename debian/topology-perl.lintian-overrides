@@ -6,3 +6,9 @@ topology-perl: executable-not-elf-or-script [opt/topology/perl/lib/*]
 topology-perl: shared-library-lacks-prerequisites [opt/topology/perl/lib/*]
 # perl's own Configure sets these RUNPATHs for its DBM and HiRes modules.
 topology-perl: custom-library-search-path RUNPATH /usr/lib/x86_64-linux-gnu [opt/topology/perl/lib/*]
+# A private, self-contained perl lives under /opt on purpose (it is not the
+# system perl and must not look like it).  Moving it to /usr/lib/topology/perl
+# is the change an archive upload would need; see design/DESIGN-2026-10-31-topology.md.
+topology-perl: dir-or-file-in-opt [opt/*]
+# perl's Compress::Raw::Zlib builds its bundled zlib by default.
+topology-perl: embedded-library zlib [opt/topology/perl/lib/*]

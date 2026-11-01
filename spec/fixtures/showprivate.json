@@ -1,5 +1,5 @@
 {
- "about": "Shared cases for spec/TOPOLOGY-md.md. Read by perl/Topology/t/20-showprivate.t and tests/js/showprivate.test.mjs. Each case: files by name, the two settings, and what must come out.",
+ "about": "Shared cases for spec/TOPOLOGY-md.md. Read by perl/Topology/t/20-showprivate.t and tests/js/core.test.mjs. Each case: files by name, the two settings, and what must come out.",
  "files": {
   "says-show": "---\nname: pub\nprivate: show\n---\n# pub\nopen words\n## Private\nsecret one\n",
   "says-hide": "---\nname: lab\nprivate: hide   # keep it in\n---\n# lab\n## Private\nsecret two\n### deeper\nstill private\n## Next\npublic again\n",

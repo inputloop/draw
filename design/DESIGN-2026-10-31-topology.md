@@ -70,4 +70,7 @@ feature, on or off, and the line that decided.
 - The merge panel of the 2026-10-27 proposal; our host side of its integration object is built.
 - A deploy to gw26: this session reached gw26 over HTTPS only. `runcards/RUNCARD-2026-10-31-gw26.md`
   is the hand-run version.
+- Debian archive quality: `topology-perl` lives under `/opt/topology/perl` (lintian: dir-or-file-in-opt,
+  overridden with the reason). An upload to Debian would move it to `/usr/lib/topology/perl`; a choice
+  for Corwin, not made here.
 - An accessibility scan of our two pages with axe-core (TopoForge's own kit covers TopoForge).
