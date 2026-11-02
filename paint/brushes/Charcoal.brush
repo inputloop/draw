@@ -1,0 +1,11 @@
+# Built-in "grain" tip: a dry, broken stroke that darkens with pressure.
+name = Charcoal
+tip = grain
+size = 34
+flow = 0.35
+spacing = 0.12
+pressure_size = 0.4
+min_size = 0.4
+pressure_opacity = 1
+jitter = 0.2
+smoothing = 0.15

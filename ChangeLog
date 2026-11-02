@@ -1,3 +1,23 @@
+2026-11-02  Bryant Frankford  <nathanielfrankford@gmail.com>
+
+	topology paint: a drawing and painting program built into topology,
+	in C, for Windows, Linux and macOS, with pen pressure, brushes,
+	layers, the usual file formats and mods (Bryant's request, 2026-11-02).
+	* paint/: the program (src/core without SDL, src/app with SDL3),
+	the mod API (include/tpaint_mod.h) and three example mods, brushes,
+	palettes, build.bat and build.sh, CMakeLists.txt, tests, README.md
+	with screenshots, docs/MODDING.md, docs/LESSONS-LEARNED.md.
+	* RECIPE.org: what goes in (SDL 3.2.26 by sha256, stb); test.sh
+	runs paint/tests/run.sh and its --prove-red.
+	* bin/test.sh: tangled again.
+	* examples/inputloop/: topology-paint, in topology and by bryant.
+	* spec/fixtures/examples.json: made again.
+	* README.org, NEWS, AUTHORS, REUSE.toml, LICENSES/: the new part
+	and its licences (MIT OR Unlicense for stb, Bitstream-Vera for the
+	baked DejaVu glyphs).
+	* .github/workflows/paint.yml: build and test paint on Windows
+	(MSVC), macOS and Linux.
+
 2026-11-02  Corwin Brust  <corwin@bru.st>
 
 	topology forge (formerly TopoForge) 1.9 in www/topoforge/, second

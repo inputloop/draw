@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# topology paint: build and test on the three systems it is for, the way a
+# person would (build.bat on Windows, build.sh elsewhere), and keep the
+# packaged builds as downloads.  Runs only when paint/ (or this file) changes.
+name: paint
+on:
+  push:
+    paths: ['paint/**', '.github/workflows/paint.yml']
+  pull_request:
+    paths: ['paint/**', '.github/workflows/paint.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux headers (X11 with XInput2 for pen pressure, Wayland, D-Bus)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libx11-dev libxext-dev libxi-dev libxrandr-dev libxcursor-dev \
+            libxfixes-dev libxss-dev libwayland-dev libxkbcommon-dev wayland-protocols libegl-dev libdbus-1-dev
+      - name: build.bat test, package (MSVC)
+        if: runner.os == 'Windows'
+        shell: cmd
+        working-directory: paint
+        run: |
+          call build.bat test || exit /b 1
+          call build.bat package || exit /b 1
+      - name: build.sh, test, package
+        if: runner.os != 'Windows'
+        working-directory: paint
+        run: |
+          ./build.sh
+          ./build.sh test
+          ./build.sh package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: topology-paint-${{ runner.os }}
+          path: paint/dist/*
+          if-no-files-found: error

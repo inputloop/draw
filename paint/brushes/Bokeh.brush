@@ -1,0 +1,11 @@
+# Built-in "ring" tip, scattered: out-of-focus lights on a Screen layer.
+name = Bokeh
+tip = ring
+size = 60
+opacity = 0.6
+spacing = 2.0
+jitter = 0.8
+scatter = 2.5
+pressure_size = 0
+pressure_opacity = 0.6
+smoothing = 0

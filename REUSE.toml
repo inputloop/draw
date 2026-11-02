@@ -14,3 +14,31 @@ SPDX-License-Identifier = "CC-BY-SA-4.0"
 path = ["vendor/cpan/**", "vendor/perl/**"]
 SPDX-FileCopyrightText = "their authors, as each distribution states"
 SPDX-License-Identifier = "GPL-1.0-or-later OR Artistic-1.0-Perl"
+
+[[annotations]]
+path = ["paint/src/app/font_data.h"]
+precedence = "override"
+SPDX-FileCopyrightText = "2003 Bitstream, Inc. (DejaVu changes: DejaVu fonts team); baked by paint/tools/mkfont.py"
+SPDX-License-Identifier = "Bitstream-Vera"
+
+[[annotations]]
+path = ["paint/third_party/stb/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2017 Sean Barrett"
+SPDX-License-Identifier = "MIT OR Unlicense"
+
+[[annotations]]
+path = ["paint/third_party/dejavu/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2003 Bitstream, Inc.; DejaVu fonts team"
+SPDX-License-Identifier = "Bitstream-Vera"
+
+[[annotations]]
+path = ["paint/src/**", "paint/include/**", "paint/mods/**", "paint/tests/**", "paint/tools/**", "paint/brushes/**", "paint/palettes/**", "paint/CMakeLists.txt", "paint/build.sh", "paint/build.bat", "paint/.gitattributes", ".github/workflows/paint.yml"]
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "GPL-3.0-or-later OR LGPL-3.0-or-later"
+
+[[annotations]]
+path = ["paint/*.md", "paint/docs/**"]
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
