@@ -1,3 +1,32 @@
+2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
+	topology forge (formerly TopoForge) 1.9, first stage: the seven calls
+	corwin.cloud's docs/NAV.md (revision 4, "Asked of the app") asked
+	for, blessed by Corwin on 2026-11-02 ("Your next list: bless").
+	Each message waits for its own switch; none is in ?embed=all or bare.
+	* index.html (TF_VERSION): 1.9.  (header comment): the 1.9 lines.
+	(applyView): calls tellView, which does nothing unless the view
+	switch is on.
+	(renderOverlay, buildPages): call tellPages, the same with pagelist.
+	(EMBED_WORDS): view, keys, context, pagelist, map, preview.
+	(ALL_V1): New.  What 'all' turned on in 1.8; embedWordsFromQuery
+	uses it, so 'all' does not grow.
+	(embed): calls embed19.
+	(selectionInfo): the detail gains rect.
+	(place): place(null) gives up an armed shape.
+	(embed19, viewInfo, setView, tellView, screenRect, selectionRect)
+	(setProps, applyPatch, tellPages, emacsKey, inDrawing, endKeys)
+	(forwardKey, onKey19, tellContext, wire19): New.
+	(window.TopoForge): view, setView, selectionRect, setProps, endKeys.
+	* spec/EMBED-v1.md: "Added in 1.9 (still v1)".
+	* tests/browser/embed.browser.mjs: standalone is now compared with
+	1.8 rebuilt from upstream/ and patches/; V1, V2, R3, Z3, U1, Y1, Y2,
+	Q1, Q2, G1, W1, E8.
+	* tests/browser/embed-prove-red.sh: sixteen more plants, one or more
+	for each new promise; PLANTS= runs a few while working.
+	* patches/topoforge-1.8-to-1.9.patch: New.
+	* NEWS, AUTHORS: 1.9.
+
 2026-11-01  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
 	topology forge (formerly TopoForge) 1.8: switches a page that embeds

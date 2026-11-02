@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
 // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8.
+// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 checks 2026-11-02.
 //
-// embed.browser.mjs -- the 1.8 embedding switches in real Chromium, held to spec/EMBED-v1.md.
-//   S  standalone is unchanged: 1.8 opened with no switch draws the same pixels as 1.7 (rebuilt here from
-//      Bryant's 1.5 and patches/, so the kit needs no copy of 1.7), at three widths, light and dark, with the
-//      same tab order, and writes nothing new to storage.
+// embed.browser.mjs -- the embedding switches (1.8, 1.9) in real Chromium, held to spec/EMBED-v1.md.
+//   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+//      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+//      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
 //   F  frameless; P props floats right; H shapes floats left; M pages fold into the overview box;
 //   K  keyboard and one-pointer moves, hide and show, kept across a reload, storage refused;
 //   E  the selection hook and the ready event reach a parent page of the same origin, and never one of
@@ -33,7 +33,8 @@ const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const results = []; let red = 0;
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
 
-// ---- 1.7, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to 1.7 ----
+// ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+const VER = '1.9', PREV = '1.8';
 function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
   const out = []; let on = false;
   for (const l of patchText.split('\n')) {
@@ -44,7 +45,7 @@ function indexPart(patchText) { // the hunks of one multi-file patch that touch 
 }
 function rebuild(upto) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8'].slice(0, upto)) {
+  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9'].slice(0, upto)) {
     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
@@ -52,7 +53,7 @@ function rebuild(upto) {
   return cur;
 }
 let v17;
-try { v17 = rebuild(2); } catch (e) { console.error('KIT BROKEN: could not rebuild 1.7 from upstream/ and patches/: ' + e.message); process.exit(2); }
+try { v17 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
 
 // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
 const html = fs.readFileSync(file);
@@ -75,7 +76,7 @@ const A = 'http://127.0.0.1:' + sA.address().port, B = 'http://127.0.0.1:' + sB.
 const browser = await chromium.launch({ executablePath: CHROMIUM, headless: true });
 const consoleErrors = [];
 async function ctx(o = {}) {
-  const c = await browser.newContext({ viewport: { width: o.w || 1400, height: o.h || 900 }, colorScheme: o.dark ? 'dark' : 'light', reducedMotion: o.reduce ? 'reduce' : 'no-preference' });
+  const c = await browser.newContext({ viewport: { width: o.w || 1400, height: o.h || 900 }, colorScheme: o.dark ? 'dark' : 'light', reducedMotion: o.reduce ? 'reduce' : 'no-preference', hasTouch: !!o.touch });
   if (o.noStorage) await c.addInitScript(() => { const no = () => { throw new DOMException('refused', 'SecurityError'); }; Storage.prototype.getItem = no; Storage.prototype.setItem = no; });
   return c;
 }
@@ -113,20 +114,20 @@ try {
     });
     routes['/fixture.json'] = { type: 'application/json', body: json }; await c.close(); }
 
-  // ---- S: standalone, no switch: the same as 1.7 ----
+  // ---- S: standalone, no switch: the same as the version before ----
   routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };
   for (const [w, h, dark] of [[1400, 900, false], [1400, 900, true], [1000, 800, false], [800, 700, true]]) {
     const tag = `${w}x${h} ${dark ? 'dark' : 'light'}`;
     const a = await open(A + '/v17.html', { w, h, dark, settle: 1200 }), b = await open(A + '/index.html', { w, h, dark, settle: 1200 });
     const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
-    fs.writeFileSync(path.join(outdir, `standalone-1.7-${w}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `standalone-1.8-${w}-${dark ? 'dark' : 'light'}.png`), ib);
-    check(`S1 standalone ${tag}: 1.8 with no switch draws the same pixels as 1.7`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)`);
+    fs.writeFileSync(path.join(outdir, `standalone-${PREV}-${w}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `standalone-${VER}-${w}-${dark ? 'dark' : 'light'}.png`), ib);
+    check(`S1 standalone ${tag}: ${VER} with no switch draws the same pixels as ${PREV}`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)`);
     const tabs = async p => { const r = []; await p.evaluate(() => document.body.focus()); for (let i = 0; i < 30; i++) { await p.keyboard.press('Tab'); r.push(await p.evaluate(() => { const e = document.activeElement; return (e.id || e.className || e.tagName) + ':' + (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 16); })); } return r.join('|'); };
     if (w === 1400 && !dark) {
       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
-      check('S2 standalone: the first 30 Tab stops are the same as 1.7', ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
-      check('S3 standalone: no switch is on, no 1.8 element is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
+      check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
+      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+      check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
     }
     await a.c.close(); await b.c.close();
   }
@@ -190,18 +191,20 @@ try {
     await c.close(); }
 
   // ---- E: the selection hook and the ready event, same origin only ----
-  const parentRun = async (origin, src, act) => {
-    const c = await ctx({ w: 1240, h: 840 }); const p = await c.newPage();
+  const parentRun = async (origin, src, act, o = {}) => {
+    const c = await ctx({ w: 1240, h: 840, ...o }); const p = await c.newPage();
     p.on('pageerror', e => consoleErrors.push('parent: ' + e.message));
     await p.goto(origin + '/parent.html?src=' + encodeURIComponent(src));
     const fr = p.frame({ url: u => u.pathname === '/index.html' });
     await fr.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
-    await fr.evaluate(() => { window.own = []; addEventListener('topoforge:select', e => window.own.push(e.detail)); });
+    await fr.evaluate(() => { window.own = []; window.ownAll = []; addEventListener('topoforge:select', e => window.own.push(e.detail));
+      for (const t of ['view', 'key', 'context', 'pages']) addEventListener('topoforge:' + t, e => window.ownAll.push(t)); });
     await p.waitForTimeout(900);
     if (act) await act(p, fr);
     await p.waitForTimeout(500);
-    const got = await p.evaluate(() => window.got), own = await fr.evaluate(() => window.own);
-    await c.close(); return { got, own };
+    const got = await p.evaluate(() => window.got), own = await fr.evaluate(() => window.own), ownAll = await fr.evaluate(() => window.ownAll);
+    const extra = o.after ? await o.after(p, fr) : null;
+    await c.close(); return { got, own, ownAll, extra };
   };
   const clickFirst = async (p, fr) => { // a real click on the first shape, through the iframe
     const at = await fr.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y }; });
@@ -226,7 +229,7 @@ try {
   check('E6 with no switch the app tells no parent anything', off.got.length === 0 && off.own.length === 0, `parent got ${off.got.length}, own ${off.own.length}`);
   { const { c, p } = await open('file://' + path.resolve(file) + '?embed=select,ready');
     const r = await p.evaluate(async () => { const d = await TopoForge.ready; return { v: d.version, ok: d.ok, sel: TopoForge.selection.count }; });
-    check('E7 TopoForge.ready resolves from file:// too (nothing is posted from there)', r.v === '1.8' && r.ok === true && r.sel === 0, JSON.stringify(r));
+    check('E7 TopoForge.ready resolves from file:// too (nothing is posted from there)', r.v === VER && r.ok === true && r.sel === 0, JSON.stringify(r));
     await c.close(); }
 
   // ---- B: hiding the app's own chrome, all of it or each piece ----
@@ -285,8 +288,99 @@ try {
   { const { c, p } = await open(A + '/index.html');
     await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
     const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
-    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && /Version 1\.8/.test(t.b), JSON.stringify(t).slice(0, 300));
+    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
     await c.close(); }
+
+  // ======== 1.9 (A): more for an embedding page; each message behind its own switch ========
+  const msgs = (got, t) => got.filter(m => m.data && m.data.type === 'topoforge:' + t).map(m => m.data.detail);
+  const shapeAt = (fr, label) => fr.evaluate(l => { const n = P().nodes.find(x => x.text === l); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y, id: n.id }; }, label);
+  const inFrame = async (p, at) => { const fb = await (await p.$('#f')).boundingBox(); return { x: fb.x + at.x, y: fb.y + at.y }; };
+  // V: the view
+  { const r = await parentRun(A, A + '/index.html?embed=view&load=/fixture.json', async (p, fr) => {
+      await fr.evaluate(() => TopoForge.setView({ k: 0.5, x: 100, y: 50 })); await p.waitForTimeout(250);
+      const c = await inFrame(p, { x: 700, y: 400 }); await p.mouse.move(c.x, c.y); await p.keyboard.down('Control'); await p.mouse.wheel(0, -200); await p.keyboard.up('Control'); await p.waitForTimeout(300);
+    }, { after: (p, fr) => fr.evaluate(() => TopoForge.view) });
+    const v = msgs(r.got, 'view'), set = v.find(d => d.k === 0.5 && d.x === 100 && d.y === 50 && d.zoom === 50), last = v[v.length - 1];
+    check('V1 view: TopoForge.setView moves the drawing and topoforge:view tells the parent; a zoom by the wheel is told too; TopoForge.view agrees', !!set && last && last.k > 0.5 && JSON.stringify({ k: last.k, x: last.x, y: last.y }) === JSON.stringify({ k: r.extra.k, x: r.extra.x, y: r.extra.y }) && set.width > 0 && 'rect' in set, JSON.stringify({ n: v.length, set, last, now: r.extra }));
+    const off = await parentRun(A, A + '/index.html?embed=select&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => TopoForge.setView({ k: 0.7 })); });
+    check('V2 without the view switch no topoforge:view is sent, though setView still works', msgs(off.got, 'view').length === 0 && off.ownAll.length === 0, `view messages: ${msgs(off.got, 'view').length}`); }
+  // R3: where the selection is on screen; Z3: place(null); U1: setProps
+  { const { c, p } = await open(A + '/index.html?load=/fixture.json');
+    const r3 = await p.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'); TopoForge.select([n.id]); const ov = document.querySelector('#overlay rect').getBoundingClientRect(); const k = S.view.k;
+      return { rect: TopoForge.selectionRect(), sel: TopoForge.selection.rect, ov: { x: ov.left + 3, y: ov.top + 3, w: ov.width - 6, h: ov.height - 6 }, none: (TopoForge.select([]), TopoForge.selectionRect()) }; });
+    const near = (a, b, d = 2) => Math.abs(a - b) <= d;
+    check('R3 selectionRect() and the select detail\'s rect give the selected shape\'s box on screen, in the app\'s pixels (null when nothing is selected)', r3.rect && near(r3.rect.x, r3.ov.x) && near(r3.rect.y, r3.ov.y) && near(r3.rect.w, r3.ov.w) && r3.rect.h >= r3.ov.h - 2 && JSON.stringify(r3.rect) === JSON.stringify(r3.sel) && r3.none === null, JSON.stringify(r3));
+    const z = await p.evaluate(() => { const n0 = P().nodes.length; const a = TopoForge.place('server'), armed = TopoForge.placing, d = TopoForge.place(null), after = TopoForge.placing, again = TopoForge.place(null); return { n0, a, armed, d, after, again, cross: document.body.classList.contains('tf-placing') }; });
+    const cv = await boxOf(p, '#canvas'); await p.mouse.click(cv.x + 300, cv.y + 200); await p.waitForTimeout(150);
+    const zn = await p.evaluate(() => P().nodes.length);
+    check('Z3 place(null) gives up an armed shape: placing is null, the cross-hair goes, the next press drops nothing; with nothing armed it says false', z.a && z.armed === 'server' && z.d === true && z.after === null && z.again === false && !z.cross && zn === z.n0, JSON.stringify({ ...z, after: zn }));
+    const u = await p.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'), id = n.id, u0 = H.undo.length;
+      const ok = TopoForge.setProps(id, { text: 'Edge', data: { what: 'New words', extra: 7 }, w: 120 });
+      const mid = { text: N(id).text, what: N(id).data.what, extra: N(id).data.extra, w: N(id).w, undo: H.undo.length - u0, drawn: !!document.querySelector(`#content [data-id="${id}"]`) && document.querySelector('#content').innerHTML.includes('Edge<') };
+      const bad = [TopoForge.setProps('no-such-id', { text: 'x' }), TopoForge.setProps(id, { bogus: 1 }), TopoForge.setProps(id, { x: 'a' }), TopoForge.setProps(id, { data: { deep: { no: 1 } } }), TopoForge.setProps(id, {})];
+      const still = { text: N(id).text, undo: H.undo.length - u0 };
+      TopoForge.undo(); const back = { text: N(id).text, what: N(id).data.what, extra: N(id).data.extra, w: N(id).w };
+      return { ok, mid, bad, still, back }; });
+    check('U1 setProps(id, patch) changes a shape through the app\'s own edit path: drawn at once, one undo step that puts it all back; an unknown id, an unknown field or a wrong type changes nothing and says false',
+      u.ok === true && u.mid.text === 'Edge' && u.mid.what === 'New words' && u.mid.extra === '7' && u.mid.w === 120 && u.mid.undo === 1 && u.mid.drawn && u.bad.every(x => x === false) && u.still.text === 'Edge' && u.still.undo === 1 && u.back.text === 'Edge Router' && u.back.what === 'Where the shop meets the internet.' && u.back.extra === undefined && u.back.w !== 120, JSON.stringify(u));
+    await c.close(); }
+  // Y: keys for the parent
+  { const r = await parentRun(A, A + '/index.html?embed=keys&load=/fixture.json', async (p, fr) => {
+      const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.waitForTimeout(150);
+      for (const k of ['Alt+x', 'F10', 'Control+x', '5', '2']) await p.keyboard.press(k);
+      await fr.evaluate(() => { window.ended = TopoForge.endKeys(); });
+      await p.keyboard.press('a'); await p.keyboard.press('Control+c'); await p.keyboard.press('Escape'); await p.keyboard.press('b');
+      await fr.focus('#palSearch'); await p.keyboard.press('Alt+x');
+    }, { after: (p, fr) => fr.evaluate(() => ({ ended: window.ended, search: document.querySelector('#palSearch').value })) });
+    const k = msgs(r.got, 'key');
+    const want = [['M-x', false], ['<f10>', false], ['C-x', true], ['5', true], ['2', true], ['C-c', true], ['<escape>', false]];
+    check('Y1 keys: Alt+x, F10, C-x and C-c pressed in the drawing reach the parent, with the keys of a sequence after them, until endKeys(), C-g or Escape; a plain key outside a sequence, and keys in a text field, stay with the app',
+      JSON.stringify(k.map(d => [d.key, d.open])) === JSON.stringify(want) && JSON.stringify(k[4].seq) === '["C-x","5","2"]' && r.extra.ended === true && k.every(d => d.raw && 'code' in d.raw), JSON.stringify({ got: k.map(d => [d.key, d.open, d.seq.join(' ')]), extra: r.extra }));
+    const off = await parentRun(A, A + '/index.html?embed=select&load=/fixture.json', async (p) => { const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.keyboard.press('Alt+x'); await p.keyboard.press('Control+x'); });
+    check('Y2 without the keys switch no key is sent to the parent', msgs(off.got, 'key').length === 0 && off.ownAll.length === 0, `key messages: ${msgs(off.got, 'key').length}`); }
+  // Q: right click, long press and the menu key on a shape
+  { let menuSeen = null; const r = await parentRun(A, A + '/index.html?embed=context&load=/fixture.json', async (p, fr) => {
+      const s = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.click(s.x, s.y, { button: 'right' }); await p.waitForTimeout(200);
+      menuSeen = await fr.evaluate(() => !!document.querySelector('.menu .mi'));
+      await p.keyboard.press('Escape');
+      const empty = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(empty.x, empty.y, { button: 'right' }); await p.keyboard.press('Escape');
+      await fr.evaluate(() => { const n = P().nodes.find(x => x.text === 'Core Switch'); TopoForge.select([n.id]); svgEl().focus(); }); await p.keyboard.press('Shift+F10'); await p.waitForTimeout(150);
+    }, { after: async () => ({ menu: menuSeen }) });
+    const q = msgs(r.got, 'context');
+    const rc = q.find(d => d.via === 'contextmenu'), kb = q.find(d => d.via === 'keyboard');
+    check('Q1 context: a right click on a shape tells the parent its ref, name and the point (the app\'s own menu still opens); a right click on the empty drawing tells nothing; Shift+F10 on a selected shape tells it too',
+      q.length === 2 && rc && /^router-/.test(rc.ref) && rc.name === 'Edge Router' && rc.x > 0 && rc.y > 0 && rc.rect && rc.rect.w > 0 && r.extra.menu === true && kb && kb.name === 'Core Switch' && kb.x > 0, JSON.stringify({ q, menu: r.extra.menu }));
+    const lp = await parentRun(A, A + '/index.html?embed=context&load=/fixture.json', async (p, fr) => {
+      const s = await inFrame(p, await shapeAt(fr, 'Core Switch')); const cdp = await p.context().newCDPSession(p);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: s.x, y: s.y }] }); await p.waitForTimeout(800);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(300);
+    }, { touch: true });
+    const l = msgs(lp.got, 'context');
+    check('Q2 a long press (touch, held still) on a shape tells the parent once, via longpress, and selects it', l.length === 1 && l[0].via === 'longpress' && l[0].name === 'Core Switch', JSON.stringify(l)); }
+  // G: the page list
+  { const r = await parentRun(A, A + '/index.html?embed=pagelist&load=/fixture.json', async (p, fr) => {
+      await fr.click('#pagetabs .ptab.add'); await p.waitForTimeout(150);
+      await fr.dblclick('#pagetabs .ptab.active'); await fr.fill('#pagetabs .ptab input', 'Renamed page'); await fr.press('#pagetabs .ptab input', 'Enter'); await p.waitForTimeout(150);
+      await fr.evaluate(() => TopoForge.showPage(0)); await p.waitForTimeout(150);
+      await fr.evaluate(() => { TopoForge.undo(); TopoForge.undo(); }); await p.waitForTimeout(200);
+    });
+    const g = msgs(r.got, 'pages');
+    check('G1 pagelist: the drawing ?load= opens (replaced), adding a page, renaming one and removing one (here by undo) each send topoforge:pages with the new list; showing another page sends none',
+      JSON.stringify(g.map(d => d.change)) === '["replaced","added","renamed","renamed","removed"]' && g[0].pages.join('|') === 'First page|Second page' && g[1].added[0] === 'Page-3' && g[2].added[0] === 'Renamed page' && g[4].pages.join('|') === 'First page|Second page', JSON.stringify(g.map(d => [d.change, d.added, d.removed, d.pages.length]))); }
+  // W1: 'all' and 'bare' mean what they meant in 1.8
+  { const { c, p } = await open(A + '/index.html?embed=all,bare');
+    const w = await p.evaluate(() => TopoForge.embed());
+    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview'];
+    check('W1 ?embed=all and bare turn on none of the 1.9 switches (view, keys, context, pagelist, map, preview); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+    await c.close(); }
+  // E8: the new messages never reach a parent of another origin
+  { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
+      await fr.evaluate(() => TopoForge.setView({ k: 0.6 })); await p.waitForTimeout(150);
+      const s = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.click(s.x, s.y, { button: 'right' }); await p.keyboard.press('Escape');
+      await fr.click('#pagetabs .ptab.add');
+      const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.keyboard.press('Alt+x');
+    });
+    check('E8 view, pages, context and key messages never reach a parent of another origin, though each fired inside the app', r.got.length === 0 && ['view', 'pages', 'context', 'key'].every(t => r.ownAll.includes(t)), `parent got ${r.got.length}; inside: ${[...new Set(r.ownAll)].join(',')}`); }
 
   // ---- X: axe with every switch on; reduced motion ----
   for (const dark of [false, true]) {
@@ -311,11 +405,11 @@ console.log(results.join('\n'));
 console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
 const passed = results.filter(r => r.startsWith('PASS')).length;
 fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
-  'topology forge (formerly TopoForge) 1.8, the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
+  'topology forge (formerly TopoForge) ' + VER + ', the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
   'Licence of this note: CC-BY-SA-4.0',
   'Run at: ' + new Date().toISOString() + ' on ' + os.type() + ' ' + os.release() + ', node ' + process.version + ', ' + 'playwright ' + require(PW + '/package.json').version,
   'File tested: index.html sha256 ' + sha(html),
-  'Compared with: 1.7 rebuilt from upstream/topoforge-1.5.html and patches/, sha256 ' + sha(fs.readFileSync(v17)),
+  'Compared with: ' + PREV + ' rebuilt from upstream/topoforge-1.5.html and patches/, sha256 ' + sha(fs.readFileSync(v17)),
   'Kit: tests/browser/embed.browser.mjs sha256 ' + sha(fs.readFileSync(fileURLToPath(import.meta.url))),
   `Result: ${passed} checks passed, ${red} failed. Exit ${red ? 1 : 0} (0 green, 1 red, 2 kit broken).`,
   '', 'CHECKS', ...results, ''].join('\n'));

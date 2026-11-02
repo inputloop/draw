@@ -1,0 +1,728 @@
+--- topoforge-1.8/AUTHORS
++++ topoforge-1.9/AUTHORS
+@@ -10,7 +10,10 @@
+                                           recipe and its scripts, 1.6, the
+                                           browser kit, and accessibility
+                                           fixes (some to parts from 1.5);
+-                                          1.8, the embedding switches
++                                          1.8, the embedding switches;
++                                          1.9, more for an embedding page,
++                                          the overview map's handles and
++                                          preview, page tabs that fit
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.8/ChangeLog
++++ topoforge-1.9/ChangeLog
+@@ -1,3 +1,32 @@
++2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
++	topology forge (formerly TopoForge) 1.9, first stage: the seven calls
++	corwin.cloud's docs/NAV.md (revision 4, "Asked of the app") asked
++	for, blessed by Corwin on 2026-11-02 ("Your next list: bless").
++	Each message waits for its own switch; none is in ?embed=all or bare.
++	* index.html (TF_VERSION): 1.9.  (header comment): the 1.9 lines.
++	(applyView): calls tellView, which does nothing unless the view
++	switch is on.
++	(renderOverlay, buildPages): call tellPages, the same with pagelist.
++	(EMBED_WORDS): view, keys, context, pagelist, map, preview.
++	(ALL_V1): New.  What 'all' turned on in 1.8; embedWordsFromQuery
++	uses it, so 'all' does not grow.
++	(embed): calls embed19.
++	(selectionInfo): the detail gains rect.
++	(place): place(null) gives up an armed shape.
++	(embed19, viewInfo, setView, tellView, screenRect, selectionRect)
++	(setProps, applyPatch, tellPages, emacsKey, inDrawing, endKeys)
++	(forwardKey, onKey19, tellContext, wire19): New.
++	(window.TopoForge): view, setView, selectionRect, setProps, endKeys.
++	* spec/EMBED-v1.md: "Added in 1.9 (still v1)".
++	* tests/browser/embed.browser.mjs: standalone is now compared with
++	1.8 rebuilt from upstream/ and patches/; V1, V2, R3, Z3, U1, Y1, Y2,
++	Q1, Q2, G1, W1, E8.
++	* tests/browser/embed-prove-red.sh: sixteen more plants, one or more
++	for each new promise; PLANTS= runs a few while working.
++	* patches/topoforge-1.8-to-1.9.patch: New.
++	* NEWS, AUTHORS: 1.9.
++
+ 2026-11-01  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
+ 	topology forge (formerly TopoForge) 1.8: switches a page that embeds
+--- topoforge-1.8/NEWS
++++ topoforge-1.9/NEWS
+@@ -4,6 +4,27 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.9 (2026-11-02; built in stages on the corwin branch; checked: tests/run.sh,
++the project-files check, the browser kit and the embedding kit green, with their
++planted faults; see RESULT.txt and RESULT-embed.txt in tests/browser/; no release
++packed or signed yet)
++
++- For a page that embeds the app (corwin.cloud's requests 1 to 7, blessed by
++  Corwin on 2026-11-02).  New calls: TopoForge.view and .setView({ k, x, y });
++  .selectionRect(), the selection's box on screen (also as rect in the select
++  message); .place(null), to give up an armed shape; .setProps(id, patch), to
++  change a shape's fields as one undo step.  New switches, each off until a page
++  asks, and none of them turned on by ?embed=all or bare:
++  - view: a message when the zoom or the place of the drawing changes;
++  - keys: Alt+x, F10, C-x and C-c pressed in the drawing go to the page (with
++    the keys after C-x or C-c, until the page says done, or C-g or Escape).
++    While it is on, the drawing's own Ctrl+X and Ctrl+C are the page's; Cut
++    and Copy stay in the Edit menu;
++  - context: a message on a right click, a long press or the menu key on a
++    shape (the app's own menu still opens);
++  - pagelist: a message when a page is added, renamed, moved or removed.
++  All of these reach a parent page of the app's own origin only.
++
+ Version 1.8 (2026-11-01; built and checked: tests/run.sh, the project-files
+ check, the browser kit and the new embedding kit green; see RESULT.txt and
+ RESULT-embed.txt in tests/browser/; no release packed or signed yet)
+--- topoforge-1.8/spec/EMBED-v1.md
++++ topoforge-1.9/spec/EMBED-v1.md
+@@ -2,7 +2,7 @@
+ SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ -->
+-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9)
+ 
+ topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
+ This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
+@@ -104,6 +104,82 @@
+ `TopoForge.panels()` (where the stage, the shapes, the inspector and the overview are, in the app's
+ pixels, and whether each floats or is hidden).
+ 
++## Added in 1.9 (still v1)
++
++1.9 adds calls, switches and fields; it changes nothing 1.8 promised, so a page written for 1.8 works
++unchanged and this is still v1 (no v2 is needed). The six new switch words are `view`, `keys`, `context`,
++`pagelist`, `map` and `preview`. **None of them is turned on by `all` or `bare`**, which mean exactly
++what they meant in 1.8 (W1). Each message below goes by the same two routes and the same origin rule as
++`topoforge:select`: a `CustomEvent` on the app's own window, and `postMessage` to a parent of the app's
++own origin only, never from `file://` (E8).
++
++### The view: `view`
++
++`TopoForge.view` is `{ k, x, y, zoom, width, height }`: `k` the zoom (1 is 100 %), `x`, `y` where the
++drawing's point 0,0 sits in the canvas, `zoom` the percentage the app shows, `width`, `height` the
++canvas's size, all in the app's own pixels. `TopoForge.setView({ k, x, y })` sets any of the three (`k`
++is held between 0.08 and 5, as the app's own zoom is) and returns the new view. With `view` on, every
++change of the view (a wheel, a drag, Fit, setView) sends `topoforge:view`, at most once per 60 ms, with
++the view's fields and `rect` (below) (V1, V2).
++
++### Where the selection is
++
++`TopoForge.selectionRect()` is the box around what is selected, as it is on screen, in the app's own
++pixels (`{ x, y, w, h }`, as `getBoundingClientRect` gives them inside the app; a device's box includes
++its label below it), or `null` with nothing selected. The select detail (`topoforge:select`,
++`TopoForge.selection`) gains the same as `rect`; `topoforge:view` carries it too, so a page that floats
++something beside the shape can follow a zoom or a pan (R3).
++
++### Giving up an armed shape
++
++`TopoForge.place(null)` gives up a shape armed with `place(id)`, as Escape on the drawing does: the
++cross-hair goes and `TopoForge.placing` is `null`. It returns `true`, or `false` when nothing was armed
++(Z3).
++
++### Setting a shape's fields
++
++`TopoForge.setProps(id, patch)` changes one shape or link on the current page through the app's own
++edit path: it is drawn at once and is **one** undo step. A shape takes `text`, `x`, `y`, `w`, `h`,
++`layer`, `props`, `data`, `style`; a link takes `text`, `layer`, `route` (`orthogonal`, `straight`,
++`curved`), `arrows` (`none`, `end`, `start`, `both`), `props`, `data`, `style`. `props`, `data` and
++`style` are merged field by field: a value of `null` removes the field, others are kept (as text, in
++`props` and `data`, as the inspector keeps them). Moving a container moves what is in it. An unknown id,
++a field not in the list, a wrong type, a nested object or an empty patch changes nothing and returns
++`false` (U1).
++
++### Keys for the page: `keys`
++
++With `keys` on, Alt+x, F10, Ctrl+X and Ctrl+C pressed while the focus is in the drawing (the canvas, or
++nothing in the app) are not the app's: each is sent as `topoforge:key`. Ctrl+X and Ctrl+C (Emacs's C-x
++and C-c) open a sequence: the keys pressed after them are sent too, wherever the focus is, until the
++page calls `TopoForge.endKeys()` (true if a sequence was open), C-g or Escape is pressed, four keys have
++followed the first, or the app's window loses focus, so the keyboard can never be kept from the app
++(WCAG 2.1.2). Detail: `key` (Emacs's name: `M-x`, `<f10>`, `C-x`, `5`, `C-g`, `<escape>`, `RET`, `S-<f3>`
++...), `seq` (the sequence so far, the first key first), `open` (true while more keys of the sequence
++will come) and `raw` (`key`, `code`, `alt`, `ctrl`, `shift`, `meta`). A plain key outside a sequence,
++and every key typed into a field, stay with the app (Y1, Y2).
++
++The trade, said plainly: while `keys` is on, the drawing's own Ctrl+X and Ctrl+C (cut and copy) belong
++to the page. Edit, Cut and Edit, Copy stay in the app's menus and in `commands()`, and the page may run
++them.
++
++### Long press and right click: `context`
++
++With `context` on, a right click on a shape or a link, a long press on one (touch or pen, held still for
++550 ms), or the menu key or Shift+F10 with something selected and the focus in the drawing, sends
++`topoforge:context`: `via` (`contextmenu`, `longpress`, `keyboard`), `x`, `y` (the point, in the app's
++own pixels; the middle of the selection for the keyboard), `id`, `ref`, `name`, `tooltip`, `kind`,
++`page`, `pageIndex` and `rect` (that shape's box on screen). The app still selects what was pressed and
++its own menu still opens on a right click; a right click on the empty drawing sends nothing (Q1, Q2).
++
++### Pages changed: `pagelist`
++
++The word `pages` was taken in 1.8 (the page tabs in the overview box), so this switch is `pagelist`.
++With it on, a change to the list of pages sends `topoforge:pages`: `change` (`added`, `removed`,
++`renamed`, `moved`, or `replaced` when a whole drawing is opened in place of the last), `added` and
++`removed` (names), `pages` (every name, in order), `page`, `pageIndex`. Undo and redo are changes like
++any other. Showing another page is not a change of the list (the select message says it) (G1).
++
+ ## Not changed
+ 
+ `window.TopoForge`'s name, the TopoForge JSON format, every storage key 1.7 used, and the brand and
+--- topoforge-1.8/tests/browser/embed-prove-red.sh
++++ topoforge-1.9/tests/browser/embed-prove-red.sh
+@@ -24,7 +24,25 @@
+ #   bare-pages     bare leaves the page tabs             -> B1
+ #   no-icons       shapes() without pictures             -> Z1
+ #   drop-lost      an armed place() drops nothing        -> Z2
++# 1.9 (A):
++#   view-silent    applyView no longer tells the view    -> V1
++#   view-unasked   the view is told with no switch       -> V2
++#   rect-off       selectionRect forgets the canvas's place -> R3
++#   unarm-not      place(null) leaves the shape armed    -> Z3
++#   props-no-undo  setProps bypasses the edit path       -> U1
++#   props-any-key  setProps takes any field              -> U1
++#   keys-letters   every plain key goes to the parent    -> Y1
++#   keys-trap      Escape and C-g do not end a sequence  -> Y1
++#   keys-unasked   keys forwarded with no switch         -> Y2
++#   ctx-silent     a right click tells nothing           -> Q1
++#   ctx-no-menu    the app's own menu is shut            -> Q1
++#   ctx-no-press   a long press never fires              -> Q2
++#   pages-silent   the page list is never told           -> G1
++#   pages-switch   showing a page is told as a change    -> G1
++#   all-grows      'all' turns on the 1.9 switches       -> W1
++#   any-origin-19  postMessage to '*', the new messages  -> E8
+ # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
++#        PLANTS='name name' runs only those plants (after the control); the full run is what counts
+ # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
+ set -u
+ ix=${1-}; out=${2:-out-embed-prove-red}
+@@ -42,7 +60,9 @@
+ echo "control      exit 0, no check failed"
+ bad=0 n=0
+ plant() { # NAME WANT SED-EXPR
+-  name=$1 want=$2 expr=$3; n=$((n + 1))
++  name=$1 want=$2 expr=$3
++  [ -n "${PLANTS-}" ] && case " $PLANTS " in *" $name "*) ;; *) return ;; esac
++  n=$((n + 1))
+   sed "$expr" "$ix" > "$out/plant-$name.html" || exit 2
+   cmp -s "$ix" "$out/plant-$name.html" && { echo "embed-prove-red.sh: plant $name changed nothing; fix the plant" >&2; exit 2; }
+   run "$name" "$out/plant-$name.html"
+@@ -53,7 +73,7 @@
+ }
+ plant on-by-default S3 "s#const q = new URLSearchParams(location.search).get('embed'), o = {};#const q = new URLSearchParams(location.search).get('embed') || 'frameless', o = {};#"
+ plant any-origin    E5 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+-plant silent-select E2 's#^  tellSelection();$##'
++plant silent-select E2 's#^  tellSelection(); tellPages();$#  tellPages();#'
+ plant no-ready      E1 "s#if (EMBED.ready \&\& !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }##"
+ plant not-kept      K5 's#try { localStorage.setItem(UI_KEY, JSON.stringify(o)); }#try { }#'
+ plant no-keys       K1 's#if (d) { e.preventDefault(); f.move(d\[0\], d\[1\]); }##'
+@@ -67,5 +87,22 @@
+ plant no-icons      Z1 "s#icon: previewSVG(k) }))#icon: '' }))#"
+ plant drop-lost     Z2 's#e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));#placing(null);#'
+ plant old-name      A1 "s#title: 'topology forge (formerly TopoForge)'#title: 'TopoForge'#"
++# 1.9 (A)
++plant view-silent   V1 's#^  tellView();$##'
++plant view-unasked  V2 's#^  if (!EMBED.view) return;$#  if (false) return;#'
++plant rect-off      R3 's#return { x: Math.round(r.left + S.view.x + b.x \* k), y: Math.round(r.top + S.view.y + b.y \* k)#return { x: Math.round(S.view.x + b.x * k), y: Math.round(S.view.y + b.y * k)#'
++plant unarm-not     Z3 's#if (id === null) { if (!PLACING) return false; placing(null);#if (id === null) { if (!PLACING) return false;#'
++plant props-no-undo U1 's#^  edit(() => applyPatch(it, patch, keys));$#  applyPatch(it, patch, keys);#'
++plant props-any-key U1 "s#^    if (!SETPROPS_KEYS\[n ? 'node' : 'link'\].includes(k)) return false;\$##"
++plant keys-letters  Y1 "s#if (name === 'M-x' || name === '<f10>') { forwardKey#if (name === 'M-x' || name === '<f10>' || name.length === 1) { forwardKey#"
++plant keys-trap     Y1 "s#const done = name === 'C-g' || name === '<escape>' || KEYSEQ.length >= 5;#const done = KEYSEQ.length >= 50;#"
++plant keys-unasked  Y2 's#^  if (!EMBED.keys) return;$#  if (false) return;#'
++plant ctx-silent    Q1 "s#if (h.type === 'node' || h.type === 'link') tellContext(h.node || h.link, { x: e.clientX, y: e.clientY }, 'contextmenu');##"
++plant ctx-no-menu   Q1 "s#if (!EMBED.context || Date.now() - _lpAt < 900) return;#closeMenus(); if (!EMBED.context || Date.now() - _lpAt < 900) return;#"
++plant ctx-no-press  Q2 's#^    }, 550) };$#    }, 55000) };#'
++plant pages-silent  G1 's#^  if (!EMBED.pagelist) return;$#  return;#'
++plant pages-switch  G1 's#const names = DOC.pages.map(p => p.name), key = JSON.stringify(names);#const names = DOC.pages.map(p => p.name), key = JSON.stringify(names) + DOC.cur;#'
++plant all-grows     W1 "s#if (w === 'all') ALL_V1.forEach#if (w === 'all') EMBED_WORDS.forEach#"
++plant any-origin-19 E8 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+ [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
+ exit $bad
+--- topoforge-1.8/tests/browser/embed.browser.mjs
++++ topoforge-1.9/tests/browser/embed.browser.mjs
+@@ -1,11 +1,11 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 checks 2026-11-02.
+ //
+-// embed.browser.mjs -- the 1.8 embedding switches in real Chromium, held to spec/EMBED-v1.md.
+-//   S  standalone is unchanged: 1.8 opened with no switch draws the same pixels as 1.7 (rebuilt here from
+-//      Bryant's 1.5 and patches/, so the kit needs no copy of 1.7), at three widths, light and dark, with the
+-//      same tab order, and writes nothing new to storage.
++// embed.browser.mjs -- the embedding switches (1.8, 1.9) in real Chromium, held to spec/EMBED-v1.md.
++//   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
++//      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
++//      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+ //   F  frameless; P props floats right; H shapes floats left; M pages fold into the overview box;
+ //   K  keyboard and one-pointer moves, hide and show, kept across a reload, storage refused;
+ //   E  the selection hook and the ready event reach a parent page of the same origin, and never one of
+@@ -33,7 +33,8 @@
+ const results = []; let red = 0;
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+-// ---- 1.7, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to 1.7 ----
++// ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
++const VER = '1.9', PREV = '1.8';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -44,7 +45,7 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+@@ -52,7 +53,7 @@
+   return cur;
+ }
+ let v17;
+-try { v17 = rebuild(2); } catch (e) { console.error('KIT BROKEN: could not rebuild 1.7 from upstream/ and patches/: ' + e.message); process.exit(2); }
++try { v17 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -75,7 +76,7 @@
+ const browser = await chromium.launch({ executablePath: CHROMIUM, headless: true });
+ const consoleErrors = [];
+ async function ctx(o = {}) {
+-  const c = await browser.newContext({ viewport: { width: o.w || 1400, height: o.h || 900 }, colorScheme: o.dark ? 'dark' : 'light', reducedMotion: o.reduce ? 'reduce' : 'no-preference' });
++  const c = await browser.newContext({ viewport: { width: o.w || 1400, height: o.h || 900 }, colorScheme: o.dark ? 'dark' : 'light', reducedMotion: o.reduce ? 'reduce' : 'no-preference', hasTouch: !!o.touch });
+   if (o.noStorage) await c.addInitScript(() => { const no = () => { throw new DOMException('refused', 'SecurityError'); }; Storage.prototype.getItem = no; Storage.prototype.setItem = no; });
+   return c;
+ }
+@@ -113,20 +114,20 @@
+     });
+     routes['/fixture.json'] = { type: 'application/json', body: json }; await c.close(); }
+ 
+-  // ---- S: standalone, no switch: the same as 1.7 ----
++  // ---- S: standalone, no switch: the same as the version before ----
+   routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };
+   for (const [w, h, dark] of [[1400, 900, false], [1400, 900, true], [1000, 800, false], [800, 700, true]]) {
+     const tag = `${w}x${h} ${dark ? 'dark' : 'light'}`;
+     const a = await open(A + '/v17.html', { w, h, dark, settle: 1200 }), b = await open(A + '/index.html', { w, h, dark, settle: 1200 });
+     const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
+-    fs.writeFileSync(path.join(outdir, `standalone-1.7-${w}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `standalone-1.8-${w}-${dark ? 'dark' : 'light'}.png`), ib);
+-    check(`S1 standalone ${tag}: 1.8 with no switch draws the same pixels as 1.7`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)`);
++    fs.writeFileSync(path.join(outdir, `standalone-${PREV}-${w}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `standalone-${VER}-${w}-${dark ? 'dark' : 'light'}.png`), ib);
++    check(`S1 standalone ${tag}: ${VER} with no switch draws the same pixels as ${PREV}`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)`);
+     const tabs = async p => { const r = []; await p.evaluate(() => document.body.focus()); for (let i = 0; i < 30; i++) { await p.keyboard.press('Tab'); r.push(await p.evaluate(() => { const e = document.activeElement; return (e.id || e.className || e.tagName) + ':' + (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 16); })); } return r.join('|'); };
+     if (w === 1400 && !dark) {
+       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
+-      check('S2 standalone: the first 30 Tab stops are the same as 1.7', ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
+-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+-      check('S3 standalone: no switch is on, no 1.8 element is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
++      check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
++      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
++      check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
+     }
+     await a.c.close(); await b.c.close();
+   }
+@@ -190,18 +191,20 @@
+     await c.close(); }
+ 
+   // ---- E: the selection hook and the ready event, same origin only ----
+-  const parentRun = async (origin, src, act) => {
+-    const c = await ctx({ w: 1240, h: 840 }); const p = await c.newPage();
++  const parentRun = async (origin, src, act, o = {}) => {
++    const c = await ctx({ w: 1240, h: 840, ...o }); const p = await c.newPage();
+     p.on('pageerror', e => consoleErrors.push('parent: ' + e.message));
+     await p.goto(origin + '/parent.html?src=' + encodeURIComponent(src));
+     const fr = p.frame({ url: u => u.pathname === '/index.html' });
+     await fr.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
+-    await fr.evaluate(() => { window.own = []; addEventListener('topoforge:select', e => window.own.push(e.detail)); });
++    await fr.evaluate(() => { window.own = []; window.ownAll = []; addEventListener('topoforge:select', e => window.own.push(e.detail));
++      for (const t of ['view', 'key', 'context', 'pages']) addEventListener('topoforge:' + t, e => window.ownAll.push(t)); });
+     await p.waitForTimeout(900);
+     if (act) await act(p, fr);
+     await p.waitForTimeout(500);
+-    const got = await p.evaluate(() => window.got), own = await fr.evaluate(() => window.own);
+-    await c.close(); return { got, own };
++    const got = await p.evaluate(() => window.got), own = await fr.evaluate(() => window.own), ownAll = await fr.evaluate(() => window.ownAll);
++    const extra = o.after ? await o.after(p, fr) : null;
++    await c.close(); return { got, own, ownAll, extra };
+   };
+   const clickFirst = async (p, fr) => { // a real click on the first shape, through the iframe
+     const at = await fr.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y }; });
+@@ -226,7 +229,7 @@
+   check('E6 with no switch the app tells no parent anything', off.got.length === 0 && off.own.length === 0, `parent got ${off.got.length}, own ${off.own.length}`);
+   { const { c, p } = await open('file://' + path.resolve(file) + '?embed=select,ready');
+     const r = await p.evaluate(async () => { const d = await TopoForge.ready; return { v: d.version, ok: d.ok, sel: TopoForge.selection.count }; });
+-    check('E7 TopoForge.ready resolves from file:// too (nothing is posted from there)', r.v === '1.8' && r.ok === true && r.sel === 0, JSON.stringify(r));
++    check('E7 TopoForge.ready resolves from file:// too (nothing is posted from there)', r.v === VER && r.ok === true && r.sel === 0, JSON.stringify(r));
+     await c.close(); }
+ 
+   // ---- B: hiding the app's own chrome, all of it or each piece ----
+@@ -285,9 +288,100 @@
+   { const { c, p } = await open(A + '/index.html');
+     await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
+     const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
+-    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && /Version 1\.8/.test(t.b), JSON.stringify(t).slice(0, 300));
++    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
+     await c.close(); }
+ 
++  // ======== 1.9 (A): more for an embedding page; each message behind its own switch ========
++  const msgs = (got, t) => got.filter(m => m.data && m.data.type === 'topoforge:' + t).map(m => m.data.detail);
++  const shapeAt = (fr, label) => fr.evaluate(l => { const n = P().nodes.find(x => x.text === l); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y, id: n.id }; }, label);
++  const inFrame = async (p, at) => { const fb = await (await p.$('#f')).boundingBox(); return { x: fb.x + at.x, y: fb.y + at.y }; };
++  // V: the view
++  { const r = await parentRun(A, A + '/index.html?embed=view&load=/fixture.json', async (p, fr) => {
++      await fr.evaluate(() => TopoForge.setView({ k: 0.5, x: 100, y: 50 })); await p.waitForTimeout(250);
++      const c = await inFrame(p, { x: 700, y: 400 }); await p.mouse.move(c.x, c.y); await p.keyboard.down('Control'); await p.mouse.wheel(0, -200); await p.keyboard.up('Control'); await p.waitForTimeout(300);
++    }, { after: (p, fr) => fr.evaluate(() => TopoForge.view) });
++    const v = msgs(r.got, 'view'), set = v.find(d => d.k === 0.5 && d.x === 100 && d.y === 50 && d.zoom === 50), last = v[v.length - 1];
++    check('V1 view: TopoForge.setView moves the drawing and topoforge:view tells the parent; a zoom by the wheel is told too; TopoForge.view agrees', !!set && last && last.k > 0.5 && JSON.stringify({ k: last.k, x: last.x, y: last.y }) === JSON.stringify({ k: r.extra.k, x: r.extra.x, y: r.extra.y }) && set.width > 0 && 'rect' in set, JSON.stringify({ n: v.length, set, last, now: r.extra }));
++    const off = await parentRun(A, A + '/index.html?embed=select&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => TopoForge.setView({ k: 0.7 })); });
++    check('V2 without the view switch no topoforge:view is sent, though setView still works', msgs(off.got, 'view').length === 0 && off.ownAll.length === 0, `view messages: ${msgs(off.got, 'view').length}`); }
++  // R3: where the selection is on screen; Z3: place(null); U1: setProps
++  { const { c, p } = await open(A + '/index.html?load=/fixture.json');
++    const r3 = await p.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'); TopoForge.select([n.id]); const ov = document.querySelector('#overlay rect').getBoundingClientRect(); const k = S.view.k;
++      return { rect: TopoForge.selectionRect(), sel: TopoForge.selection.rect, ov: { x: ov.left + 3, y: ov.top + 3, w: ov.width - 6, h: ov.height - 6 }, none: (TopoForge.select([]), TopoForge.selectionRect()) }; });
++    const near = (a, b, d = 2) => Math.abs(a - b) <= d;
++    check('R3 selectionRect() and the select detail\'s rect give the selected shape\'s box on screen, in the app\'s pixels (null when nothing is selected)', r3.rect && near(r3.rect.x, r3.ov.x) && near(r3.rect.y, r3.ov.y) && near(r3.rect.w, r3.ov.w) && r3.rect.h >= r3.ov.h - 2 && JSON.stringify(r3.rect) === JSON.stringify(r3.sel) && r3.none === null, JSON.stringify(r3));
++    const z = await p.evaluate(() => { const n0 = P().nodes.length; const a = TopoForge.place('server'), armed = TopoForge.placing, d = TopoForge.place(null), after = TopoForge.placing, again = TopoForge.place(null); return { n0, a, armed, d, after, again, cross: document.body.classList.contains('tf-placing') }; });
++    const cv = await boxOf(p, '#canvas'); await p.mouse.click(cv.x + 300, cv.y + 200); await p.waitForTimeout(150);
++    const zn = await p.evaluate(() => P().nodes.length);
++    check('Z3 place(null) gives up an armed shape: placing is null, the cross-hair goes, the next press drops nothing; with nothing armed it says false', z.a && z.armed === 'server' && z.d === true && z.after === null && z.again === false && !z.cross && zn === z.n0, JSON.stringify({ ...z, after: zn }));
++    const u = await p.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'), id = n.id, u0 = H.undo.length;
++      const ok = TopoForge.setProps(id, { text: 'Edge', data: { what: 'New words', extra: 7 }, w: 120 });
++      const mid = { text: N(id).text, what: N(id).data.what, extra: N(id).data.extra, w: N(id).w, undo: H.undo.length - u0, drawn: !!document.querySelector(`#content [data-id="${id}"]`) && document.querySelector('#content').innerHTML.includes('Edge<') };
++      const bad = [TopoForge.setProps('no-such-id', { text: 'x' }), TopoForge.setProps(id, { bogus: 1 }), TopoForge.setProps(id, { x: 'a' }), TopoForge.setProps(id, { data: { deep: { no: 1 } } }), TopoForge.setProps(id, {})];
++      const still = { text: N(id).text, undo: H.undo.length - u0 };
++      TopoForge.undo(); const back = { text: N(id).text, what: N(id).data.what, extra: N(id).data.extra, w: N(id).w };
++      return { ok, mid, bad, still, back }; });
++    check('U1 setProps(id, patch) changes a shape through the app\'s own edit path: drawn at once, one undo step that puts it all back; an unknown id, an unknown field or a wrong type changes nothing and says false',
++      u.ok === true && u.mid.text === 'Edge' && u.mid.what === 'New words' && u.mid.extra === '7' && u.mid.w === 120 && u.mid.undo === 1 && u.mid.drawn && u.bad.every(x => x === false) && u.still.text === 'Edge' && u.still.undo === 1 && u.back.text === 'Edge Router' && u.back.what === 'Where the shop meets the internet.' && u.back.extra === undefined && u.back.w !== 120, JSON.stringify(u));
++    await c.close(); }
++  // Y: keys for the parent
++  { const r = await parentRun(A, A + '/index.html?embed=keys&load=/fixture.json', async (p, fr) => {
++      const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.waitForTimeout(150);
++      for (const k of ['Alt+x', 'F10', 'Control+x', '5', '2']) await p.keyboard.press(k);
++      await fr.evaluate(() => { window.ended = TopoForge.endKeys(); });
++      await p.keyboard.press('a'); await p.keyboard.press('Control+c'); await p.keyboard.press('Escape'); await p.keyboard.press('b');
++      await fr.focus('#palSearch'); await p.keyboard.press('Alt+x');
++    }, { after: (p, fr) => fr.evaluate(() => ({ ended: window.ended, search: document.querySelector('#palSearch').value })) });
++    const k = msgs(r.got, 'key');
++    const want = [['M-x', false], ['<f10>', false], ['C-x', true], ['5', true], ['2', true], ['C-c', true], ['<escape>', false]];
++    check('Y1 keys: Alt+x, F10, C-x and C-c pressed in the drawing reach the parent, with the keys of a sequence after them, until endKeys(), C-g or Escape; a plain key outside a sequence, and keys in a text field, stay with the app',
++      JSON.stringify(k.map(d => [d.key, d.open])) === JSON.stringify(want) && JSON.stringify(k[4].seq) === '["C-x","5","2"]' && r.extra.ended === true && k.every(d => d.raw && 'code' in d.raw), JSON.stringify({ got: k.map(d => [d.key, d.open, d.seq.join(' ')]), extra: r.extra }));
++    const off = await parentRun(A, A + '/index.html?embed=select&load=/fixture.json', async (p) => { const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.keyboard.press('Alt+x'); await p.keyboard.press('Control+x'); });
++    check('Y2 without the keys switch no key is sent to the parent', msgs(off.got, 'key').length === 0 && off.ownAll.length === 0, `key messages: ${msgs(off.got, 'key').length}`); }
++  // Q: right click, long press and the menu key on a shape
++  { let menuSeen = null; const r = await parentRun(A, A + '/index.html?embed=context&load=/fixture.json', async (p, fr) => {
++      const s = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.click(s.x, s.y, { button: 'right' }); await p.waitForTimeout(200);
++      menuSeen = await fr.evaluate(() => !!document.querySelector('.menu .mi'));
++      await p.keyboard.press('Escape');
++      const empty = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(empty.x, empty.y, { button: 'right' }); await p.keyboard.press('Escape');
++      await fr.evaluate(() => { const n = P().nodes.find(x => x.text === 'Core Switch'); TopoForge.select([n.id]); svgEl().focus(); }); await p.keyboard.press('Shift+F10'); await p.waitForTimeout(150);
++    }, { after: async () => ({ menu: menuSeen }) });
++    const q = msgs(r.got, 'context');
++    const rc = q.find(d => d.via === 'contextmenu'), kb = q.find(d => d.via === 'keyboard');
++    check('Q1 context: a right click on a shape tells the parent its ref, name and the point (the app\'s own menu still opens); a right click on the empty drawing tells nothing; Shift+F10 on a selected shape tells it too',
++      q.length === 2 && rc && /^router-/.test(rc.ref) && rc.name === 'Edge Router' && rc.x > 0 && rc.y > 0 && rc.rect && rc.rect.w > 0 && r.extra.menu === true && kb && kb.name === 'Core Switch' && kb.x > 0, JSON.stringify({ q, menu: r.extra.menu }));
++    const lp = await parentRun(A, A + '/index.html?embed=context&load=/fixture.json', async (p, fr) => {
++      const s = await inFrame(p, await shapeAt(fr, 'Core Switch')); const cdp = await p.context().newCDPSession(p);
++      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: s.x, y: s.y }] }); await p.waitForTimeout(800);
++      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(300);
++    }, { touch: true });
++    const l = msgs(lp.got, 'context');
++    check('Q2 a long press (touch, held still) on a shape tells the parent once, via longpress, and selects it', l.length === 1 && l[0].via === 'longpress' && l[0].name === 'Core Switch', JSON.stringify(l)); }
++  // G: the page list
++  { const r = await parentRun(A, A + '/index.html?embed=pagelist&load=/fixture.json', async (p, fr) => {
++      await fr.click('#pagetabs .ptab.add'); await p.waitForTimeout(150);
++      await fr.dblclick('#pagetabs .ptab.active'); await fr.fill('#pagetabs .ptab input', 'Renamed page'); await fr.press('#pagetabs .ptab input', 'Enter'); await p.waitForTimeout(150);
++      await fr.evaluate(() => TopoForge.showPage(0)); await p.waitForTimeout(150);
++      await fr.evaluate(() => { TopoForge.undo(); TopoForge.undo(); }); await p.waitForTimeout(200);
++    });
++    const g = msgs(r.got, 'pages');
++    check('G1 pagelist: the drawing ?load= opens (replaced), adding a page, renaming one and removing one (here by undo) each send topoforge:pages with the new list; showing another page sends none',
++      JSON.stringify(g.map(d => d.change)) === '["replaced","added","renamed","renamed","removed"]' && g[0].pages.join('|') === 'First page|Second page' && g[1].added[0] === 'Page-3' && g[2].added[0] === 'Renamed page' && g[4].pages.join('|') === 'First page|Second page', JSON.stringify(g.map(d => [d.change, d.added, d.removed, d.pages.length]))); }
++  // W1: 'all' and 'bare' mean what they meant in 1.8
++  { const { c, p } = await open(A + '/index.html?embed=all,bare');
++    const w = await p.evaluate(() => TopoForge.embed());
++    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview'];
++    check('W1 ?embed=all and bare turn on none of the 1.9 switches (view, keys, context, pagelist, map, preview); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
++    await c.close(); }
++  // E8: the new messages never reach a parent of another origin
++  { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
++      await fr.evaluate(() => TopoForge.setView({ k: 0.6 })); await p.waitForTimeout(150);
++      const s = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.click(s.x, s.y, { button: 'right' }); await p.keyboard.press('Escape');
++      await fr.click('#pagetabs .ptab.add');
++      const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.keyboard.press('Alt+x');
++    });
++    check('E8 view, pages, context and key messages never reach a parent of another origin, though each fired inside the app', r.got.length === 0 && ['view', 'pages', 'context', 'key'].every(t => r.ownAll.includes(t)), `parent got ${r.got.length}; inside: ${[...new Set(r.ownAll)].join(',')}`); }
++
+   // ---- X: axe with every switch on; reduced motion ----
+   for (const dark of [false, true]) {
+     const { c, p } = await open(A + '/index.html?embed=all&load=/fixture.json', { dark, reduce: true });
+@@ -311,11 +405,11 @@
+ console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
+ const passed = results.filter(r => r.startsWith('PASS')).length;
+ fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
+-  'topology forge (formerly TopoForge) 1.8, the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
++  'topology forge (formerly TopoForge) ' + VER + ', the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
+   'Licence of this note: CC-BY-SA-4.0',
+   'Run at: ' + new Date().toISOString() + ' on ' + os.type() + ' ' + os.release() + ', node ' + process.version + ', ' + 'playwright ' + require(PW + '/package.json').version,
+   'File tested: index.html sha256 ' + sha(html),
+-  'Compared with: 1.7 rebuilt from upstream/topoforge-1.5.html and patches/, sha256 ' + sha(fs.readFileSync(v17)),
++  'Compared with: ' + PREV + ' rebuilt from upstream/topoforge-1.5.html and patches/, sha256 ' + sha(fs.readFileSync(v17)),
+   'Kit: tests/browser/embed.browser.mjs sha256 ' + sha(fs.readFileSync(fileURLToPath(import.meta.url))),
+   `Result: ${passed} checks passed, ${red} failed. Exit ${red ? 1 : 0} (0 green, 1 red, 2 kit broken).`,
+   '', 'CHECKS', ...results, ''].join('\n'));
+--- topoforge-1.8/index.html
++++ topoforge-1.9/index.html
+@@ -10,6 +10,10 @@
+   ?embed=frameless,props,shapes,pages,select,ready (or TopoForge.embed({...})): no frame, floating Properties and Shapes,
+   the page tabs in the overview map, a selection hook and a ready event (both to this window, and to a parent page of this
+   origin only). Embedding switches by Mentat (for Corwin, claude-opus-5-5).
++  1.9: more for an embedding page, each message behind its own switch (view, keys, context, pagelist, map, preview), none
++  of them in ?embed=all or bare: TopoForge.view and setView, selectionRect, place(null), setProps (one undo step), the
++  overview map moved and resized by handles outside its frame, a preview in the map; and, everywhere, page tabs that
++  overflow show the ones that fit, with < and > and a list of all of them. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -359,7 +363,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.8';
++const TF_VERSION = '1.9';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -1476,6 +1480,7 @@
+   $('#zoomLabel').textContent = Math.round(k * 100) + '%';
+   if (S.editing) positionEditor();
+   drawMinimapViewport();
++  tellView();
+ }
+ function zoomAt(k, sx, sy) {
+   const r = svgEl().getBoundingClientRect(); if (sx == null) { sx = r.width / 2; sy = r.height / 2; }
+@@ -1548,7 +1553,7 @@
+   if (S.marquee) { const m = S.marquee; const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1); s += `<rect x="${rnd(x)}" y="${rnd(y)}" width="${rnd(Math.abs(m.x1 - m.x0))}" height="${rnd(Math.abs(m.y1 - m.y0))}" fill="${c}" fill-opacity=".08" stroke="${c}" stroke-width="${rnd(1 / k, 3)}" stroke-dasharray="${rnd(4 / k)} ${rnd(3 / k)}"/>`; }
+   for (const gl of S.guides) s += `<path d="M${rnd(gl.x1)} ${rnd(gl.y1)}L${rnd(gl.x2)} ${rnd(gl.y2)}" stroke="#ec4899" stroke-width="${rnd(1 / k, 3)}" fill="none"/>`;
+   $('#overlay').innerHTML = s;
+-  tellSelection();
++  tellSelection(); tellPages();
+ }
+ 
+ /* ---------- hit testing ---------- */
+@@ -2672,6 +2677,7 @@
+   const el = $('#pagetabs');
+   el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}"${i === DOC.cur ? ' aria-current="page"' : ''} title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
+   if (MAP) mapShowActive();
++  tellPages();
+ }
+ function switchPage(i) { if (S.editing) commitEdit(); DOC.cur = clamp(i, 0, DOC.pages.length - 1); S.sel.clear(); S.hover = null; reindex(); buildPages(); render(); refreshPanels(true); fitView(); scheduleSave(); }
+ function initPages() {
+@@ -4078,7 +4084,9 @@
+    it is of this page's own origin (postMessage names location.origin; the browser drops the message
+    for any other, and nothing is posted from file://).
+    ============================================================ */
+-const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
++const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
++  'view', 'keys', 'context', 'pagelist', 'map', 'preview'];   // 1.9: the last six, never turned on by 'all' or 'bare'
++const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
+ const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+ const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
+ const UI_KEY = 'topoforge.ui.v1', FL_STEP = 16, FL_BIG = 64, FL = {};
+@@ -4087,7 +4095,7 @@
+ function embedWordsFromQuery() {
+   const q = new URLSearchParams(location.search).get('embed'), o = {};
+   // 'all' turns on every switch that keeps the chrome (frameless, floating, pages, select, ready); 'bare' hides every piece of it
+-  if (q) for (const w of q.toLowerCase().split(/[\s,+]+/)) { if (w === 'all') EMBED_WORDS.filter(k => !k.startsWith('hide-')).forEach(k => { o[k] = true; }); else if (w === 'bare') HIDE_ALL.forEach(k => { o[k] = true; }); else if (EMBED_WORDS.includes(w)) o[w] = true; }
++  if (q) for (const w of q.toLowerCase().split(/[\s,+]+/)) { if (w === 'all') ALL_V1.forEach(k => { o[k] = true; }); else if (w === 'bare') HIDE_ALL.forEach(k => { o[k] = true; }); else if (EMBED_WORDS.includes(w)) o[w] = true; }
+   return o;
+ }
+ function embed(opts) {
+@@ -4103,6 +4111,7 @@
+   for (const n of ['shapes', 'props']) { if (EMBED[n]) floatPanel(n); if (FL[n]) FL[n].turn(EMBED[n]); }
+   if (EMBED.select && !was.select) { _selKey = null; tellSelection(); }
+   if (!EMBED.ready) _readyTold = false; else if (_readyDetail && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
++  embed19(was);
+   return { ...EMBED };
+ }
+ function tell(type, detail) {
+@@ -4119,7 +4128,7 @@
+     return { id, ref: String(d.tf_ref || ''), name, tooltip: String(d.tooltip || d.what || pr.notes || ''), kind: n ? n.type : 'link' };
+   }).filter(Boolean);
+   const first = items[0] || { id: '', ref: '', name: '', tooltip: '', kind: '' };
+-  return { ...first, count: items.length, items, page: P().name, pageIndex: DOC.cur };
++  return { ...first, count: items.length, items, page: P().name, pageIndex: DOC.cur, rect: selectionRect() };
+ }
+ function tellSelection() {
+   if (!EMBED.select) return;
+@@ -4258,6 +4267,7 @@
+ // may also drag with the type text/x-topoforge set to the shape's id, as the palette does.
+ let PLACING = null, _placeWired = false;
+ function place(id, at) {
++  if (id === null) { if (!PLACING) return false; placing(null); flSay('Placing given up.'); return true; }   // 1.9: give up an armed shape
+   if (!SHAPES[id]) return false;
+   if (at === 'center') { addShapeCenter(id); return true; }
+   if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) { addShapeAt(id, toWorld({ clientX: at.x, clientY: at.y })); return true; }
+@@ -4278,6 +4288,146 @@
+ }
+ function placing(id) { PLACING = id; document.body.classList.toggle('tf-placing', !!id); }
+ 
++/* ---- 1.9: more for an embedding page. Calls work whenever called (nothing calls them on a page opened on
++   its own); each message waits for its own switch: view, keys, context, pagelist. None is in 'all' or 'bare'. ---- */
++let _viewKey = null, _viewT = null, _pagesKey = null, _pagesPrev = null, _wired19 = false, KEYSEQ = null, _lp = null, _lpAt = 0;
++function embed19(was) {
++  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview'].some(k => EMBED[k])) wire19();
++  if (EMBED.view && !was.view) { _viewKey = null; tellView(); }
++  if (EMBED.pagelist && !was.pagelist) { _pagesPrev = DOC.pages.map(p => p.name); _pagesKey = JSON.stringify(_pagesPrev); }
++  if (!EMBED.keys) KEYSEQ = null;
++  if (typeof embed19b === 'function') embed19b(was);
++}
++// the view: k is the zoom (1 is 100%), x and y where the drawing's 0,0 sits in the canvas, in the app's pixels
++function viewInfo() { const r = svgEl().getBoundingClientRect(); return { k: rnd(S.view.k, 5), x: rnd(S.view.x), y: rnd(S.view.y), zoom: Math.round(S.view.k * 100), width: Math.round(r.width), height: Math.round(r.height) }; }
++function setView(v) {
++  if (!v || typeof v !== 'object') return viewInfo();
++  const num = x => typeof x === 'number' && Number.isFinite(x);
++  if (num(v.k)) S.view.k = clamp(v.k, 0.08, 5);
++  if (num(v.x)) S.view.x = v.x;
++  if (num(v.y)) S.view.y = v.y;
++  applyView(); scheduleMinimap(); updateStatus();
++  return viewInfo();
++}
++function tellView() {
++  if (!EMBED.view) return;
++  clearTimeout(_viewT);
++  _viewT = setTimeout(() => {
++    const d = { ...viewInfo(), rect: selectionRect() }, key = JSON.stringify(d);
++    if (key === _viewKey) return;
++    _viewKey = key; tell('topoforge:view', d);
++  }, 60);
++}
++// where things are on screen, in the app's own pixels (as getBoundingClientRect gives them inside the app)
++function screenRect(nodes, links) {
++  const b = boundsOf(nodes, links); if (b.empty) return null;
++  const r = svgEl().getBoundingClientRect(), k = S.view.k;
++  return { x: Math.round(r.left + S.view.x + b.x * k), y: Math.round(r.top + S.view.y + b.y * k), w: Math.round(b.w * k), h: Math.round(b.h * k) };
++}
++function selectionRect() { return S.sel.size ? screenRect(selNodes(), selLinks()) : null; }
++// set a shape's or a link's fields, as the inspector would, in one undo step
++const SETPROPS_KEYS = { node: ['text', 'x', 'y', 'w', 'h', 'layer', 'props', 'data', 'style'], link: ['text', 'layer', 'route', 'arrows', 'props', 'data', 'style'] };
++function setProps(id, patch) {
++  const n = N(id), l = n ? null : LK(id), it = n || l;
++  if (!it || !patch || typeof patch !== 'object' || Array.isArray(patch)) return false;
++  const keys = Object.keys(patch); if (!keys.length) return false;
++  const flat = v => v === null || ['string', 'number', 'boolean'].includes(typeof v);
++  const isMap = o => o && typeof o === 'object' && !Array.isArray(o) && Object.values(o).every(flat);
++  for (const k of keys) {
++    const v = patch[k];
++    if (!SETPROPS_KEYS[n ? 'node' : 'link'].includes(k)) return false;
++    if (k === 'text' && typeof v !== 'string') return false;
++    if (['x', 'y', 'w', 'h'].includes(k) && !(typeof v === 'number' && Number.isFinite(v))) return false;
++    if (k === 'layer' && !P().layers.some(L => L.id === v)) return false;
++    if (k === 'route' && !['orthogonal', 'straight', 'curved'].includes(v)) return false;
++    if (k === 'arrows' && !['none', 'end', 'start', 'both'].includes(v)) return false;
++    if (['props', 'data', 'style'].includes(k) && !isMap(v)) return false;
++  }
++  edit(() => applyPatch(it, patch, keys));
++  return true;
++}
++function applyPatch(it, patch, keys) {
++  for (const k of keys) {
++    const v = patch[k];
++    if (['props', 'data', 'style'].includes(k)) { it[k] = it[k] || {}; for (const [f, x] of Object.entries(v)) { if (x === null) delete it[k][f]; else it[k][f] = k === 'style' ? x : String(x); } }
++    else if (k === 'w' || k === 'h') it[k] = Math.max(4, v);
++    else if ((k === 'x' || k === 'y') && isContainer(it)) { const d = v - it[k]; for (const c of descendants(it.id)) c[k] += d; it[k] = v; }
++    else it[k] = v;
++  }
++}
++// the page list: told when a page is added, renamed, moved or removed (not when another page is shown: the select message says that)
++function tellPages() {
++  if (!EMBED.pagelist) return;
++  const names = DOC.pages.map(p => p.name), key = JSON.stringify(names);
++  if (key === _pagesKey) return;
++  const prev = _pagesPrev || [], added = names.filter(x => !prev.includes(x)), removed = prev.filter(x => !names.includes(x));
++  const change = added.length && !removed.length ? 'added' : removed.length && !added.length ? 'removed'
++    : added.length === 1 && removed.length === 1 && names.length === prev.length ? 'renamed' : !added.length && !removed.length ? 'moved' : 'replaced';
++  _pagesKey = key; _pagesPrev = names;
++  tell('topoforge:pages', { change, added, removed, pages: names, page: P().name, pageIndex: DOC.cur });
++}
++// keys: Alt+x, F10, C-x and C-c pressed while focus is in the drawing go to the page instead of the app. C-x and C-c
++// open a sequence: the keys after them go to the page too, until it calls endKeys(), C-g or Escape is pressed, four
++// keys have followed, or the app's window loses focus. So the drawing's own Ctrl+X and Ctrl+C (cut, copy) are the
++// page's while keys is on; Edit, Cut and Copy stay in the app's menus and in commands().
++const KEYNAMES = { ' ': 'SPC', Enter: 'RET', Tab: 'TAB', Escape: '<escape>', Backspace: 'DEL', Delete: '<delete>', ArrowLeft: '<left>', ArrowRight: '<right>', ArrowUp: '<up>', ArrowDown: '<down>', Home: '<home>', End: '<end>', PageUp: '<prior>', PageDown: '<next>' };
++function emacsKey(e) {
++  let b = /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : /^Digit[0-9]$/.test(e.code) ? e.code.slice(5) : KEYNAMES[e.key] || (/^F[0-9]{1,2}$/.test(e.key) ? '<' + e.key.toLowerCase() + '>' : e.key.length === 1 ? e.key.toLowerCase() : null);
++  if (b === null) return null;
++  if (e.shiftKey && b.length === 1 && /[a-z]/.test(b)) b = b.toUpperCase(); else if (e.shiftKey && b.length > 1) b = 'S-' + b;
++  return (e.ctrlKey ? 'C-' : '') + (e.altKey ? 'M-' : '') + (e.metaKey ? 's-' : '') + b;
++}
++function inDrawing() { const a = document.activeElement; return !a || a === document.body || a === document.documentElement || a === svgEl(); }
++function endKeys() { const was = !!KEYSEQ; KEYSEQ = null; return was; }
++function forwardKey(e, name, open) {
++  e.preventDefault(); e.stopImmediatePropagation();
++  tell('topoforge:key', { key: name, seq: KEYSEQ ? [...KEYSEQ] : [name], open, raw: { key: e.key, code: e.code, alt: e.altKey, ctrl: e.ctrlKey, shift: e.shiftKey, meta: e.metaKey } });
++}
++function onKey19(e) {
++  if (['Shift', 'Control', 'Alt', 'Meta', 'AltGraph', 'CapsLock'].includes(e.key)) return;
++  if (EMBED.context && inDrawing() && S.sel.size && (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey && !e.ctrlKey && !e.altKey))) {
++    e.preventDefault(); e.stopImmediatePropagation(); const r = selectionRect(); tellContext(N([...S.sel][0]) || LK([...S.sel][0]), r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : { x: 0, y: 0 }, 'keyboard'); return;
++  }
++  if (!EMBED.keys) return;
++  const name = emacsKey(e); if (!name) return;
++  if (KEYSEQ) {
++    KEYSEQ.push(name);
++    const done = name === 'C-g' || name === '<escape>' || KEYSEQ.length >= 5;
++    forwardKey(e, name, !done); if (done) KEYSEQ = null; return;
++  }
++  if (!inDrawing()) return;
++  if (name === 'M-x' || name === '<f10>') { forwardKey(e, name, false); return; }
++  if (name === 'C-x' || name === 'C-c') { KEYSEQ = [name]; forwardKey(e, name, true); }
++}
++// context: a right click, a long press (touch or pen, 550 ms, still), or the menu key on a shape or link
++function tellContext(it, at, via) {
++  if (!EMBED.context || !it) return;
++  const info = selectionInfo().items.find(x => x.id === it.id) || selectionInfo();
++  tell('topoforge:context', { via, x: Math.round(at.x), y: Math.round(at.y), id: it.id, ref: info.ref, name: info.name, tooltip: info.tooltip, kind: info.kind,
++    page: P().name, pageIndex: DOC.cur, rect: it.a ? screenRect([], [it]) : screenRect([it], []) });
++}
++function wire19() {
++  if (_wired19) return; _wired19 = true;
++  const svg = svgEl();
++  document.addEventListener('keydown', onKey19, true);
++  window.addEventListener('blur', () => { KEYSEQ = null; });
++  svg.addEventListener('contextmenu', e => {   // after the app's own handler, which has selected the thing pressed and opened its menu
++    if (!EMBED.context || Date.now() - _lpAt < 900) return;
++    const h = hitTest(toWorld(e), { noOverlay: true }); if (h.type === 'node' || h.type === 'link') tellContext(h.node || h.link, { x: e.clientX, y: e.clientY }, 'contextmenu');
++  });
++  const lpEnd = () => { if (_lp) { clearTimeout(_lp.t); _lp = null; } };
++  svg.addEventListener('pointerdown', e => {
++    lpEnd(); if (!EMBED.context || e.pointerType === 'mouse' || PLACING) return;
++    const at = { x: e.clientX, y: e.clientY };
++    _lp = { at, t: setTimeout(() => {
++      _lp = null; const h = hitTest(toWorld({ clientX: at.x, clientY: at.y }), { noOverlay: true }); const it = h.node || h.link; if (!it) return;
++      if (!S.sel.has(it.id)) setSel([it.id]); _lpAt = Date.now(); tellContext(it, at, 'longpress');
++    }, 550) };
++  });
++  svg.addEventListener('pointermove', e => { if (_lp && Math.hypot(e.clientX - _lp.at.x, e.clientY - _lp.at.y) > 8) lpEnd(); });
++  for (const t of ['pointerup', 'pointercancel', 'pointerleave']) svg.addEventListener(t, lpEnd);
++}
++
+ // Every command in the menus, for an embedding page that hides the app's chrome and offers them from its
+ // own prompt: read from MENUS (Bryant's table) each time, so it is never a copy that drifts. An id is
+ // menu:group:label in lower case, words joined by '-'; group is the menu's last heading ('' before one).
+@@ -4312,7 +4462,9 @@
+ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex },
+   // 1.8: for an embedding page (see the Embedding block above)
+   version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
+-  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; } };
++  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; },
++  // 1.9
++  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

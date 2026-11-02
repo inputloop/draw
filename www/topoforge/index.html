@@ -10,6 +10,10 @@
   ?embed=frameless,props,shapes,pages,select,ready (or TopoForge.embed({...})): no frame, floating Properties and Shapes,
   the page tabs in the overview map, a selection hook and a ready event (both to this window, and to a parent page of this
   origin only). Embedding switches by Mentat (for Corwin, claude-opus-5-5).
+  1.9: more for an embedding page, each message behind its own switch (view, keys, context, pagelist, map, preview), none
+  of them in ?embed=all or bare: TopoForge.view and setView, selectionRect, place(null), setProps (one undo step), the
+  overview map moved and resized by handles outside its frame, a preview in the map; and, everywhere, page tabs that
+  overflow show the ones that fit, with < and > and a list of all of them. By Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -359,7 +363,7 @@ body.tf-placing #canvas{cursor:crosshair}
 
 <script>
 'use strict';
-const TF_VERSION = '1.8';
+const TF_VERSION = '1.9';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -1476,6 +1480,7 @@ function applyView() {
   $('#zoomLabel').textContent = Math.round(k * 100) + '%';
   if (S.editing) positionEditor();
   drawMinimapViewport();
+  tellView();
 }
 function zoomAt(k, sx, sy) {
   const r = svgEl().getBoundingClientRect(); if (sx == null) { sx = r.width / 2; sy = r.height / 2; }
@@ -1548,7 +1553,7 @@ function renderOverlay() {
   if (S.marquee) { const m = S.marquee; const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1); s += `<rect x="${rnd(x)}" y="${rnd(y)}" width="${rnd(Math.abs(m.x1 - m.x0))}" height="${rnd(Math.abs(m.y1 - m.y0))}" fill="${c}" fill-opacity=".08" stroke="${c}" stroke-width="${rnd(1 / k, 3)}" stroke-dasharray="${rnd(4 / k)} ${rnd(3 / k)}"/>`; }
   for (const gl of S.guides) s += `<path d="M${rnd(gl.x1)} ${rnd(gl.y1)}L${rnd(gl.x2)} ${rnd(gl.y2)}" stroke="#ec4899" stroke-width="${rnd(1 / k, 3)}" fill="none"/>`;
   $('#overlay').innerHTML = s;
-  tellSelection();
+  tellSelection(); tellPages();
 }
 
 /* ---------- hit testing ---------- */
@@ -2672,6 +2677,7 @@ function buildPages() {
   const el = $('#pagetabs');
   el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}"${i === DOC.cur ? ' aria-current="page"' : ''} title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
   if (MAP) mapShowActive();
+  tellPages();
 }
 function switchPage(i) { if (S.editing) commitEdit(); DOC.cur = clamp(i, 0, DOC.pages.length - 1); S.sel.clear(); S.hover = null; reindex(); buildPages(); render(); refreshPanels(true); fitView(); scheduleSave(); }
 function initPages() {
@@ -4078,7 +4084,9 @@ async function loadFromQuery() {
    it is of this page's own origin (postMessage names location.origin; the browser drops the message
    for any other, and nothing is posted from file://).
    ============================================================ */
-const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
+  'view', 'keys', 'context', 'pagelist', 'map', 'preview'];   // 1.9: the last six, never turned on by 'all' or 'bare'
+const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
 const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
 const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
 const UI_KEY = 'topoforge.ui.v1', FL_STEP = 16, FL_BIG = 64, FL = {};
@@ -4087,7 +4095,7 @@ const READY = new Promise(res => { _readyResolve = res; });
 function embedWordsFromQuery() {
   const q = new URLSearchParams(location.search).get('embed'), o = {};
   // 'all' turns on every switch that keeps the chrome (frameless, floating, pages, select, ready); 'bare' hides every piece of it
-  if (q) for (const w of q.toLowerCase().split(/[\s,+]+/)) { if (w === 'all') EMBED_WORDS.filter(k => !k.startsWith('hide-')).forEach(k => { o[k] = true; }); else if (w === 'bare') HIDE_ALL.forEach(k => { o[k] = true; }); else if (EMBED_WORDS.includes(w)) o[w] = true; }
+  if (q) for (const w of q.toLowerCase().split(/[\s,+]+/)) { if (w === 'all') ALL_V1.forEach(k => { o[k] = true; }); else if (w === 'bare') HIDE_ALL.forEach(k => { o[k] = true; }); else if (EMBED_WORDS.includes(w)) o[w] = true; }
   return o;
 }
 function embed(opts) {
@@ -4103,6 +4111,7 @@ function embed(opts) {
   for (const n of ['shapes', 'props']) { if (EMBED[n]) floatPanel(n); if (FL[n]) FL[n].turn(EMBED[n]); }
   if (EMBED.select && !was.select) { _selKey = null; tellSelection(); }
   if (!EMBED.ready) _readyTold = false; else if (_readyDetail && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
+  embed19(was);
   return { ...EMBED };
 }
 function tell(type, detail) {
@@ -4119,7 +4128,7 @@ function selectionInfo() {
     return { id, ref: String(d.tf_ref || ''), name, tooltip: String(d.tooltip || d.what || pr.notes || ''), kind: n ? n.type : 'link' };
   }).filter(Boolean);
   const first = items[0] || { id: '', ref: '', name: '', tooltip: '', kind: '' };
-  return { ...first, count: items.length, items, page: P().name, pageIndex: DOC.cur };
+  return { ...first, count: items.length, items, page: P().name, pageIndex: DOC.cur, rect: selectionRect() };
 }
 function tellSelection() {
   if (!EMBED.select) return;
@@ -4258,6 +4267,7 @@ function shapes() {
 // may also drag with the type text/x-topoforge set to the shape's id, as the palette does.
 let PLACING = null, _placeWired = false;
 function place(id, at) {
+  if (id === null) { if (!PLACING) return false; placing(null); flSay('Placing given up.'); return true; }   // 1.9: give up an armed shape
   if (!SHAPES[id]) return false;
   if (at === 'center') { addShapeCenter(id); return true; }
   if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) { addShapeAt(id, toWorld({ clientX: at.x, clientY: at.y })); return true; }
@@ -4277,6 +4287,146 @@ function place(id, at) {
   return true;
 }
 function placing(id) { PLACING = id; document.body.classList.toggle('tf-placing', !!id); }
+
+/* ---- 1.9: more for an embedding page. Calls work whenever called (nothing calls them on a page opened on
+   its own); each message waits for its own switch: view, keys, context, pagelist. None is in 'all' or 'bare'. ---- */
+let _viewKey = null, _viewT = null, _pagesKey = null, _pagesPrev = null, _wired19 = false, KEYSEQ = null, _lp = null, _lpAt = 0;
+function embed19(was) {
+  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview'].some(k => EMBED[k])) wire19();
+  if (EMBED.view && !was.view) { _viewKey = null; tellView(); }
+  if (EMBED.pagelist && !was.pagelist) { _pagesPrev = DOC.pages.map(p => p.name); _pagesKey = JSON.stringify(_pagesPrev); }
+  if (!EMBED.keys) KEYSEQ = null;
+  if (typeof embed19b === 'function') embed19b(was);
+}
+// the view: k is the zoom (1 is 100%), x and y where the drawing's 0,0 sits in the canvas, in the app's pixels
+function viewInfo() { const r = svgEl().getBoundingClientRect(); return { k: rnd(S.view.k, 5), x: rnd(S.view.x), y: rnd(S.view.y), zoom: Math.round(S.view.k * 100), width: Math.round(r.width), height: Math.round(r.height) }; }
+function setView(v) {
+  if (!v || typeof v !== 'object') return viewInfo();
+  const num = x => typeof x === 'number' && Number.isFinite(x);
+  if (num(v.k)) S.view.k = clamp(v.k, 0.08, 5);
+  if (num(v.x)) S.view.x = v.x;
+  if (num(v.y)) S.view.y = v.y;
+  applyView(); scheduleMinimap(); updateStatus();
+  return viewInfo();
+}
+function tellView() {
+  if (!EMBED.view) return;
+  clearTimeout(_viewT);
+  _viewT = setTimeout(() => {
+    const d = { ...viewInfo(), rect: selectionRect() }, key = JSON.stringify(d);
+    if (key === _viewKey) return;
+    _viewKey = key; tell('topoforge:view', d);
+  }, 60);
+}
+// where things are on screen, in the app's own pixels (as getBoundingClientRect gives them inside the app)
+function screenRect(nodes, links) {
+  const b = boundsOf(nodes, links); if (b.empty) return null;
+  const r = svgEl().getBoundingClientRect(), k = S.view.k;
+  return { x: Math.round(r.left + S.view.x + b.x * k), y: Math.round(r.top + S.view.y + b.y * k), w: Math.round(b.w * k), h: Math.round(b.h * k) };
+}
+function selectionRect() { return S.sel.size ? screenRect(selNodes(), selLinks()) : null; }
+// set a shape's or a link's fields, as the inspector would, in one undo step
+const SETPROPS_KEYS = { node: ['text', 'x', 'y', 'w', 'h', 'layer', 'props', 'data', 'style'], link: ['text', 'layer', 'route', 'arrows', 'props', 'data', 'style'] };
+function setProps(id, patch) {
+  const n = N(id), l = n ? null : LK(id), it = n || l;
+  if (!it || !patch || typeof patch !== 'object' || Array.isArray(patch)) return false;
+  const keys = Object.keys(patch); if (!keys.length) return false;
+  const flat = v => v === null || ['string', 'number', 'boolean'].includes(typeof v);
+  const isMap = o => o && typeof o === 'object' && !Array.isArray(o) && Object.values(o).every(flat);
+  for (const k of keys) {
+    const v = patch[k];
+    if (!SETPROPS_KEYS[n ? 'node' : 'link'].includes(k)) return false;
+    if (k === 'text' && typeof v !== 'string') return false;
+    if (['x', 'y', 'w', 'h'].includes(k) && !(typeof v === 'number' && Number.isFinite(v))) return false;
+    if (k === 'layer' && !P().layers.some(L => L.id === v)) return false;
+    if (k === 'route' && !['orthogonal', 'straight', 'curved'].includes(v)) return false;
+    if (k === 'arrows' && !['none', 'end', 'start', 'both'].includes(v)) return false;
+    if (['props', 'data', 'style'].includes(k) && !isMap(v)) return false;
+  }
+  edit(() => applyPatch(it, patch, keys));
+  return true;
+}
+function applyPatch(it, patch, keys) {
+  for (const k of keys) {
+    const v = patch[k];
+    if (['props', 'data', 'style'].includes(k)) { it[k] = it[k] || {}; for (const [f, x] of Object.entries(v)) { if (x === null) delete it[k][f]; else it[k][f] = k === 'style' ? x : String(x); } }
+    else if (k === 'w' || k === 'h') it[k] = Math.max(4, v);
+    else if ((k === 'x' || k === 'y') && isContainer(it)) { const d = v - it[k]; for (const c of descendants(it.id)) c[k] += d; it[k] = v; }
+    else it[k] = v;
+  }
+}
+// the page list: told when a page is added, renamed, moved or removed (not when another page is shown: the select message says that)
+function tellPages() {
+  if (!EMBED.pagelist) return;
+  const names = DOC.pages.map(p => p.name), key = JSON.stringify(names);
+  if (key === _pagesKey) return;
+  const prev = _pagesPrev || [], added = names.filter(x => !prev.includes(x)), removed = prev.filter(x => !names.includes(x));
+  const change = added.length && !removed.length ? 'added' : removed.length && !added.length ? 'removed'
+    : added.length === 1 && removed.length === 1 && names.length === prev.length ? 'renamed' : !added.length && !removed.length ? 'moved' : 'replaced';
+  _pagesKey = key; _pagesPrev = names;
+  tell('topoforge:pages', { change, added, removed, pages: names, page: P().name, pageIndex: DOC.cur });
+}
+// keys: Alt+x, F10, C-x and C-c pressed while focus is in the drawing go to the page instead of the app. C-x and C-c
+// open a sequence: the keys after them go to the page too, until it calls endKeys(), C-g or Escape is pressed, four
+// keys have followed, or the app's window loses focus. So the drawing's own Ctrl+X and Ctrl+C (cut, copy) are the
+// page's while keys is on; Edit, Cut and Copy stay in the app's menus and in commands().
+const KEYNAMES = { ' ': 'SPC', Enter: 'RET', Tab: 'TAB', Escape: '<escape>', Backspace: 'DEL', Delete: '<delete>', ArrowLeft: '<left>', ArrowRight: '<right>', ArrowUp: '<up>', ArrowDown: '<down>', Home: '<home>', End: '<end>', PageUp: '<prior>', PageDown: '<next>' };
+function emacsKey(e) {
+  let b = /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : /^Digit[0-9]$/.test(e.code) ? e.code.slice(5) : KEYNAMES[e.key] || (/^F[0-9]{1,2}$/.test(e.key) ? '<' + e.key.toLowerCase() + '>' : e.key.length === 1 ? e.key.toLowerCase() : null);
+  if (b === null) return null;
+  if (e.shiftKey && b.length === 1 && /[a-z]/.test(b)) b = b.toUpperCase(); else if (e.shiftKey && b.length > 1) b = 'S-' + b;
+  return (e.ctrlKey ? 'C-' : '') + (e.altKey ? 'M-' : '') + (e.metaKey ? 's-' : '') + b;
+}
+function inDrawing() { const a = document.activeElement; return !a || a === document.body || a === document.documentElement || a === svgEl(); }
+function endKeys() { const was = !!KEYSEQ; KEYSEQ = null; return was; }
+function forwardKey(e, name, open) {
+  e.preventDefault(); e.stopImmediatePropagation();
+  tell('topoforge:key', { key: name, seq: KEYSEQ ? [...KEYSEQ] : [name], open, raw: { key: e.key, code: e.code, alt: e.altKey, ctrl: e.ctrlKey, shift: e.shiftKey, meta: e.metaKey } });
+}
+function onKey19(e) {
+  if (['Shift', 'Control', 'Alt', 'Meta', 'AltGraph', 'CapsLock'].includes(e.key)) return;
+  if (EMBED.context && inDrawing() && S.sel.size && (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey && !e.ctrlKey && !e.altKey))) {
+    e.preventDefault(); e.stopImmediatePropagation(); const r = selectionRect(); tellContext(N([...S.sel][0]) || LK([...S.sel][0]), r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : { x: 0, y: 0 }, 'keyboard'); return;
+  }
+  if (!EMBED.keys) return;
+  const name = emacsKey(e); if (!name) return;
+  if (KEYSEQ) {
+    KEYSEQ.push(name);
+    const done = name === 'C-g' || name === '<escape>' || KEYSEQ.length >= 5;
+    forwardKey(e, name, !done); if (done) KEYSEQ = null; return;
+  }
+  if (!inDrawing()) return;
+  if (name === 'M-x' || name === '<f10>') { forwardKey(e, name, false); return; }
+  if (name === 'C-x' || name === 'C-c') { KEYSEQ = [name]; forwardKey(e, name, true); }
+}
+// context: a right click, a long press (touch or pen, 550 ms, still), or the menu key on a shape or link
+function tellContext(it, at, via) {
+  if (!EMBED.context || !it) return;
+  const info = selectionInfo().items.find(x => x.id === it.id) || selectionInfo();
+  tell('topoforge:context', { via, x: Math.round(at.x), y: Math.round(at.y), id: it.id, ref: info.ref, name: info.name, tooltip: info.tooltip, kind: info.kind,
+    page: P().name, pageIndex: DOC.cur, rect: it.a ? screenRect([], [it]) : screenRect([it], []) });
+}
+function wire19() {
+  if (_wired19) return; _wired19 = true;
+  const svg = svgEl();
+  document.addEventListener('keydown', onKey19, true);
+  window.addEventListener('blur', () => { KEYSEQ = null; });
+  svg.addEventListener('contextmenu', e => {   // after the app's own handler, which has selected the thing pressed and opened its menu
+    if (!EMBED.context || Date.now() - _lpAt < 900) return;
+    const h = hitTest(toWorld(e), { noOverlay: true }); if (h.type === 'node' || h.type === 'link') tellContext(h.node || h.link, { x: e.clientX, y: e.clientY }, 'contextmenu');
+  });
+  const lpEnd = () => { if (_lp) { clearTimeout(_lp.t); _lp = null; } };
+  svg.addEventListener('pointerdown', e => {
+    lpEnd(); if (!EMBED.context || e.pointerType === 'mouse' || PLACING) return;
+    const at = { x: e.clientX, y: e.clientY };
+    _lp = { at, t: setTimeout(() => {
+      _lp = null; const h = hitTest(toWorld({ clientX: at.x, clientY: at.y }), { noOverlay: true }); const it = h.node || h.link; if (!it) return;
+      if (!S.sel.has(it.id)) setSel([it.id]); _lpAt = Date.now(); tellContext(it, at, 'longpress');
+    }, 550) };
+  });
+  svg.addEventListener('pointermove', e => { if (_lp && Math.hypot(e.clientX - _lp.at.x, e.clientY - _lp.at.y) > 8) lpEnd(); });
+  for (const t of ['pointerup', 'pointercancel', 'pointerleave']) svg.addEventListener(t, lpEnd);
+}
 
 // Every command in the menus, for an embedding page that hides the app's chrome and offers them from its
 // own prompt: read from MENUS (Bryant's table) each time, so it is never a copy that drifts. An id is
@@ -4312,7 +4462,9 @@ function panels() {
 window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex },
   // 1.8: for an embedding page (see the Embedding block above)
   version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
-  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; } };
+  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; },
+  // 1.9
+  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>

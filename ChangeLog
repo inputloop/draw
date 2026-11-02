@@ -1,3 +1,14 @@
+2026-11-02  Corwin Brust  <corwin@bru.st>
+
+	topology forge (formerly TopoForge) 1.9 in www/topoforge/, first
+	stage: the seven calls corwin.cloud asked for (docs/NAV.md revision
+	4), blessed 2026-11-02.  topoforge/ChangeLog has the detail.
+	* www/topoforge/index.html: 1.9.
+	* topoforge/: the 1.8-to-1.9 patch, the spec, the kit and its plants,
+	NEWS, ChangeLog, AUTHORS.
+	* RECIPE.org: the app's row, 1.9, and its sha256.
+	* NEWS: 1.9.
+
 2026-11-01  Corwin Brust  <corwin@bru.st>
 
 	topology forge (formerly TopoForge) 1.8 in www/topoforge/, built here

@@ -5,6 +5,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- topology forge (formerly TopoForge) 1.9, by Bryant Frankford, with our
+  changes: calls and switches a page that embeds it asked for (the view,
+  where the selection is, keys and right clicks for the page, setting a
+  shape's fields, a message when pages change), all off when the app is
+  opened on its own.  See topoforge/NEWS.
+
 - The drawing app is topology forge (formerly TopoForge), 1.8, made by
   Bryant Frankford; its work now goes on here.  README.org says how it is
   named.  New in 1.8: switches a page that embeds it may turn on (no frame,

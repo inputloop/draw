@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8
+# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9)
 
 topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
 This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
@@ -103,6 +103,82 @@ An embedding page may also let people drag from its own palette with HTML drag a
 `TopoForge.version`; `TopoForge.showPage(name or index)` (true if that page exists);
 `TopoForge.panels()` (where the stage, the shapes, the inspector and the overview are, in the app's
 pixels, and whether each floats or is hidden).
+
+## Added in 1.9 (still v1)
+
+1.9 adds calls, switches and fields; it changes nothing 1.8 promised, so a page written for 1.8 works
+unchanged and this is still v1 (no v2 is needed). The six new switch words are `view`, `keys`, `context`,
+`pagelist`, `map` and `preview`. **None of them is turned on by `all` or `bare`**, which mean exactly
+what they meant in 1.8 (W1). Each message below goes by the same two routes and the same origin rule as
+`topoforge:select`: a `CustomEvent` on the app's own window, and `postMessage` to a parent of the app's
+own origin only, never from `file://` (E8).
+
+### The view: `view`
+
+`TopoForge.view` is `{ k, x, y, zoom, width, height }`: `k` the zoom (1 is 100 %), `x`, `y` where the
+drawing's point 0,0 sits in the canvas, `zoom` the percentage the app shows, `width`, `height` the
+canvas's size, all in the app's own pixels. `TopoForge.setView({ k, x, y })` sets any of the three (`k`
+is held between 0.08 and 5, as the app's own zoom is) and returns the new view. With `view` on, every
+change of the view (a wheel, a drag, Fit, setView) sends `topoforge:view`, at most once per 60 ms, with
+the view's fields and `rect` (below) (V1, V2).
+
+### Where the selection is
+
+`TopoForge.selectionRect()` is the box around what is selected, as it is on screen, in the app's own
+pixels (`{ x, y, w, h }`, as `getBoundingClientRect` gives them inside the app; a device's box includes
+its label below it), or `null` with nothing selected. The select detail (`topoforge:select`,
+`TopoForge.selection`) gains the same as `rect`; `topoforge:view` carries it too, so a page that floats
+something beside the shape can follow a zoom or a pan (R3).
+
+### Giving up an armed shape
+
+`TopoForge.place(null)` gives up a shape armed with `place(id)`, as Escape on the drawing does: the
+cross-hair goes and `TopoForge.placing` is `null`. It returns `true`, or `false` when nothing was armed
+(Z3).
+
+### Setting a shape's fields
+
+`TopoForge.setProps(id, patch)` changes one shape or link on the current page through the app's own
+edit path: it is drawn at once and is **one** undo step. A shape takes `text`, `x`, `y`, `w`, `h`,
+`layer`, `props`, `data`, `style`; a link takes `text`, `layer`, `route` (`orthogonal`, `straight`,
+`curved`), `arrows` (`none`, `end`, `start`, `both`), `props`, `data`, `style`. `props`, `data` and
+`style` are merged field by field: a value of `null` removes the field, others are kept (as text, in
+`props` and `data`, as the inspector keeps them). Moving a container moves what is in it. An unknown id,
+a field not in the list, a wrong type, a nested object or an empty patch changes nothing and returns
+`false` (U1).
+
+### Keys for the page: `keys`
+
+With `keys` on, Alt+x, F10, Ctrl+X and Ctrl+C pressed while the focus is in the drawing (the canvas, or
+nothing in the app) are not the app's: each is sent as `topoforge:key`. Ctrl+X and Ctrl+C (Emacs's C-x
+and C-c) open a sequence: the keys pressed after them are sent too, wherever the focus is, until the
+page calls `TopoForge.endKeys()` (true if a sequence was open), C-g or Escape is pressed, four keys have
+followed the first, or the app's window loses focus, so the keyboard can never be kept from the app
+(WCAG 2.1.2). Detail: `key` (Emacs's name: `M-x`, `<f10>`, `C-x`, `5`, `C-g`, `<escape>`, `RET`, `S-<f3>`
+...), `seq` (the sequence so far, the first key first), `open` (true while more keys of the sequence
+will come) and `raw` (`key`, `code`, `alt`, `ctrl`, `shift`, `meta`). A plain key outside a sequence,
+and every key typed into a field, stay with the app (Y1, Y2).
+
+The trade, said plainly: while `keys` is on, the drawing's own Ctrl+X and Ctrl+C (cut and copy) belong
+to the page. Edit, Cut and Edit, Copy stay in the app's menus and in `commands()`, and the page may run
+them.
+
+### Long press and right click: `context`
+
+With `context` on, a right click on a shape or a link, a long press on one (touch or pen, held still for
+550 ms), or the menu key or Shift+F10 with something selected and the focus in the drawing, sends
+`topoforge:context`: `via` (`contextmenu`, `longpress`, `keyboard`), `x`, `y` (the point, in the app's
+own pixels; the middle of the selection for the keyboard), `id`, `ref`, `name`, `tooltip`, `kind`,
+`page`, `pageIndex` and `rect` (that shape's box on screen). The app still selects what was pressed and
+its own menu still opens on a right click; a right click on the empty drawing sends nothing (Q1, Q2).
+
+### Pages changed: `pagelist`
+
+The word `pages` was taken in 1.8 (the page tabs in the overview box), so this switch is `pagelist`.
+With it on, a change to the list of pages sends `topoforge:pages`: `change` (`added`, `removed`,
+`renamed`, `moved`, or `replaced` when a whole drawing is opened in place of the last), `added` and
+`removed` (names), `pages` (every name, in order), `page`, `pageIndex`. Undo and redo are changes like
+any other. Showing another page is not a change of the list (the select message says it) (G1).
 
 ## Not changed
 

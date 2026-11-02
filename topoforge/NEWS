@@ -4,6 +4,27 @@ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
+Version 1.9 (2026-11-02; built in stages on the corwin branch; checked: tests/run.sh,
+the project-files check, the browser kit and the embedding kit green, with their
+planted faults; see RESULT.txt and RESULT-embed.txt in tests/browser/; no release
+packed or signed yet)
+
+- For a page that embeds the app (corwin.cloud's requests 1 to 7, blessed by
+  Corwin on 2026-11-02).  New calls: TopoForge.view and .setView({ k, x, y });
+  .selectionRect(), the selection's box on screen (also as rect in the select
+  message); .place(null), to give up an armed shape; .setProps(id, patch), to
+  change a shape's fields as one undo step.  New switches, each off until a page
+  asks, and none of them turned on by ?embed=all or bare:
+  - view: a message when the zoom or the place of the drawing changes;
+  - keys: Alt+x, F10, C-x and C-c pressed in the drawing go to the page (with
+    the keys after C-x or C-c, until the page says done, or C-g or Escape).
+    While it is on, the drawing's own Ctrl+X and Ctrl+C are the page's; Cut
+    and Copy stay in the Edit menu;
+  - context: a message on a right click, a long press or the menu key on a
+    shape (the app's own menu still opens);
+  - pagelist: a message when a page is added, renamed, moved or removed.
+  All of these reach a parent page of the app's own origin only.
+
 Version 1.8 (2026-11-01; built and checked: tests/run.sh, the project-files
 check, the browser kit and the new embedding kit green; see RESULT.txt and
 RESULT-embed.txt in tests/browser/; no release packed or signed yet)
