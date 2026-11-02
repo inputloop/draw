@@ -14,6 +14,9 @@
   of them in ?embed=all or bare: TopoForge.view and setView, selectionRect, place(null), setProps (one undo step), the
   overview map moved and resized by handles outside its frame, a preview in the map; and, everywhere, page tabs that
   overflow show the ones that fit, with < and > and a list of all of them. By Mentat (for Corwin, claude-opus-5-5).
+  1.10: the map's modes for a preview (mapMode: cards, both, rings; both by default), a card in the map, the matches
+  highlighted in the drawing, the map's own scale (mapScale), and, with the switch mapwheel, the wheel over the map.
+  Nothing changes for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -316,6 +319,18 @@ body.tf-pages #mmwrap{display:none}
 #ptFlyList li.cur{font-weight:600}
 #ptFlyList li[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 #ptFlyList li.pt-none{color:var(--text-2);cursor:default}
+/* 1.10: map modes (cards, both, rings) and the card; the drawing's highlight; each hung on what only that code adds */
+#minimap .mm-card{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;gap:3px 8px;padding:6px 8px;color:var(--text);pointer-events:none;overflow:hidden;text-align:left}
+#minimap .mm-card[hidden]{display:none}
+#minimap .mm-card .mc-t{grid-column:1;grid-row:1;margin:0;font-size:12.5px;font-weight:650;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#minimap .mm-card .mc-a{grid-column:2;grid-row:1/span 2;width:40px;height:40px}
+#minimap .mm-card .mc-a svg{width:100%;height:100%;display:block}
+#minimap .mm-card .mc-f{grid-column:1;grid-row:2;margin:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:1px 10px;font-size:11px;line-height:1.3;overflow:hidden}
+#minimap .mm-card .mc-f div{display:flex;gap:4px;min-width:0}
+#minimap .mm-card .mc-f dt{color:var(--text-2)}
+#minimap .mm-card .mc-f dd{margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#minimap .mm-card .mc-s{grid-column:1/-1;grid-row:3;margin:0;font-size:11px;line-height:1.3;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#minimap.mm-carded #mmSvg{opacity:.14}
 @media print{body *{visibility:hidden}}
 
 </style>
@@ -397,7 +412,7 @@ body.tf-pages #mmwrap{display:none}
 
 <script>
 'use strict';
-const TF_VERSION = '1.9';
+const TF_VERSION = '1.10';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -2920,7 +2935,7 @@ function drawMinimap() {
   applyMinimapVisibility(); if (!ST().minimap || !P().nodes.length) return;
   const b = boundsOf(P().nodes.filter(visible)); if (b.empty) return;
   const pad = 40; MM = { x: b.x - pad, y: b.y - pad, w: b.w + pad * 2, h: b.h + pad * 2 };
-  const svg = $('#mmSvg'); svg.setAttribute('viewBox', `${rnd(MM.x)} ${rnd(MM.y)} ${rnd(MM.w)} ${rnd(MM.h)}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const svg = $('#mmSvg'), B = mmBox(); svg.setAttribute('viewBox', `${rnd(B.x)} ${rnd(B.y)} ${rnd(B.w)} ${rnd(B.h)}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');   // 1.10: mmBox is MM unless the map's own scale is up
   svg.innerHTML = `<rect x="${MM.x}" y="${MM.y}" width="${MM.w}" height="${MM.h}" fill="${curPal().paper}"/>` + $('#content').innerHTML.replace(/<text[\s\S]*?<\/text>/g, '') + `<rect id="mmView" fill="${curPal().sel}" fill-opacity=".08" stroke="${curPal().sel}" vector-effect="non-scaling-stroke" stroke-width="1.5"/>`;
   drawMinimapViewport();
   if (PREVIEW) drawPreview();   // 1.9: the preview, when an embedding page asked for one
@@ -2928,13 +2943,14 @@ function drawMinimap() {
 function drawMinimapViewport() {
   const v = $('#mmView'); if (!v || !MM) return; const r = svgEl().getBoundingClientRect();
   v.setAttribute('x', rnd(-S.view.x / S.view.k)); v.setAttribute('y', rnd(-S.view.y / S.view.k)); v.setAttribute('width', rnd(r.width / S.view.k)); v.setAttribute('height', rnd(r.height / S.view.k));
+  if (MAPSCALE > 1) mmScaleBox();   // 1.10: a nearer map follows the view
 }
 function initMinimap() {
   const mm = $('#minimap'); let down = false;
   const go = e => {
-    if (!MM) return; const r = mm.getBoundingClientRect(); const sc = Math.min(r.width / MM.w, r.height / MM.h);
-    const ox = (r.width - MM.w * sc) / 2, oy = (r.height - MM.h * sc) / 2;
-    const wx = MM.x + (e.clientX - r.left - ox) / sc, wy = MM.y + (e.clientY - r.top - oy) / sc; const cr = svgEl().getBoundingClientRect();
+    if (!MM) return; const B = mmBox(), r = mm.getBoundingClientRect(); const sc = Math.min(r.width / B.w, r.height / B.h);   // 1.10: the part the map shows
+    const ox = (r.width - B.w * sc) / 2, oy = (r.height - B.h * sc) / 2;
+    const wx = B.x + (e.clientX - r.left - ox) / sc, wy = B.y + (e.clientY - r.top - oy) / sc; const cr = svgEl().getBoundingClientRect();
     S.view.x = cr.width / 2 - wx * S.view.k; S.view.y = cr.height / 2 - wy * S.view.k; applyView();
   };
   mm.addEventListener('pointerdown', e => { down = true; mm.setPointerCapture(e.pointerId); go(e); });
@@ -4121,7 +4137,7 @@ async function loadFromQuery() {
    for any other, and nothing is posted from file://).
    ============================================================ */
 const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
-  'view', 'keys', 'context', 'pagelist', 'map', 'preview'];   // 1.9: the last six, never turned on by 'all' or 'bare'
+  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];   // 1.9: view to preview; 1.10: mapwheel; never turned on by 'all' or 'bare'
 const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
 const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
 const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
@@ -4329,7 +4345,7 @@ function placing(id) { PLACING = id; document.body.classList.toggle('tf-placing'
    its own); each message waits for its own switch: view, keys, context, pagelist. None is in 'all' or 'bare'. ---- */
 let _viewKey = null, _viewT = null, _pagesKey = null, _pagesPrev = null, _wired19 = false, KEYSEQ = null, _lp = null, _lpAt = 0;
 function embed19(was) {
-  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview'].some(k => EMBED[k])) wire19();
+  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'].some(k => EMBED[k])) wire19();
   if (EMBED.view && !was.view) { _viewKey = null; tellView(); }
   if (EMBED.pagelist && !was.pagelist) { _pagesPrev = DOC.pages.map(p => p.name); _pagesKey = JSON.stringify(_pagesPrev); }
   if (!EMBED.keys) KEYSEQ = null;
@@ -4471,6 +4487,7 @@ function embed19b(was) {
   mapFloat(EMBED.map);
   document.body.classList.toggle('tf-preview', EMBED.preview);
   if (!EMBED.preview && was.preview) preview(null, undefined, true);
+  embed110(was);
 }
 function mmSaved() { const o = uiLoad().minimap || {}; const ok = k => Number.isFinite(o[k]); return ok('r') && ok('b') && ok('w') && ok('h') ? { r: o.r, b: o.b, w: o.w, h: o.h } : { ...MMW_DEF }; }
 function mmSave() { const o = uiLoad(); o.minimap = { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h }; try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ } }
@@ -4487,7 +4504,8 @@ function mapFloat(on) {
     wrap.innerHTML = '<div class="mm-handles" role="group" aria-label="Overview map controls">' +
       '<button type="button" class="mm-h mm-size" aria-label="Resize the overview map: drag, or the arrow keys (left and up make it bigger; Shift goes further)"><span aria-hidden="true">⤡</span></button>' +
       '<button type="button" class="mm-h mm-grip" aria-label="Move the overview map: drag, or the arrow keys (Shift goes further)"><span aria-hidden="true">⠿</span> Move</button>' +
-      '<button type="button" class="mm-h mm-pos menu-btn" aria-haspopup="menu" aria-expanded="false">Position</button></div>';
+      '<button type="button" class="mm-h mm-pos menu-btn" aria-haspopup="menu" aria-expanded="false">Position</button>' +
+      '<button type="button" class="mm-h mm-mode menu-btn" aria-haspopup="menu" aria-expanded="false">Mode</button></div>';   // 1.10: Mode
     $('#stage').appendChild(wrap);
     MMW = { wrap, ...mmSaved() };
     const grip = wrap.querySelector('.mm-grip'), size = wrap.querySelector('.mm-size'), pos = wrap.querySelector('.mm-pos');
@@ -4511,6 +4529,15 @@ function mapFloat(on) {
       openMenuAt([{ header: 'Overview map' }, { label: 'Bottom right', action: corner(true, true) }, { label: 'Bottom left', action: corner(false, true) }, { label: 'Top right', action: corner(true, false) }, { label: 'Top left', action: corner(false, false) },
         '-', { label: 'Larger', action: () => mmSize(FL_BIG, Math.round(FL_BIG * 0.7), true) }, { label: 'Smaller', action: () => mmSize(-FL_BIG, -Math.round(FL_BIG * 0.7), true) },
         '-', { label: 'Back to its starting place', action: () => { Object.assign(MMW, MMW_DEF); mmApply(); mmSave(); flSay('The overview map is back in its starting place.'); } }], r.left, r.bottom + 4, pos);
+    });
+    const modeB = wrap.querySelector('.mm-mode');   // 1.10: the map's mode and its own scale, from a menu
+    modeB.addEventListener('click', () => {
+      if (modeB.classList.contains('open')) { closeMenus(); return; }
+      const r = modeB.getBoundingClientRect(), set = m => () => { mapMode(m); flSay(`Overview map: ${m} mode.`); }, sc = n => () => { mapScale(n); flSay(`Overview map: scale ${MAPSCALE}.`); };
+      openMenuAt([{ header: 'Map mode' }, { label: 'Cards: a card about what you point at', checked: MAPMODE === 'cards', action: set('cards') },
+        { label: 'Both: the card, and matches lit in the drawing', checked: MAPMODE === 'both', action: set('both') },
+        { label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') },
+        '-', { header: 'Map scale' }, { label: 'Closer', action: sc(MAPSCALE * 1.5) }, { label: 'Farther', action: sc(MAPSCALE / 1.5) }, { label: 'The whole drawing', checked: MAPSCALE === 1, action: sc(1) }], r.left, r.bottom + 4, modeB);
     });
     // the door handle: shown while the pointer is within 40 pixels of the map or its handles, or one has focus
     document.addEventListener('pointermove', e => {
@@ -4545,12 +4572,13 @@ function previewMatch(what) {
   if (what && typeof what === 'object' && typeof what.kind === 'string') return n => n.type === what.kind;
   return null;
 }
-function preview(what, caption, quiet) {
+function preview(what, opt, quiet) {
   if (!EMBED.preview && !quiet) return false;
-  if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }
+  if (what === null || what === undefined) { PREVIEW = null; drawPreview(); if (!quiet) tellPreview(null); return true; }
   const m = previewMatch(what); if (!m) return false;
-  PREVIEW = { m, what, caption: typeof caption === 'string' ? caption : null };
-  return drawPreview();
+  const o = typeof opt === 'string' ? { caption: opt } : opt && typeof opt === 'object' ? opt : {};   // 1.9: a caption; 1.10: { caption, card }
+  PREVIEW = { m, what, caption: typeof o.caption === 'string' ? o.caption : null, card: cleanCard(o.card) };
+  const r = drawPreview(); tellPreview(r); return r;
 }
 function previewCaption(hits, other) {
   if (PREVIEW.caption !== null) return PREVIEW.caption;
@@ -4564,13 +4592,16 @@ function drawPreview() {
   const svg = $('#mmSvg'), mm = $('#minimap'); let cap = mm.querySelector('.mm-cap');
   const old = svg.querySelector('#mmPrev'); if (old) old.remove();
   svg.classList.remove('mm-dim'); $$('.mm-rest', svg).forEach(g => g.replaceWith(...g.childNodes));
-  if (!PREVIEW) { if (cap) cap.hidden = true; return true; }
+  if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }
   const hits = P().nodes.filter(n => visible(n) && PREVIEW.m(n));
   const other = DOC.pages.reduce((a, pg, i) => a + (i === DOC.cur ? 0 : pg.nodes.filter(PREVIEW.m).length), 0);
   const text = previewCaption(hits, other);
+  const rings = MAPMODE === 'rings', card = rings ? null : cardOf(hits, other, text);
   if (!cap) { cap = document.createElement('div'); cap.className = 'mm-cap'; mm.appendChild(cap); }
-  cap.textContent = text; cap.hidden = false;
-  if (MM && hits.length) {
+  cap.textContent = text; cap.hidden = !(rings && MAPCAP);   // 1.10: the caption goes to the page (topoforge:preview); in the map only when asked
+  drawCard(card, hits);
+  drawHighlight(MAPMODE === 'both' ? hits : null);
+  if (rings && MM && hits.length) {
     const kids = [...svg.childNodes].filter(n => n.id !== 'mmView' && n !== svg.firstChild), rest = document.createElementNS(SVGNS, 'g');
     rest.setAttribute('class', 'mm-rest'); kids.forEach(k => rest.appendChild(k)); svg.insertBefore(rest, svg.querySelector('#mmView'));
     svg.classList.add('mm-dim');
@@ -4578,7 +4609,114 @@ function drawPreview() {
     g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2)}" rx="${rnd(pad)}" fill="${c}" fill-opacity=".28" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
     svg.insertBefore(g, svg.querySelector('#mmView'));
   }
-  return { count: hits.length, other, caption: text, ids: hits.map(n => n.id) };
+  return { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
+}
+/* ---- 1.10: the map's modes, its own scale, and the wheel over it ----
+   mapMode('cards' | 'both' | 'rings'): what a preview shows. cards: a card about what the page points at, in the
+   map (the map fades behind it); both (the default): that card, and the matches highlighted in the drawing itself;
+   rings: the matches ringed in the map (1.9's look; its caption now goes to the page, or stays in the map with
+   { mapCaption: true }). The map's place and size never change with the mode. mapScale(n): the map's own zoom.
+   The switch mapwheel: the wheel over the map zooms the drawing (about the middle of the view); Alt+wheel the map's
+   own scale; Shift+wheel moves the view east and west; Alt+Shift+wheel north and south. */
+const MAP_MODES = ['cards', 'both', 'rings'];
+let MAPMODE = 'both', MAPCAP = false, MAPSCALE = 1, _mapWheelWired = false, _mapStateRead = false;
+function uiPut(k, v) { const o = uiLoad(); o[k] = v; try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ } }
+function mapStateRead() {
+  if (_mapStateRead) return; _mapStateRead = true;
+  const o = uiLoad(), m = o.mapMode || {};
+  if (MAP_MODES.includes(m.mode)) { MAPMODE = m.mode; MAPCAP = !!m.mapCaption; }
+  if (Number.isFinite(o.mapScale)) MAPSCALE = clamp(o.mapScale, 1, 8);
+}
+function embed110(was) {
+  if (EMBED.preview || EMBED.map || EMBED.mapwheel) mapStateRead();
+  if (EMBED.mapwheel && !_mapWheelWired) { _mapWheelWired = true; $('#minimap').addEventListener('wheel', onMapWheel, { passive: false }); }
+  if (MAPSCALE > 1) scheduleMinimap();
+}
+function mapMode(mode, opts) {
+  if (mode === undefined) return { mode: MAPMODE, mapCaption: MAPCAP };
+  if (!MAP_MODES.includes(mode)) return false;
+  const cap = opts && typeof opts === 'object' && 'mapCaption' in opts ? !!opts.mapCaption : MAPCAP;
+  const changed = mode !== MAPMODE || cap !== MAPCAP;
+  MAPMODE = mode; MAPCAP = cap;
+  if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview(); if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap }); }
+  return { mode, mapCaption: cap };
+}
+function mapScale(s) {
+  if (typeof s === 'number' && Number.isFinite(s)) {
+    const n = rnd(clamp(s, 1, 8), 3);
+    if (n !== MAPSCALE) { MAPSCALE = n; uiPut('mapScale', n); drawMinimap(); }
+  }
+  return MAPSCALE;
+}
+// the part of the drawing the map shows: all of it at scale 1; nearer, centred on the view, at a larger scale
+function mmBox() {
+  if (!MM || MAPSCALE <= 1) return MM;
+  const r = svgEl().getBoundingClientRect(), k = S.view.k, cx = (r.width / 2 - S.view.x) / k, cy = (r.height / 2 - S.view.y) / k;
+  const w = MM.w / MAPSCALE, h = MM.h / MAPSCALE;
+  return { x: clamp(cx - w / 2, MM.x, MM.x + MM.w - w), y: clamp(cy - h / 2, MM.y, MM.y + MM.h - h), w, h };
+}
+function mmScaleBox() { const b = mmBox(); if (b) $('#mmSvg').setAttribute('viewBox', `${rnd(b.x)} ${rnd(b.y)} ${rnd(b.w)} ${rnd(b.h)}`); }
+function onMapWheel(e) {
+  if (!EMBED.mapwheel) return;
+  e.preventDefault(); e.stopPropagation();
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+  // Shift+wheel often arrives as deltaX with deltaY 0 (Chromium, Firefox on Windows and Linux): take whichever moved most
+  const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit; if (!d) return;
+  if (e.altKey && e.shiftKey) { S.view.y -= d; applyView(); }
+  else if (e.shiftKey) { S.view.x -= d; applyView(); }
+  else if (e.altKey) mapScale(MAPSCALE * Math.exp(-d * 0.002));
+  else zoomAt(S.view.k * Math.exp(-d * 0.0022));   // about the middle of the view: the map stays a map, the view zooms in place
+  updateStatus(); scheduleMinimap();
+}
+// the card: what the page gave, field by field, over what the app knows; text only (never markup from the page)
+function cleanCard(c) {
+  if (!c || typeof c !== 'object') return null;
+  const t = v => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 200) : null;
+  const facts = Array.isArray(c.facts) ? c.facts.filter(f => Array.isArray(f) && f.length >= 2).slice(0, 8).map(f => [String(f[0]).slice(0, 40), String(f[1]).slice(0, 60)]) : null;
+  const art = c.art === 'matches' || c.art === 'none' ? c.art : c.art && typeof c.art === 'object' && typeof c.art.shape === 'string' && SHAPES[c.art.shape] ? { shape: c.art.shape } : null;
+  return { title: t(c.title), facts, statement: t(c.statement), art };
+}
+function cardOf(hits, other, text) {
+  const w = PREVIEW.what, pc = PREVIEW.card || {}, one = hits.length === 1 ? hits[0] : null;
+  const catName = w && w.category ? (CATS.find(c => c.id === w.category) || {}).name || w.category : w && w.kind ? (SHAPES[w.kind] || {}).name || w.kind : null;
+  const tip = one ? String((one.data || {}).tooltip || (one.data || {}).what || (one.props || {}).notes || '') : '';
+  const facts = [['On this page', String(hits.length)]];
+  if (other) facts.push(['On other pages', String(other)]);
+  if (one) facts.push(['Kind', (SHAPES[one.type] || {}).name || one.type]);
+  else if (catName) facts.push(['Kind', catName]);
+  const art = pc.art || (one ? { shape: one.type } : w && w.kind && SHAPES[w.kind] ? { shape: w.kind } : hits.length ? 'matches' : 'none');
+  return { title: pc.title || PREVIEW.caption || (one ? nodeName(one) : catName || text), facts: pc.facts || facts, statement: pc.statement || tip || text, art };
+}
+function artSVG(art, hits) {
+  if (art && art.shape) return previewSVG(art.shape);
+  if (art === 'matches' && hits.length) {
+    const b = boundsOf(hits), pad = 20, ids = new Set(hits.map(n => n.id));
+    const parts = [...$('#content').querySelectorAll('g[data-id]')].filter(g => ids.has(g.getAttribute('data-id'))).map(g => g.outerHTML.replace(/<text[\s\S]*?<\/text>/g, '')).join('');
+    return `<svg viewBox="${rnd(b.x - pad)} ${rnd(b.y - pad)} ${rnd(b.w + pad * 2)} ${rnd(b.h + pad * 2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${parts}</svg>`;
+  }
+  return '';
+}
+function drawCard(card, hits) {
+  const mm = $('#minimap'); let el = mm.querySelector('.mm-card');
+  if (!card) { if (el) el.hidden = true; mm.classList.remove('mm-carded'); return; }
+  if (!el) { el = document.createElement('div'); el.className = 'mm-card'; el.innerHTML = '<p class="mc-t"></p><div class="mc-a" aria-hidden="true"></div><dl class="mc-f"></dl><p class="mc-s"></p>'; mm.appendChild(el); }
+  el.querySelector('.mc-t').textContent = card.title || '';
+  el.querySelector('.mc-a').innerHTML = artSVG(card.art, hits);   // the app's own pictures only
+  const dl = el.querySelector('.mc-f'); dl.textContent = '';
+  for (const [k, v] of card.facts || []) { const d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; d.append(dt, dd); dl.appendChild(d); }
+  el.querySelector('.mc-s').textContent = card.statement || '';
+  el.hidden = false; mm.classList.add('mm-carded');
+}
+function drawHighlight(hits) {
+  let g = $('#tfHi');
+  if (!hits) { if (g) g.remove(); return; }
+  if (!g) { g = document.createElementNS(SVGNS, 'g'); g.id = 'tfHi'; g.setAttribute('pointer-events', 'none'); $('#world').insertBefore(g, $('#overlay')); }
+  const c = curPal().sel, pad = 8;
+  g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2 + (isDevice(n) ? 18 : 0))}" rx="10" fill="${c}" fill-opacity=".10" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
+}
+function tellPreview(r) {
+  tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card }
+    : { mode: MAPMODE, caption: '', count: 0, other: 0, ids: [], card: null });
 }
 /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
@@ -4705,7 +4843,9 @@ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(
   version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
   commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; },
   // 1.9
-  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, caption) => preview(what, caption) };
+  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, opt) => preview(what, opt),
+  // 1.10
+  mapMode, mapScale };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>

@@ -4,7 +4,29 @@ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
-Version 1.9 (2026-11-02; built in stages on the corwin branch; checked: tests/run.sh,
+Version 1.10 (2026-11-02; checked: tests/run.sh, the project-files check, the
+browser kit and the embedding kit green, with their planted faults; see
+RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+yet)
+
+- The overview map's modes, for a page that shows a preview (Corwin,
+  2026-11-02 12:48): TopoForge.mapMode('cards' | 'both' | 'rings'), both by
+  default.  Rings is 1.9's look: matches ringed in the map; its caption now
+  goes to the page (or stays in the map with { mapCaption: true }).  Cards
+  shows a card about what the page points at (a picture, a title, facts and
+  one sentence), the map fading behind it.  Both shows the card and lights
+  the matches in the drawing itself.  The map keeps its place and size
+  through every mode.  The page may give the card's words with
+  preview(what, { card }); the app fills in what it leaves out.
+- TopoForge.mapScale(n): the map's own zoom, 1 (all of the drawing) to 8.
+  With the map's handles shown, a Mode menu offers the modes and the scale.
+- A new switch, mapwheel: the wheel over the map zooms the drawing,
+  Alt+wheel the map's own scale, Shift+wheel moves the view east and west,
+  Alt+Shift+wheel north and south.
+- New messages, to a parent page of the same origin only: topoforge:preview
+  (the caption and card of each preview) and topoforge:mapmode.
+
+ built in stages on the corwin branch; checked: tests/run.sh,
 the project-files check, the browser kit and the embedding kit green, with their
 planted faults; see RESULT.txt and RESULT-embed.txt in tests/browser/; no release
 packed or signed yet)

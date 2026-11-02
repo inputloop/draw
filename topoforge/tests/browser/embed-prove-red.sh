@@ -68,6 +68,25 @@
 #   tabs-no-filter typing does not narrow the list        -> T4
 #   tabs-fly-down  All's list opens below the strip       -> T4
 #   tabs-ctl-always the controls show when the tabs fit   -> T5
+# 1.10:
+#   wheel-unasked  the wheel works with mapwheel off      -> MW2
+#   wheel-corner   the wheel zooms about the corner       -> MW1
+#   wheel-alt-dead Alt+wheel leaves the map's scale       -> MW3
+#   wheel-deltax   Shift+wheel as deltaX is ignored       -> MW4
+#   wheel-ns-dead  Alt+Shift+wheel moves nothing          -> MW5
+#   mode-default   rings, not both, by default            -> MM1
+#   mode-silent    a mode change is not told              -> MM1
+#   mode-any       any name is taken as a mode            -> MM1
+#   preview-silent preview() tells the page nothing       -> MM1
+#   rings-cap-in   rings keeps the caption in the map     -> MM2
+#   card-no-fade   the map does not fade behind the card  -> MM3
+#   mode-moves-map a mode change resets the map's size    -> MM3
+#   both-no-hi     both lights nothing in the drawing     -> MM4
+#   both-no-clear  preview(null) leaves the highlight     -> MM4
+#   card-markup    the card's title taken as markup       -> MM5
+#   menu-dead      Mode, Rings does nothing               -> MM6
+#   hi-faint       the highlight too faint to see         -> MM7
+#   mode-not-kept  the mode chosen is not kept            -> MM8
 # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
 # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
@@ -80,7 +99,8 @@ command -v node >/dev/null 2>&1 || { echo "embed-prove-red.sh: node not found" >
 mkdir -p "$out" && out=$(cd "$out" && pwd) || exit 2
 run() { # NAME FILE: sets rc and fails (the failing check ids)
   RESULT=$out/RESULT-$1.txt node "$kit" "$2" "$out/out-$1" > "$out/log-$1.txt" 2>&1; rc=$?
-  fails=$(sed -n 's/^FAIL \([A-Z][0-9]*\) .*/\1/p' "$out/RESULT-$1.txt" 2>/dev/null | sort -u | tr '\n' ' ' | sed 's/ $//')
+  # 1.10: a check's id may have two letters (MW1, MM1)
+  fails=$(sed -n 's/^FAIL \([A-Z][A-Z]*[0-9]*\) .*/\1/p' "$out/RESULT-$1.txt" 2>/dev/null | sort -u | tr '\n' ' ' | sed 's/ $//')
 }
 run control "$ix"
 [ "$rc" -eq 0 ] || { echo "embed-prove-red.sh: the control run is not green (exit $rc, failing: ${fails:-none}); nothing proved" >&2; exit 2; }
@@ -146,7 +166,7 @@ plant map-touch     N8 's|^@media (hover:none){#mmwrap .mm-handles{opacity:1 !im
 plant map-contrast  X3 's@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:var(--text);@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:#a0a8b4;@'
 plant map-covered   N9 's@^    if (name === .props. \&\& typeof MMW !== .undefined.*$@@'
 plant prev-redraw   H1 's@^  if (PREVIEW) drawPreview();   // 1.9.*$@@'
-plant prev-no-clear H1 's@if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }@if (what === null || what === undefined) { return true; }@'
+plant prev-no-clear H1 's@if (what === null || what === undefined) { PREVIEW = null; drawPreview(); if (!quiet) tellPreview(null); return true; }@if (what === null || what === undefined) { return true; }@'
 plant prev-unasked  H2 's@if (!EMBED.preview \&\& !quiet) return false;@if (false) return false;@'
 plant prev-box      H3 's@^body.tf-preview #mapbox #minimap{position:relative}$@@'
 # 1.9 (C)
@@ -158,5 +178,24 @@ plant tabs-lost     T3 "s@if (typeof show === 'number' \&\& show >= 0 \&\& show 
 plant tabs-no-filter T4 "s@^  inp.addEventListener('input', draw);\$@@"
 plant tabs-fly-down T4 "s@m.style.top = 'auto'; m.style.bottom = Math.round(innerHeight - r.top + 4) + 'px';@m.style.top = Math.round(r.bottom + 4) + 'px';@"
 plant tabs-ctl-always T5 's@if (!W || total <= W + 0.5) {@if (!W) {@'
+# 1.10
+plant wheel-unasked  MW2 's@^  if (!EMBED.mapwheel) return;$@@'
+plant wheel-corner   MW1 's@else zoomAt(S.view.k \* Math.exp(-d \* 0.0022));@else zoomAt(S.view.k * Math.exp(-d * 0.0022), 0, 0);@'
+plant wheel-alt-dead MW3 's@else if (e.altKey) mapScale(MAPSCALE \* Math.exp(-d \* 0.002));@else if (e.altKey) { }@'
+plant wheel-deltax   MW4 's@const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) \* unit;@const d = e.deltaY * unit;@'
+plant wheel-ns-dead  MW5 's@if (e.altKey \&\& e.shiftKey) { S.view.y -= d; applyView(); }@if (e.altKey \&\& e.shiftKey) { }@'
+plant mode-default   MM1 "s@^let MAPMODE = 'both',@let MAPMODE = 'rings',@"
+plant mode-silent    MM1 "s@ if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap });@@"
+plant mode-any       MM1 's@^  if (!MAP_MODES.includes(mode)) return false;$@@'
+plant preview-silent MM1 's@const r = drawPreview(); tellPreview(r); return r;@const r = drawPreview(); return r;@'
+plant rings-cap-in   MM2 's@cap.hidden = !(rings \&\& MAPCAP);@cap.hidden = !rings;@'
+plant card-no-fade   MM3 's@^#minimap.mm-carded #mmSvg{opacity:.14}$@@'
+plant mode-moves-map MM3 's@^  MAPMODE = mode; MAPCAP = cap;$@  MAPMODE = mode; MAPCAP = cap; if (MMW) { MMW.w = 190; MMW.h = 130; mmApply(); }@'
+plant both-no-hi     MM4 "s@drawHighlight(MAPMODE === 'both' ? hits : null);@drawHighlight(null);@"
+plant both-no-clear  MM4 's@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); return true; }@'
+plant card-markup    MM5 "s@el.querySelector('.mc-t').textContent = card.title || '';@el.querySelector('.mc-t').innerHTML = card.title || '';@"
+plant menu-dead      MM6 "s@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') }@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: () => {} }@"
+plant hi-faint       MM7 's@rx="10" fill="${c}" fill-opacity=".10" stroke="${c}"@rx="10" fill="${c}" fill-opacity=".10" stroke="#e5e7eb"@'
+plant mode-not-kept  MM8 "s@if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview();@if (changed) { drawPreview();@"
 [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
 exit $bad

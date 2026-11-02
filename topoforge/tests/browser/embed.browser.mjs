@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
 // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 checks 2026-11-02.
+// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 and 1.10 checks 2026-11-02.
 //
-// embed.browser.mjs -- the embedding switches (1.8, 1.9) in real Chromium, held to spec/EMBED-v1.md.
+// embed.browser.mjs -- the embedding switches (1.8, 1.9, 1.10) in real Chromium, held to spec/EMBED-v1.md.
 //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
 //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
 //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
@@ -34,7 +34,7 @@ const results = []; let red = 0, at = '';   // at: the check whose steps are run
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
 
 // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
-const VER = '1.9', PREV = '1.8';
+const VER = '1.10', PREV = '1.9';
 function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
   const out = []; let on = false;
   for (const l of patchText.split('\n')) {
@@ -45,15 +45,15 @@ function indexPart(patchText) { // the hunks of one multi-file patch that touch 
 }
 function rebuild(upto) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9'].slice(0, upto)) {
+  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10'].slice(0, upto)) {
     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
   }
   return cur;
 }
-let v17;
-try { v17 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+let v17, v18;
+try { v17 = rebuild(4); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
 
 // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
 const html = fs.readFileSync(file);
@@ -118,7 +118,8 @@ try {
     await c.close(); }
 
   // ---- S: standalone, no switch: the same as the version before ----
-  routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };
+  routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };   // the version before (PREV)
+  routes['/v18.html'] = { type: 'text/html', body: fs.readFileSync(v18) };   // 1.8, the last without the page-tab fix (S4)
   for (const [w, h, dark] of [[1400, 900, false], [1400, 900, true], [1000, 800, false], [800, 700, true]]) {
     const tag = `${w}x${h} ${dark ? 'dark' : 'light'}`;
     const a = await open(A + '/v17.html', { w, h, dark, settle: 1200 }), b = await open(A + '/index.html', { w, h, dark, settle: 1200 });
@@ -129,7 +130,7 @@ try {
     if (w === 1400 && !dark) {
       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
       check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
       check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
     }
     await a.c.close(); await b.c.close();
@@ -374,8 +375,8 @@ try {
   // W1: 'all' and 'bare' mean what they meant in 1.8
   { const { c, p } = await open(A + '/index.html?embed=all,bare');
     const w = await p.evaluate(() => TopoForge.embed());
-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview'];
-    check('W1 ?embed=all and bare turn on none of the 1.9 switches (view, keys, context, pagelist, map, preview); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];
+    check('W1 ?embed=all and bare turn on none of the 1.9 and 1.10 switches (view, keys, context, pagelist, map, preview, mapwheel); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
     await c.close(); }
   // E8: the new messages never reach a parent of another origin
   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
@@ -396,7 +397,7 @@ try {
     await p.mouse.move(far.map.r + 25, far.map.y + 40); await p.waitForTimeout(80); const near = await look();
     const g0 = far.handles[1]; await p.mouse.move(g0.x + 10, g0.y + 8); await p.waitForTimeout(80); const onIt = await look();
     check('N1 ?embed=map: the overview map moves into its own frame; its handles sit outside that frame, hidden while the pointer is far, shown when it comes within reach and while it is on them',
-      far.inWrap && far.handles.length === 3 && outside && far.op === '0' && near.op === '1' && onIt.op === '1', JSON.stringify({ map: far.map, handles: far.handles, far: far.op, near: near.op, onIt: onIt.op }));
+      far.inWrap && far.handles.length === 4 && outside && far.op === '0' && near.op === '1' && onIt.op === '1', JSON.stringify({ map: far.map, handles: far.handles, far: far.op, near: near.op, onIt: onIt.op }));
     await p.mouse.move(200, 200); await p.evaluate(() => document.body.focus());
     let n = 0, hit = null; for (; n < 140 && !hit; n++) { await p.keyboard.press('Tab'); hit = await p.evaluate(() => document.activeElement.closest('#mmwrap') ? document.activeElement.className : null); }
     const kf = await look();
@@ -436,7 +437,7 @@ try {
   // H: the preview
   { const { c, p } = await open(A + '/index.html?embed=preview&load=/fixture.json');
     await p.waitForTimeout(300);
-    const h = await p.evaluate(() => { const ref = P().nodes.find(x => x.text === 'Edge Router').data.tf_ref || TopoForge.story.ensureRefs && '';
+    const h = await p.evaluate(() => { TopoForge.mapMode('rings', { mapCaption: true });   /* 1.9's look, kept as an option in 1.10 */ const ref = P().nodes.find(x => x.text === 'Edge Router').data.tf_ref || TopoForge.story.ensureRefs && '';
       const r1 = TopoForge.preview([P().nodes.find(x => x.text === 'Edge Router').id]);
       const s1 = { rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent, dim: document.querySelector('#mmSvg').classList.contains('mm-dim') };
       const r2 = TopoForge.preview({ category: 'net' }, 'Routers and switches');
@@ -448,7 +449,7 @@ try {
     await p.waitForTimeout(400);
     const after = await p.evaluate(() => ({ rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent }));
     const cl = await p.evaluate(() => { const r = TopoForge.preview(null); return { r, rects: document.querySelectorAll('#mmPrev rect').length, cap: (document.querySelector('#minimap .mm-cap') || {}).hidden, dim: document.querySelector('#mmSvg').classList.contains('mm-dim') }; });
-    check('H1 preview(ids or refs), preview({ category }) and preview({ kind }) ring the matching shapes in the map, dim the rest, and write a caption there; it holds across a redraw; preview(null) clears it',
+    check('H1 (rings mode with mapCaption: the 1.9 look, kept as an option) preview(ids or refs), preview({ category }) and preview({ kind }) ring the matching shapes in the map, dim the rest, and write a caption there; it holds across a redraw; preview(null) clears it',
       h.r1.count === 1 && h.s1.rects === 1 && h.s1.cap === 'Edge Router' && h.s1.dim && h.r2.count === 2 && h.s2.rects === 2 && h.s2.cap === 'Routers and switches' && h.r3.count === 0 && h.s3.rects === 0 && /not on this page/.test(h.s3.cap) &&
       after.rects === 3 && /3 shapes/.test(after.cap) && cl.r === true && cl.rects === 0 && cl.cap === true && !cl.dim, JSON.stringify({ h, after, cl }));
     await c.close(); }
@@ -456,21 +457,23 @@ try {
     const r = await p.evaluate(() => ({ r: TopoForge.preview({ category: 'net' }), rects: document.querySelectorAll('#mmPrev rect').length, cap: !!document.querySelector('.mm-cap') }));
     check('H2 without the preview switch preview() draws nothing and says false', r.r === false && r.rects === 0 && !r.cap, JSON.stringify(r)); await c.close(); }
   { const { c, p } = await open(A + '/index.html?embed=pages,preview&load=/fixture.json');
-    const r = await p.evaluate(() => { const x = TopoForge.preview({ category: 'net' }); const cap = document.querySelector('#mapbox #minimap .mm-cap'), b = cap && cap.getBoundingClientRect(), m = document.querySelector('#mapbox #minimap').getBoundingClientRect(); return { n: x.count, inBox: !!cap, inside: !!b && b.top >= m.top && b.bottom <= m.bottom + 1 && b.width > 20 }; });
+    const r = await p.evaluate(() => { TopoForge.mapMode('rings', { mapCaption: true }); const x = TopoForge.preview({ category: 'net' }); const cap = document.querySelector('#mapbox #minimap .mm-cap'), b = cap && cap.getBoundingClientRect(), m = document.querySelector('#mapbox #minimap').getBoundingClientRect(); return { n: x.count, inBox: !!cap, inside: !!b && b.top >= m.top && b.bottom <= m.bottom + 1 && b.width > 20 }; });
     check('H3 with the pages box, the preview shows in the map inside it', r.n === 2 && r.inBox && r.inside, JSON.stringify(r)); await c.close(); }
 
   // ======== 1.9 (C): page tabs that do not fit (everywhere, standalone too: a fix) ========
   { const [w, h] = [1400, 900];
-    const a = await open(A + '/v17.html?load=/many.json', { w, h, settle: 1400 }), b = await open(A + '/index.html?load=/many.json', { w, h, settle: 1400 });
-    for (const x of [a, b]) await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
+    const a = await open(A + '/v18.html?load=/many.json', { w, h, settle: 1400 }), b = await open(A + '/index.html?load=/many.json', { w, h, settle: 1400 }), a9 = await open(A + '/v17.html?load=/many.json', { w, h, settle: 1400 });
+    for (const x of [a, b, a9]) await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
     const bar = await boxOf(b.p, '#bottombar');
     const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()];
     const [ta, tb] = [await a.p.screenshot({ clip: { x: 0, y: 0, width: w, height: bar.y } }), await b.p.screenshot({ clip: { x: 0, y: 0, width: w, height: bar.y } })];
     const [ba, bb] = [await a.p.screenshot({ clip: { x: 0, y: bar.y, width: w, height: h - bar.y } }), await b.p.screenshot({ clip: { x: 0, y: bar.y, width: w, height: h - bar.y } })];
-    fs.writeFileSync(path.join(outdir, `overflow-${PREV}.png`), ia); fs.writeFileSync(path.join(outdir, `overflow-${VER}.png`), ib);
+    fs.writeFileSync(path.join(outdir, 'overflow-1.8.png'), ia); fs.writeFileSync(path.join(outdir, `overflow-${VER}.png`), ib);
+    const i9 = await a9.p.screenshot(); const d9 = await pixelDiff(i9, ib); await a9.c.close();
+    check(`S5 standalone, 60 pages, ${w}x${h}: ${VER} draws the same pixels as ${PREV}, the whole window`, d9.size && d9.over <= 8 && d9.n <= d9.total / 1000, `${d9.n} of ${d9.total} differ, ${d9.over} by more than 16`);
     const [dTop, dBar] = [await pixelDiff(ta, tb), await pixelDiff(ba, bb)];
     const sb = await a.p.evaluate(() => { const t = document.querySelector('#pagetabs'); return t.scrollWidth - t.clientWidth; });
-    check(`S4 standalone, 60 pages (more tabs than fit), ${w}x${h}: above the bottom bar ${VER} draws the same pixels as ${PREV}; the bottom bar is what changed (in ${PREV} the strip was ${sb} pixels wider than its room, left to the browser to scroll)`,
+    check(`S4 standalone, 60 pages (more tabs than fit), ${w}x${h}: above the bottom bar ${VER} draws the same pixels as 1.8; the bottom bar is what changed, the page-tab fix of 1.9 (in 1.8 the strip was ${sb} pixels wider than its room, left to the browser to scroll)`,
       dTop.size && dTop.over <= 8 && dTop.n <= dTop.total / 1000 && dBar.size && dBar.over > 200, `above: ${dTop.n} of ${dTop.total} differ, ${dTop.over} by more than 16; bottom bar: ${dBar.over} of ${dBar.total} differ by more than 16`);
     const t1 = await b.p.evaluate(() => { const t = document.querySelector('#pagetabs'), tr = t.getBoundingClientRect(), vis = [...t.querySelectorAll('.ptab[data-pi]:not(.add):not([hidden])')];
       return { ovf: getComputedStyle(t).overflowX, bar: t.offsetHeight - t.clientHeight, scrolled: t.scrollLeft, shown: vis.length, n: DOC.pages.length, inside: vis.every(v => { const r = v.getBoundingClientRect(); return r.left >= tr.left - 0.5 && r.right <= tr.right + 0.5; }),
@@ -520,6 +523,73 @@ try {
     const t6 = await p.evaluate(() => ({ ctl: [...document.querySelectorAll('#mapbox #pagetabs .pt-ctl')].map(x => x.textContent), cur: !!document.querySelector('#mapbox .ptab.active:not([hidden])'), list: !!document.querySelector('#mapbox .mp-list') }));
     check('T6 in the 1.8 pages box the tabs that do not fit get ‹ and ›, and its Pages button stays the list of them all', t6.ctl.join('|') === '‹|›' && t6.cur && t6.list, JSON.stringify(t6));
     await c.close(); }
+
+  // ======== 1.10: the wheel over the map, the map's modes, the card, the drawing's highlight ========
+  { const { c, p } = await open(A + '/index.html?embed=map,mapwheel&load=/fixture.json');
+    const st = () => p.evaluate(() => { const r = svgEl().getBoundingClientRect(), v = S.view; return { k: v.k, x: v.x, y: v.y, cx: (r.width / 2 - v.x) / v.k, cy: (r.height / 2 - v.y) / v.k, scale: TopoForge.mapScale(), vb: document.querySelector('#mmSvg').getAttribute('viewBox') }; });
+    const m = await boxOf(p, '#minimap'); await p.mouse.move(m.x + m.w / 2, m.y + m.h / 2);
+    at = 'MW1'; const s0 = await st(); await p.mouse.wheel(0, -200); await p.waitForTimeout(150); const s1 = await st();
+    check('MW1 mapwheel: the wheel over the map zooms the drawing, about the middle of the view (the point there stays put)', s1.k > s0.k * 1.2 && Math.abs(s1.cx - s0.cx) < 1 && Math.abs(s1.cy - s0.cy) < 1 && s1.scale === 1, JSON.stringify({ s0, s1 }));
+    at = 'MW3'; await p.keyboard.down('Alt'); await p.mouse.wheel(0, -300); await p.keyboard.up('Alt'); await p.waitForTimeout(150); const s2 = await st();
+    check('MW3 Alt+wheel over the map changes the map\'s own scale, not the drawing\'s zoom', s2.scale > 1.3 && s2.k === s1.k && s2.vb !== s1.vb && +s2.vb.split(' ')[2] < +s1.vb.split(' ')[2], JSON.stringify({ k: [s1.k, s2.k], scale: s2.scale, vb: [s1.vb, s2.vb] }));
+    at = 'MW4'; await p.keyboard.down('Shift'); await p.mouse.wheel(0, 100); await p.keyboard.up('Shift'); await p.waitForTimeout(100); const s3 = await st();
+    await p.evaluate(() => document.querySelector('#minimap').dispatchEvent(new WheelEvent('wheel', { deltaX: 100, deltaY: 0, shiftKey: true, bubbles: true, cancelable: true }))); const s4 = await st();
+    check('MW4 Shift+wheel moves the view east and west only, whether the wheel arrives as deltaY or (as Shift+wheel often does) as deltaX', Math.abs(s3.x - (s2.x - 100)) < 1 && s3.y === s2.y && Math.abs(s4.x - (s3.x - 100)) < 1 && s4.y === s3.y && s4.k === s2.k, JSON.stringify([s2.x, s3.x, s4.x, s2.y, s4.y]));
+    at = 'MW5'; await p.keyboard.down('Alt'); await p.keyboard.down('Shift'); await p.mouse.wheel(0, 100); await p.keyboard.up('Shift'); await p.keyboard.up('Alt'); await p.waitForTimeout(100); const s5 = await st();
+    check('MW5 Alt+Shift+wheel moves the view north and south only', Math.abs(s5.y - (s4.y - 100)) < 1 && s5.x === s4.x && s5.k === s4.k, JSON.stringify([s4.y, s5.y, s4.x, s5.x]));
+    at = 'MW2'; await p.evaluate(() => TopoForge.embed({ mapwheel: false })); const s6 = await st(); await p.mouse.wheel(0, -200); await p.waitForTimeout(150); const s7 = await st();
+    check('MW2 with the mapwheel switch off the wheel over the map changes nothing', s7.k === s6.k && s7.x === s6.x && s7.y === s6.y && s7.scale === s6.scale, JSON.stringify({ s6, s7 }));
+    await c.close(); }
+  // MM: the modes, the messages, the card, the highlight
+  { const r = await parentRun(A, A + '/index.html?embed=preview,map&load=/fixture.json', async (p, fr) => {
+      await fr.evaluate(() => { window.r = {}; const id = P().nodes.find(x => x.text === 'Edge Router').id; window.r.def = TopoForge.mapMode();
+        window.r.a = TopoForge.mapMode('cards'); window.r.b = TopoForge.mapMode('cards'); window.r.bad = TopoForge.mapMode('nope');
+        window.r.p = TopoForge.preview([id], { card: { title: 'The edge', facts: [['Host', 'gw4'], ['Role', 'edge']], statement: 'Where the shop meets the internet.', art: 'matches' } }); });
+      await p.waitForTimeout(200);
+    }, { after: (p, fr) => fr.evaluate(() => window.r) });
+    const mm = msgs(r.got, 'mapmode'), pv = msgs(r.got, 'preview');
+    check('MM1 mapMode: both by default; mapMode(\'cards\') sets it and tells the page once (topoforge:mapmode), again changes nothing, a wrong name is false; each preview() tells the page its caption and card (topoforge:preview)',
+      r.extra.def.mode === 'both' && r.extra.def.mapCaption === false && r.extra.a.mode === 'cards' && r.extra.bad === false && mm.length === 1 && mm[0].mode === 'cards' && mm[0].mapCaption === false &&
+      pv.length === 1 && pv[0].mode === 'cards' && pv[0].caption === 'Edge Router' && pv[0].count === 1 && pv[0].card && pv[0].card.title === 'The edge' && pv[0].card.facts.length === 2, JSON.stringify({ extra: r.extra, mm, pv })); }
+  { const { c, p } = await open(A + '/index.html?embed=preview,map&load=/fixture.json');
+    const look = () => p.evaluate(() => { const card = document.querySelector('#minimap .mm-card'), cap = document.querySelector('#minimap .mm-cap'), b = document.querySelector('#minimap').getBoundingClientRect();
+      return { map: [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)].join(','), card: !!card && !card.hidden, title: card && card.querySelector('.mc-t').textContent, facts: card ? [...card.querySelectorAll('.mc-f div')].map(d => d.textContent) : [], st: card && card.querySelector('.mc-s').textContent, art: !!(card && card.querySelector('.mc-a svg')),
+        cap: !!cap && !cap.hidden, rings: document.querySelectorAll('#mmPrev rect').length, hi: document.querySelectorAll('#tfHi rect').length, fade: +getComputedStyle(document.querySelector('#mmSvg')).opacity }; });
+    await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.focus('#mmwrap .mm-grip'); await p.keyboard.press('Shift+ArrowUp');   // a place and size of the person's own
+    const own = await look();
+    at = 'MM2'; const id = await p.evaluate(() => P().nodes.find(x => x.text === 'Edge Router').id);
+    await p.evaluate(i => { TopoForge.mapMode('rings'); TopoForge.preview([i]); }, id); const rg = await look();
+    await p.evaluate(() => TopoForge.mapMode('rings', { mapCaption: true })); const rc = await look();
+    check('MM2 rings: the match is ringed in the map, no card, no highlight in the drawing; the caption is not in the map (it goes to the page) unless mapCaption: true',
+      rg.rings === 1 && !rg.card && rg.hi === 0 && !rg.cap && rc.cap, JSON.stringify({ rg, rc }));
+    at = 'MM3'; await p.evaluate(i => { TopoForge.mapMode('cards'); TopoForge.preview([i], { card: { title: 'The edge', facts: [['Host', 'gw4'], ['Role', 'edge']], statement: 'Where the shop meets the internet.' } }); }, id); const cd = await look();
+    check('MM3 cards: the map shows the page\'s card (title, facts, statement, the shape\'s picture), the map fades behind it, nothing is lit in the drawing; the map keeps the place and size the person gave it through every mode',
+      cd.card && cd.title === 'The edge' && cd.facts.join('|') === 'Hostgw4|Roleedge' && cd.st === 'Where the shop meets the internet.' && cd.art && cd.fade < 0.3 && cd.hi === 0 && !cd.cap && [rg.map, rc.map, cd.map].every(m => m === own.map) && own.map.split(',')[2] === '254', JSON.stringify({ cd, maps: [own.map, rg.map, rc.map, cd.map] }));
+    at = 'MM4'; await p.evaluate(i => { TopoForge.mapMode('both'); TopoForge.preview([i]); }, id); const bo = await look();
+    await p.evaluate(() => TopoForge.preview(null)); const cl = await look();
+    check('MM4 both: the match is lit in the drawing itself and the map shows a card the app makes when the page gives none (the name, its facts, what it is); preview(null) clears both and the map no longer fades',
+      bo.hi === 1 && bo.card && bo.title === 'Edge Router' && bo.st === 'Where the shop meets the internet.' && bo.facts.some(f => /^On this page1$/.test(f)) && bo.art && bo.rings === 0 && bo.map === cd.map &&
+      cl.hi === 0 && !cl.card && cl.fade === 1, JSON.stringify({ bo, cl }));
+    at = 'MM5'; const mk = await p.evaluate(i => { TopoForge.preview([i], { card: { title: '<b>bold</b>', facts: [['<i>a</i>', '<img src=x>']], art: '<svg onload=alert(1)>' } }); const c = document.querySelector('#minimap .mm-card'); return { t: c.querySelector('.mc-t').textContent, el: c.querySelectorAll('b, i, img').length, art: c.querySelector('.mc-a').innerHTML.includes('onload') }; }, id);
+    check('MM5 the card\'s words are text, never markup from the page; art is only the app\'s own picture', mk.t === '<b>bold</b>' && mk.el === 0 && !mk.art, JSON.stringify(mk));
+    at = 'MM6'; await p.click('#mmwrap .mm-mode'); const items = await p.evaluate(() => [...document.querySelectorAll('.menu .mi')].map(b => (b.querySelector('.ck').textContent ? '✓' : '') + b.querySelector('.lb').textContent));
+    await p.click('.menu .mi:has-text("Rings")'); const m1 = await p.evaluate(() => TopoForge.mapMode().mode);
+    await p.click('#mmwrap .mm-mode'); await p.click('.menu .mi:has-text("Closer")'); const sc = await p.evaluate(() => TopoForge.mapScale());
+    check('MM6 the map\'s Mode menu offers the three modes (the current one checked) and the map\'s scale, with one pointer', items.length === 6 && items.some(t => t.startsWith('✓Both')) && m1 === 'rings' && sc === 1.5, JSON.stringify({ items, m1, sc }));
+    at = 'MM8'; await p.reload(); await p.waitForFunction(() => window.TopoForge && document.querySelector('#mmwrap')); await p.waitForTimeout(500);
+    const kept = await p.evaluate(() => ({ mode: TopoForge.mapMode().mode, scale: TopoForge.mapScale() }));
+    check('MM8 the mode and the map\'s scale chosen are kept in this browser across a reload', kept.mode === 'rings' && kept.scale === 1.5, JSON.stringify(kept));
+    await c.close(); }
+  for (const dark of [false, true]) {
+    const { c, p } = await open(A + '/index.html?embed=preview&load=/fixture.json', { dark });
+    const k = await p.evaluate(() => { TopoForge.mapMode('both'); TopoForge.preview([P().nodes.find(x => x.text === 'Edge Router').id]);
+      const r = document.querySelector('#tfHi rect'), L = h => { const v = hexToRgb(h).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const a = L(r.getAttribute('stroke')), b = L(curPal().paper); return { stroke: r.getAttribute('stroke'), paper: curPal().paper, ratio: Math.round((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) * 100) / 100, motion: getComputedStyle(r).transitionDuration }; });
+    check(`MM7 the drawing's highlight has at least 3 to 1 contrast with the drawing's paper (WCAG 1.4.11), ${dark ? 'dark' : 'light'}, and does not move`, k.ratio >= 3 && k.motion === '0s', JSON.stringify(k));
+    await c.close();
+  }
+  { const r = await parentRun(B, A + '/index.html?embed=preview&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.preview({ category: 'net' }); }); });
+    check('E9 topoforge:preview and topoforge:mapmode never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
 
   // ---- X: axe with every switch on; reduced motion ----
   for (const dark of [false, true]) {

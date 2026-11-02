@@ -38,7 +38,7 @@ step "prove-red: a changed shape table is caught" tables_red
 # 1.8: the patches from Bryant's 1.5 rebuild the app byte for byte (the index.html part of each patch)
 chain() { # $1 = the app to compare
   cp "$here/../upstream/topoforge-1.5.html" "$tmp/c0.html" || return 2; n=0
-  for p in "$here"/../patches/topoforge-*.patch; do
+  for p in $(ls "$here"/../patches/topoforge-*.patch | sort -V); do   # 1.10: by version, so 1.10 comes after 1.9 (a glob puts it before 1.5)
     awk '/^--- topoforge-/ { on = ($2 ~ /\/index\.html$/) } on' "$p" > "$tmp/c.patch"
     patch -s -o "$tmp/c$((n + 1)).html" "$tmp/c$n.html" "$tmp/c.patch" >/dev/null 2>&1 || { echo "$(basename "$p") does not apply"; return 1; }
     n=$((n + 1))

@@ -5,6 +5,11 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- topology forge (formerly TopoForge) 1.10: the overview map's three modes
+  for a page's preview (a card, the card with the matches lit in the
+  drawing, or rings), the map's own scale, and the wheel over the map.
+  See topoforge/NEWS.
+
 - topology forge (formerly TopoForge) 1.9, by Bryant Frankford, with our
   changes: calls and switches a page that embeds it asked for (the view,
   where the selection is, keys and right clicks for the page, setting a

@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9)
+# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9 and 1.10)
 
 topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
 This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
@@ -220,6 +220,78 @@ small dashboard for what the person is pointing at in the page's own frame (a fi
 The preview holds through redraws and page changes until it is cleared or replaced, and works in all
 three places the map can be: its corner, its own frame (`map`) and the pages box (H3). The caption is not
 a live region: the page that asked for the preview speaks for the thing pointed at.
+
+## Added in 1.10 (still v1): the map's modes, its scale, and the wheel over it
+
+Nothing 1.9 promised changes meaning, except one default a page can set back: a preview's caption now
+goes to the page (below), and the map shows it only with `mapMode('rings', { mapCaption: true })`, which
+is exactly 1.9's look (H1, H3). A page opened on its own is unchanged: it draws the same pixels as 1.9
+(S1).
+
+### Three modes for a preview: `TopoForge.mapMode(mode, { mapCaption })`
+
+`mode` is `'cards'`, `'both'` or `'rings'`, in that order from left to right on a three-place slider;
+**`'both'` (the middle) is the default**. `mapMode()` with no argument reads `{ mode, mapCaption }`; a name
+not in the list changes nothing and returns `false`. Each change is kept in this browser
+(`topoforge.ui.v1`, key `mapMode`) and, with `preview` on, sends `topoforge:mapmode` `{ mode, mapCaption
+}` (only when something changed) (MM1, MM8).
+
+- **rings** (right): the matches are ringed in the map and the rest dimmed, as in 1.9. The caption is not
+  written in the map unless `mapCaption: true`; the page gets it in `topoforge:preview` and may show it in
+  its own echo area (MM2).
+- **cards** (left): the map shows a **card** about what the page points at, and the map fades behind it
+  ("less background"; no lines, frame or texture are added). Nothing is lit in the drawing (MM3).
+- **both** (middle): the same card in the map, and the matches highlighted in the **drawing** itself: a
+  soft fill and a 2.5-pixel outline in the selection colour, at least 3 to 1 against the drawing's paper
+  in both themes, with no motion; it follows redraws and goes with `preview(null)` (MM4, MM7).
+
+The mode never moves or resizes the map: its place, size and corner are the person's (MM3).
+
+### The card: `TopoForge.preview(what, { caption, card })`
+
+The second argument of `preview()` may now be `{ caption, card }` (a string still means a caption).
+`card` is `{ title, facts: [[label, value], ...], statement, art }`, every field optional:
+
+- `title`: the line at the top left;
+- `facts`: up to 8 pairs, shown as small clusters of label and value;
+- `statement`: one short sentence saying what it is;
+- `art`: `{ shape: id }` (that shape's own picture from `shapes()`), `'matches'` (a small drawing of the
+  matching shapes), or `'none'`. Anything else is ignored: art is only ever the app's own picture.
+
+Every word is set as text, never as markup (MM5). What the page leaves out, the app fills in: the title is
+the caption, or the one match's name, or the category's name; the facts are how many are on this page and
+on other pages, and the kind; the statement is the one match's tooltip (its `tooltip`, `what` or notes),
+else the caption; the art is the one match's picture, else a drawing of the matches.
+
+Each `preview()` call (and `preview(null)`) sends `topoforge:preview`: `{ mode, caption, count, other,
+ids, card }` (`card` is the card as shown, or `null` in rings mode; `preview(null)` sends count 0 and an
+empty caption) (MM1). The return value of `preview()` is the same object (with `true` still returned for
+`null`).
+
+### The map's own scale: `TopoForge.mapScale(n)`
+
+`n` from 1 (the whole drawing, as before) to 8. Above 1 the map shows a nearer part of the drawing,
+centred on the view, and follows the view as it moves. `mapScale()` reads it. Kept in this browser
+(`mapScale`) (MM6, MM8). With `map` on, the map's handles gain **Mode**, a menu: the three modes (the
+current one checked) and the map's scale (Closer, Farther, The whole drawing), all with one pointer (MM6).
+
+### The wheel over the map: `mapwheel`
+
+Off unless a page asks (it changes what the wheel does over the map, so it is a switch, not a default).
+With it on, over the map:
+
+| wheel | does |
+|---|---|
+| plain | zooms the drawing about the middle of the view (the map stays a map; to zoom elsewhere, click the map there first) (MW1) |
+| Alt | changes the map's own scale (MW3) |
+| Shift | moves the view east and west (MW4) |
+| Alt+Shift | moves the view north and south (MW5) |
+
+Browsers send Shift+wheel as a sideways wheel (`deltaX`, with `deltaY` 0) on many systems; the app takes
+whichever of the two moved most, so both arrive the same (MW4). Some desktops take Alt+wheel (or Alt with
+the pointer) for themselves before the page sees it; where that happens, the Mode menu's Closer and
+Farther, or `mapScale()`, do the same. With `mapwheel` off the wheel over the map does nothing, as before
+(MW2).
 
 ## Page tabs that do not fit (1.9, everywhere)
 

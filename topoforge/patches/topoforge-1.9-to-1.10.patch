@@ -1,0 +1,765 @@
+--- topoforge-1.9/AUTHORS
++++ topoforge-1.10/AUTHORS
+@@ -13,7 +13,8 @@
+                                           1.8, the embedding switches;
+                                           1.9, more for an embedding page,
+                                           the overview map's handles and
+-                                          preview, page tabs that fit
++                                          preview, page tabs that fit;
++                                          1.10, the map's modes and wheel
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.9/ChangeLog
++++ topoforge-1.10/ChangeLog
+@@ -1,5 +1,36 @@
+ 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
++	topology forge (formerly TopoForge) 1.10: the overview map's modes and
++	the wheel over it (Corwin, c4 q/2026-11-02-minimap-modes, 12:48:
++	"three state slider default in the middle"; "scroll-wheel over the
++	mini-map should change the zoom level of the outer frame").
++	* index.html (TF_VERSION): 1.10.  (header comment): the 1.10 lines.
++	(1.10 CSS): the card and the map's fade.
++	(EMBED_WORDS): mapwheel.
++	(embed19b): calls embed110.
++	(drawMinimap, drawMinimapViewport, initMinimap): the map shows mmBox,
++	which is MM unless the map's own scale is above 1.
++	(preview): takes { caption, card }; tells the page.
++	(drawPreview): the three modes.
++	(mapFloat): the Mode handle and its menu.
++	(MAP_MODES, uiPut, mapStateRead, embed110, mapMode, mapScale, mmBox)
++	(mmScaleBox, onMapWheel, cleanCard, cardOf, artSVG, drawCard)
++	(drawHighlight, tellPreview): New.
++	(window.TopoForge): mapMode, mapScale.
++	* spec/EMBED-v1.md: "Added in 1.10 (still v1)".
++	* tests/browser/embed.browser.mjs: standalone compared with 1.9;
++	MW1-MW5, MM1-MM8, E9; N1 counts four handles; H1 and H3 ask for
++	rings with mapCaption, 1.9's look.
++	* tests/browser/embed-prove-red.sh: eighteen more plants (75); a
++	check's id may have two letters (MW1, MM1), which the old pattern
++	missed, so a two-letter check that failed was read as no failure.
++	* tests/run.sh: the patch chain applies the patches in version order.
++	* RECIPE.org: the index.html row, 1.10.
++	* patches/topoforge-1.9-to-1.10.patch: New.
++	* NEWS, AUTHORS, README.org: 1.10.
++
++2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
+ 	topology forge (formerly TopoForge) 1.9, second stage: the overview
+ 	map moved and resized by handles outside its frame, a preview in it,
+ 	and page tabs that do not fit (Corwin, q/2026-11-02-yes-and: "put
+--- topoforge-1.9/NEWS
++++ topoforge-1.10/NEWS
+@@ -4,7 +4,29 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
+-Version 1.9 (2026-11-02; built in stages on the corwin branch; checked: tests/run.sh,
++Version 1.10 (2026-11-02; checked: tests/run.sh, the project-files check, the
++browser kit and the embedding kit green, with their planted faults; see
++RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
++yet)
++
++- The overview map's modes, for a page that shows a preview (Corwin,
++  2026-11-02 12:48): TopoForge.mapMode('cards' | 'both' | 'rings'), both by
++  default.  Rings is 1.9's look: matches ringed in the map; its caption now
++  goes to the page (or stays in the map with { mapCaption: true }).  Cards
++  shows a card about what the page points at (a picture, a title, facts and
++  one sentence), the map fading behind it.  Both shows the card and lights
++  the matches in the drawing itself.  The map keeps its place and size
++  through every mode.  The page may give the card's words with
++  preview(what, { card }); the app fills in what it leaves out.
++- TopoForge.mapScale(n): the map's own zoom, 1 (all of the drawing) to 8.
++  With the map's handles shown, a Mode menu offers the modes and the scale.
++- A new switch, mapwheel: the wheel over the map zooms the drawing,
++  Alt+wheel the map's own scale, Shift+wheel moves the view east and west,
++  Alt+Shift+wheel north and south.
++- New messages, to a parent page of the same origin only: topoforge:preview
++  (the caption and card of each preview) and topoforge:mapmode.
++
++ built in stages on the corwin branch; checked: tests/run.sh,
+ the project-files check, the browser kit and the embedding kit green, with their
+ planted faults; see RESULT.txt and RESULT-embed.txt in tests/browser/; no release
+ packed or signed yet)
+--- topoforge-1.9/README.org
++++ topoforge-1.10/README.org
+@@ -62,6 +62,9 @@
+   a message when pages change, the overview map moved and resized by handles
+   outside its frame, and a preview in it.  Everywhere: page tabs that do not
+   fit show the ones that do, with ‹, › and a list of all of them.
++- New in 1.10: the overview map's modes for a preview (=mapMode=: cards, both,
++  rings), a card in the map, the matches lit in the drawing, the map's own
++  scale (=mapScale=), and the wheel over the map (=mapwheel=).
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+--- topoforge-1.9/RECIPE.org
++++ topoforge-1.10/RECIPE.org
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.8: Bryant's v1.5 plus our changes (1.6, 1.7, then 1.8) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =patches/topoforge-1.6-to-1.7.patch=, then =patches/topoforge-1.7-to-1.8.patch= turn v1.5 into it byte for byte (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
++| =index.html=                  | v1.10: Bryant's v1.5 plus our changes (1.6 to 1.10) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, then =1.9-to-1.10= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+--- topoforge-1.9/spec/EMBED-v1.md
++++ topoforge-1.10/spec/EMBED-v1.md
+@@ -2,7 +2,7 @@
+ SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ -->
+-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9)
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9 and 1.10)
+ 
+ topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
+ This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
+@@ -221,6 +221,78 @@
+ three places the map can be: its corner, its own frame (`map`) and the pages box (H3). The caption is not
+ a live region: the page that asked for the preview speaks for the thing pointed at.
+ 
++## Added in 1.10 (still v1): the map's modes, its scale, and the wheel over it
++
++Nothing 1.9 promised changes meaning, except one default a page can set back: a preview's caption now
++goes to the page (below), and the map shows it only with `mapMode('rings', { mapCaption: true })`, which
++is exactly 1.9's look (H1, H3). A page opened on its own is unchanged: it draws the same pixels as 1.9
++(S1).
++
++### Three modes for a preview: `TopoForge.mapMode(mode, { mapCaption })`
++
++`mode` is `'cards'`, `'both'` or `'rings'`, in that order from left to right on a three-place slider;
++**`'both'` (the middle) is the default**. `mapMode()` with no argument reads `{ mode, mapCaption }`; a name
++not in the list changes nothing and returns `false`. Each change is kept in this browser
++(`topoforge.ui.v1`, key `mapMode`) and, with `preview` on, sends `topoforge:mapmode` `{ mode, mapCaption
++}` (only when something changed) (MM1, MM8).
++
++- **rings** (right): the matches are ringed in the map and the rest dimmed, as in 1.9. The caption is not
++  written in the map unless `mapCaption: true`; the page gets it in `topoforge:preview` and may show it in
++  its own echo area (MM2).
++- **cards** (left): the map shows a **card** about what the page points at, and the map fades behind it
++  ("less background"; no lines, frame or texture are added). Nothing is lit in the drawing (MM3).
++- **both** (middle): the same card in the map, and the matches highlighted in the **drawing** itself: a
++  soft fill and a 2.5-pixel outline in the selection colour, at least 3 to 1 against the drawing's paper
++  in both themes, with no motion; it follows redraws and goes with `preview(null)` (MM4, MM7).
++
++The mode never moves or resizes the map: its place, size and corner are the person's (MM3).
++
++### The card: `TopoForge.preview(what, { caption, card })`
++
++The second argument of `preview()` may now be `{ caption, card }` (a string still means a caption).
++`card` is `{ title, facts: [[label, value], ...], statement, art }`, every field optional:
++
++- `title`: the line at the top left;
++- `facts`: up to 8 pairs, shown as small clusters of label and value;
++- `statement`: one short sentence saying what it is;
++- `art`: `{ shape: id }` (that shape's own picture from `shapes()`), `'matches'` (a small drawing of the
++  matching shapes), or `'none'`. Anything else is ignored: art is only ever the app's own picture.
++
++Every word is set as text, never as markup (MM5). What the page leaves out, the app fills in: the title is
++the caption, or the one match's name, or the category's name; the facts are how many are on this page and
++on other pages, and the kind; the statement is the one match's tooltip (its `tooltip`, `what` or notes),
++else the caption; the art is the one match's picture, else a drawing of the matches.
++
++Each `preview()` call (and `preview(null)`) sends `topoforge:preview`: `{ mode, caption, count, other,
++ids, card }` (`card` is the card as shown, or `null` in rings mode; `preview(null)` sends count 0 and an
++empty caption) (MM1). The return value of `preview()` is the same object (with `true` still returned for
++`null`).
++
++### The map's own scale: `TopoForge.mapScale(n)`
++
++`n` from 1 (the whole drawing, as before) to 8. Above 1 the map shows a nearer part of the drawing,
++centred on the view, and follows the view as it moves. `mapScale()` reads it. Kept in this browser
++(`mapScale`) (MM6, MM8). With `map` on, the map's handles gain **Mode**, a menu: the three modes (the
++current one checked) and the map's scale (Closer, Farther, The whole drawing), all with one pointer (MM6).
++
++### The wheel over the map: `mapwheel`
++
++Off unless a page asks (it changes what the wheel does over the map, so it is a switch, not a default).
++With it on, over the map:
++
++| wheel | does |
++|---|---|
++| plain | zooms the drawing about the middle of the view (the map stays a map; to zoom elsewhere, click the map there first) (MW1) |
++| Alt | changes the map's own scale (MW3) |
++| Shift | moves the view east and west (MW4) |
++| Alt+Shift | moves the view north and south (MW5) |
++
++Browsers send Shift+wheel as a sideways wheel (`deltaX`, with `deltaY` 0) on many systems; the app takes
++whichever of the two moved most, so both arrive the same (MW4). Some desktops take Alt+wheel (or Alt with
++the pointer) for themselves before the page sees it; where that happens, the Mode menu's Closer and
++Farther, or `mapScale()`, do the same. With `mapwheel` off the wheel over the map does nothing, as before
++(MW2).
++
+ ## Page tabs that do not fit (1.9, everywhere)
+ 
+ This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
+--- topoforge-1.9/tests/browser/embed-prove-red.sh
++++ topoforge-1.10/tests/browser/embed-prove-red.sh
+@@ -68,6 +68,25 @@
+ #   tabs-no-filter typing does not narrow the list        -> T4
+ #   tabs-fly-down  All's list opens below the strip       -> T4
+ #   tabs-ctl-always the controls show when the tabs fit   -> T5
++# 1.10:
++#   wheel-unasked  the wheel works with mapwheel off      -> MW2
++#   wheel-corner   the wheel zooms about the corner       -> MW1
++#   wheel-alt-dead Alt+wheel leaves the map's scale       -> MW3
++#   wheel-deltax   Shift+wheel as deltaX is ignored       -> MW4
++#   wheel-ns-dead  Alt+Shift+wheel moves nothing          -> MW5
++#   mode-default   rings, not both, by default            -> MM1
++#   mode-silent    a mode change is not told              -> MM1
++#   mode-any       any name is taken as a mode            -> MM1
++#   preview-silent preview() tells the page nothing       -> MM1
++#   rings-cap-in   rings keeps the caption in the map     -> MM2
++#   card-no-fade   the map does not fade behind the card  -> MM3
++#   mode-moves-map a mode change resets the map's size    -> MM3
++#   both-no-hi     both lights nothing in the drawing     -> MM4
++#   both-no-clear  preview(null) leaves the highlight     -> MM4
++#   card-markup    the card's title taken as markup       -> MM5
++#   menu-dead      Mode, Rings does nothing               -> MM6
++#   hi-faint       the highlight too faint to see         -> MM7
++#   mode-not-kept  the mode chosen is not kept            -> MM8
+ # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
+ #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
+ # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
+@@ -80,7 +99,8 @@
+ mkdir -p "$out" && out=$(cd "$out" && pwd) || exit 2
+ run() { # NAME FILE: sets rc and fails (the failing check ids)
+   RESULT=$out/RESULT-$1.txt node "$kit" "$2" "$out/out-$1" > "$out/log-$1.txt" 2>&1; rc=$?
+-  fails=$(sed -n 's/^FAIL \([A-Z][0-9]*\) .*/\1/p' "$out/RESULT-$1.txt" 2>/dev/null | sort -u | tr '\n' ' ' | sed 's/ $//')
++  # 1.10: a check's id may have two letters (MW1, MM1)
++  fails=$(sed -n 's/^FAIL \([A-Z][A-Z]*[0-9]*\) .*/\1/p' "$out/RESULT-$1.txt" 2>/dev/null | sort -u | tr '\n' ' ' | sed 's/ $//')
+ }
+ run control "$ix"
+ [ "$rc" -eq 0 ] || { echo "embed-prove-red.sh: the control run is not green (exit $rc, failing: ${fails:-none}); nothing proved" >&2; exit 2; }
+@@ -146,7 +166,7 @@
+ plant map-contrast  X3 's@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:var(--text);@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:#a0a8b4;@'
+ plant map-covered   N9 's@^    if (name === .props. \&\& typeof MMW !== .undefined.*$@@'
+ plant prev-redraw   H1 's@^  if (PREVIEW) drawPreview();   // 1.9.*$@@'
+-plant prev-no-clear H1 's@if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }@if (what === null || what === undefined) { return true; }@'
++plant prev-no-clear H1 's@if (what === null || what === undefined) { PREVIEW = null; drawPreview(); if (!quiet) tellPreview(null); return true; }@if (what === null || what === undefined) { return true; }@'
+ plant prev-unasked  H2 's@if (!EMBED.preview \&\& !quiet) return false;@if (false) return false;@'
+ plant prev-box      H3 's@^body.tf-preview #mapbox #minimap{position:relative}$@@'
+ # 1.9 (C)
+@@ -158,5 +178,24 @@
+ plant tabs-no-filter T4 "s@^  inp.addEventListener('input', draw);\$@@"
+ plant tabs-fly-down T4 "s@m.style.top = 'auto'; m.style.bottom = Math.round(innerHeight - r.top + 4) + 'px';@m.style.top = Math.round(r.bottom + 4) + 'px';@"
+ plant tabs-ctl-always T5 's@if (!W || total <= W + 0.5) {@if (!W) {@'
++# 1.10
++plant wheel-unasked  MW2 's@^  if (!EMBED.mapwheel) return;$@@'
++plant wheel-corner   MW1 's@else zoomAt(S.view.k \* Math.exp(-d \* 0.0022));@else zoomAt(S.view.k * Math.exp(-d * 0.0022), 0, 0);@'
++plant wheel-alt-dead MW3 's@else if (e.altKey) mapScale(MAPSCALE \* Math.exp(-d \* 0.002));@else if (e.altKey) { }@'
++plant wheel-deltax   MW4 's@const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) \* unit;@const d = e.deltaY * unit;@'
++plant wheel-ns-dead  MW5 's@if (e.altKey \&\& e.shiftKey) { S.view.y -= d; applyView(); }@if (e.altKey \&\& e.shiftKey) { }@'
++plant mode-default   MM1 "s@^let MAPMODE = 'both',@let MAPMODE = 'rings',@"
++plant mode-silent    MM1 "s@ if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap });@@"
++plant mode-any       MM1 's@^  if (!MAP_MODES.includes(mode)) return false;$@@'
++plant preview-silent MM1 's@const r = drawPreview(); tellPreview(r); return r;@const r = drawPreview(); return r;@'
++plant rings-cap-in   MM2 's@cap.hidden = !(rings \&\& MAPCAP);@cap.hidden = !rings;@'
++plant card-no-fade   MM3 's@^#minimap.mm-carded #mmSvg{opacity:.14}$@@'
++plant mode-moves-map MM3 's@^  MAPMODE = mode; MAPCAP = cap;$@  MAPMODE = mode; MAPCAP = cap; if (MMW) { MMW.w = 190; MMW.h = 130; mmApply(); }@'
++plant both-no-hi     MM4 "s@drawHighlight(MAPMODE === 'both' ? hits : null);@drawHighlight(null);@"
++plant both-no-clear  MM4 's@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); return true; }@'
++plant card-markup    MM5 "s@el.querySelector('.mc-t').textContent = card.title || '';@el.querySelector('.mc-t').innerHTML = card.title || '';@"
++plant menu-dead      MM6 "s@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') }@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: () => {} }@"
++plant hi-faint       MM7 's@rx="10" fill="${c}" fill-opacity=".10" stroke="${c}"@rx="10" fill="${c}" fill-opacity=".10" stroke="#e5e7eb"@'
++plant mode-not-kept  MM8 "s@if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview();@if (changed) { drawPreview();@"
+ [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
+ exit $bad
+--- topoforge-1.9/tests/browser/embed.browser.mjs
++++ topoforge-1.10/tests/browser/embed.browser.mjs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 checks 2026-11-02.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 and 1.10 checks 2026-11-02.
+ //
+-// embed.browser.mjs -- the embedding switches (1.8, 1.9) in real Chromium, held to spec/EMBED-v1.md.
++// embed.browser.mjs -- the embedding switches (1.8, 1.9, 1.10) in real Chromium, held to spec/EMBED-v1.md.
+ //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+ //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+ //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+@@ -34,7 +34,7 @@
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+ // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+-const VER = '1.9', PREV = '1.8';
++const VER = '1.10', PREV = '1.9';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -45,15 +45,15 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+   }
+   return cur;
+ }
+-let v17;
+-try { v17 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
++let v17, v18;
++try { v17 = rebuild(4); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -118,7 +118,8 @@
+     await c.close(); }
+ 
+   // ---- S: standalone, no switch: the same as the version before ----
+-  routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };
++  routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };   // the version before (PREV)
++  routes['/v18.html'] = { type: 'text/html', body: fs.readFileSync(v18) };   // 1.8, the last without the page-tab fix (S4)
+   for (const [w, h, dark] of [[1400, 900, false], [1400, 900, true], [1000, 800, false], [800, 700, true]]) {
+     const tag = `${w}x${h} ${dark ? 'dark' : 'light'}`;
+     const a = await open(A + '/v17.html', { w, h, dark, settle: 1200 }), b = await open(A + '/index.html', { w, h, dark, settle: 1200 });
+@@ -129,7 +130,7 @@
+     if (w === 1400 && !dark) {
+       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
+       check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
+-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
++      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+       check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
+     }
+     await a.c.close(); await b.c.close();
+@@ -374,8 +375,8 @@
+   // W1: 'all' and 'bare' mean what they meant in 1.8
+   { const { c, p } = await open(A + '/index.html?embed=all,bare');
+     const w = await p.evaluate(() => TopoForge.embed());
+-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview'];
+-    check('W1 ?embed=all and bare turn on none of the 1.9 switches (view, keys, context, pagelist, map, preview); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
++    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];
++    check('W1 ?embed=all and bare turn on none of the 1.9 and 1.10 switches (view, keys, context, pagelist, map, preview, mapwheel); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+     await c.close(); }
+   // E8: the new messages never reach a parent of another origin
+   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
+@@ -396,7 +397,7 @@
+     await p.mouse.move(far.map.r + 25, far.map.y + 40); await p.waitForTimeout(80); const near = await look();
+     const g0 = far.handles[1]; await p.mouse.move(g0.x + 10, g0.y + 8); await p.waitForTimeout(80); const onIt = await look();
+     check('N1 ?embed=map: the overview map moves into its own frame; its handles sit outside that frame, hidden while the pointer is far, shown when it comes within reach and while it is on them',
+-      far.inWrap && far.handles.length === 3 && outside && far.op === '0' && near.op === '1' && onIt.op === '1', JSON.stringify({ map: far.map, handles: far.handles, far: far.op, near: near.op, onIt: onIt.op }));
++      far.inWrap && far.handles.length === 4 && outside && far.op === '0' && near.op === '1' && onIt.op === '1', JSON.stringify({ map: far.map, handles: far.handles, far: far.op, near: near.op, onIt: onIt.op }));
+     await p.mouse.move(200, 200); await p.evaluate(() => document.body.focus());
+     let n = 0, hit = null; for (; n < 140 && !hit; n++) { await p.keyboard.press('Tab'); hit = await p.evaluate(() => document.activeElement.closest('#mmwrap') ? document.activeElement.className : null); }
+     const kf = await look();
+@@ -436,7 +437,7 @@
+   // H: the preview
+   { const { c, p } = await open(A + '/index.html?embed=preview&load=/fixture.json');
+     await p.waitForTimeout(300);
+-    const h = await p.evaluate(() => { const ref = P().nodes.find(x => x.text === 'Edge Router').data.tf_ref || TopoForge.story.ensureRefs && '';
++    const h = await p.evaluate(() => { TopoForge.mapMode('rings', { mapCaption: true });   /* 1.9's look, kept as an option in 1.10 */ const ref = P().nodes.find(x => x.text === 'Edge Router').data.tf_ref || TopoForge.story.ensureRefs && '';
+       const r1 = TopoForge.preview([P().nodes.find(x => x.text === 'Edge Router').id]);
+       const s1 = { rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent, dim: document.querySelector('#mmSvg').classList.contains('mm-dim') };
+       const r2 = TopoForge.preview({ category: 'net' }, 'Routers and switches');
+@@ -448,7 +449,7 @@
+     await p.waitForTimeout(400);
+     const after = await p.evaluate(() => ({ rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent }));
+     const cl = await p.evaluate(() => { const r = TopoForge.preview(null); return { r, rects: document.querySelectorAll('#mmPrev rect').length, cap: (document.querySelector('#minimap .mm-cap') || {}).hidden, dim: document.querySelector('#mmSvg').classList.contains('mm-dim') }; });
+-    check('H1 preview(ids or refs), preview({ category }) and preview({ kind }) ring the matching shapes in the map, dim the rest, and write a caption there; it holds across a redraw; preview(null) clears it',
++    check('H1 (rings mode with mapCaption: the 1.9 look, kept as an option) preview(ids or refs), preview({ category }) and preview({ kind }) ring the matching shapes in the map, dim the rest, and write a caption there; it holds across a redraw; preview(null) clears it',
+       h.r1.count === 1 && h.s1.rects === 1 && h.s1.cap === 'Edge Router' && h.s1.dim && h.r2.count === 2 && h.s2.rects === 2 && h.s2.cap === 'Routers and switches' && h.r3.count === 0 && h.s3.rects === 0 && /not on this page/.test(h.s3.cap) &&
+       after.rects === 3 && /3 shapes/.test(after.cap) && cl.r === true && cl.rects === 0 && cl.cap === true && !cl.dim, JSON.stringify({ h, after, cl }));
+     await c.close(); }
+@@ -456,21 +457,23 @@
+     const r = await p.evaluate(() => ({ r: TopoForge.preview({ category: 'net' }), rects: document.querySelectorAll('#mmPrev rect').length, cap: !!document.querySelector('.mm-cap') }));
+     check('H2 without the preview switch preview() draws nothing and says false', r.r === false && r.rects === 0 && !r.cap, JSON.stringify(r)); await c.close(); }
+   { const { c, p } = await open(A + '/index.html?embed=pages,preview&load=/fixture.json');
+-    const r = await p.evaluate(() => { const x = TopoForge.preview({ category: 'net' }); const cap = document.querySelector('#mapbox #minimap .mm-cap'), b = cap && cap.getBoundingClientRect(), m = document.querySelector('#mapbox #minimap').getBoundingClientRect(); return { n: x.count, inBox: !!cap, inside: !!b && b.top >= m.top && b.bottom <= m.bottom + 1 && b.width > 20 }; });
++    const r = await p.evaluate(() => { TopoForge.mapMode('rings', { mapCaption: true }); const x = TopoForge.preview({ category: 'net' }); const cap = document.querySelector('#mapbox #minimap .mm-cap'), b = cap && cap.getBoundingClientRect(), m = document.querySelector('#mapbox #minimap').getBoundingClientRect(); return { n: x.count, inBox: !!cap, inside: !!b && b.top >= m.top && b.bottom <= m.bottom + 1 && b.width > 20 }; });
+     check('H3 with the pages box, the preview shows in the map inside it', r.n === 2 && r.inBox && r.inside, JSON.stringify(r)); await c.close(); }
+ 
+   // ======== 1.9 (C): page tabs that do not fit (everywhere, standalone too: a fix) ========
+   { const [w, h] = [1400, 900];
+-    const a = await open(A + '/v17.html?load=/many.json', { w, h, settle: 1400 }), b = await open(A + '/index.html?load=/many.json', { w, h, settle: 1400 });
+-    for (const x of [a, b]) await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++    const a = await open(A + '/v18.html?load=/many.json', { w, h, settle: 1400 }), b = await open(A + '/index.html?load=/many.json', { w, h, settle: 1400 }), a9 = await open(A + '/v17.html?load=/many.json', { w, h, settle: 1400 });
++    for (const x of [a, b, a9]) await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
+     const bar = await boxOf(b.p, '#bottombar');
+     const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()];
+     const [ta, tb] = [await a.p.screenshot({ clip: { x: 0, y: 0, width: w, height: bar.y } }), await b.p.screenshot({ clip: { x: 0, y: 0, width: w, height: bar.y } })];
+     const [ba, bb] = [await a.p.screenshot({ clip: { x: 0, y: bar.y, width: w, height: h - bar.y } }), await b.p.screenshot({ clip: { x: 0, y: bar.y, width: w, height: h - bar.y } })];
+-    fs.writeFileSync(path.join(outdir, `overflow-${PREV}.png`), ia); fs.writeFileSync(path.join(outdir, `overflow-${VER}.png`), ib);
++    fs.writeFileSync(path.join(outdir, 'overflow-1.8.png'), ia); fs.writeFileSync(path.join(outdir, `overflow-${VER}.png`), ib);
++    const i9 = await a9.p.screenshot(); const d9 = await pixelDiff(i9, ib); await a9.c.close();
++    check(`S5 standalone, 60 pages, ${w}x${h}: ${VER} draws the same pixels as ${PREV}, the whole window`, d9.size && d9.over <= 8 && d9.n <= d9.total / 1000, `${d9.n} of ${d9.total} differ, ${d9.over} by more than 16`);
+     const [dTop, dBar] = [await pixelDiff(ta, tb), await pixelDiff(ba, bb)];
+     const sb = await a.p.evaluate(() => { const t = document.querySelector('#pagetabs'); return t.scrollWidth - t.clientWidth; });
+-    check(`S4 standalone, 60 pages (more tabs than fit), ${w}x${h}: above the bottom bar ${VER} draws the same pixels as ${PREV}; the bottom bar is what changed (in ${PREV} the strip was ${sb} pixels wider than its room, left to the browser to scroll)`,
++    check(`S4 standalone, 60 pages (more tabs than fit), ${w}x${h}: above the bottom bar ${VER} draws the same pixels as 1.8; the bottom bar is what changed, the page-tab fix of 1.9 (in 1.8 the strip was ${sb} pixels wider than its room, left to the browser to scroll)`,
+       dTop.size && dTop.over <= 8 && dTop.n <= dTop.total / 1000 && dBar.size && dBar.over > 200, `above: ${dTop.n} of ${dTop.total} differ, ${dTop.over} by more than 16; bottom bar: ${dBar.over} of ${dBar.total} differ by more than 16`);
+     const t1 = await b.p.evaluate(() => { const t = document.querySelector('#pagetabs'), tr = t.getBoundingClientRect(), vis = [...t.querySelectorAll('.ptab[data-pi]:not(.add):not([hidden])')];
+       return { ovf: getComputedStyle(t).overflowX, bar: t.offsetHeight - t.clientHeight, scrolled: t.scrollLeft, shown: vis.length, n: DOC.pages.length, inside: vis.every(v => { const r = v.getBoundingClientRect(); return r.left >= tr.left - 0.5 && r.right <= tr.right + 0.5; }),
+@@ -521,6 +524,73 @@
+     check('T6 in the 1.8 pages box the tabs that do not fit get ‹ and ›, and its Pages button stays the list of them all', t6.ctl.join('|') === '‹|›' && t6.cur && t6.list, JSON.stringify(t6));
+     await c.close(); }
+ 
++  // ======== 1.10: the wheel over the map, the map's modes, the card, the drawing's highlight ========
++  { const { c, p } = await open(A + '/index.html?embed=map,mapwheel&load=/fixture.json');
++    const st = () => p.evaluate(() => { const r = svgEl().getBoundingClientRect(), v = S.view; return { k: v.k, x: v.x, y: v.y, cx: (r.width / 2 - v.x) / v.k, cy: (r.height / 2 - v.y) / v.k, scale: TopoForge.mapScale(), vb: document.querySelector('#mmSvg').getAttribute('viewBox') }; });
++    const m = await boxOf(p, '#minimap'); await p.mouse.move(m.x + m.w / 2, m.y + m.h / 2);
++    at = 'MW1'; const s0 = await st(); await p.mouse.wheel(0, -200); await p.waitForTimeout(150); const s1 = await st();
++    check('MW1 mapwheel: the wheel over the map zooms the drawing, about the middle of the view (the point there stays put)', s1.k > s0.k * 1.2 && Math.abs(s1.cx - s0.cx) < 1 && Math.abs(s1.cy - s0.cy) < 1 && s1.scale === 1, JSON.stringify({ s0, s1 }));
++    at = 'MW3'; await p.keyboard.down('Alt'); await p.mouse.wheel(0, -300); await p.keyboard.up('Alt'); await p.waitForTimeout(150); const s2 = await st();
++    check('MW3 Alt+wheel over the map changes the map\'s own scale, not the drawing\'s zoom', s2.scale > 1.3 && s2.k === s1.k && s2.vb !== s1.vb && +s2.vb.split(' ')[2] < +s1.vb.split(' ')[2], JSON.stringify({ k: [s1.k, s2.k], scale: s2.scale, vb: [s1.vb, s2.vb] }));
++    at = 'MW4'; await p.keyboard.down('Shift'); await p.mouse.wheel(0, 100); await p.keyboard.up('Shift'); await p.waitForTimeout(100); const s3 = await st();
++    await p.evaluate(() => document.querySelector('#minimap').dispatchEvent(new WheelEvent('wheel', { deltaX: 100, deltaY: 0, shiftKey: true, bubbles: true, cancelable: true }))); const s4 = await st();
++    check('MW4 Shift+wheel moves the view east and west only, whether the wheel arrives as deltaY or (as Shift+wheel often does) as deltaX', Math.abs(s3.x - (s2.x - 100)) < 1 && s3.y === s2.y && Math.abs(s4.x - (s3.x - 100)) < 1 && s4.y === s3.y && s4.k === s2.k, JSON.stringify([s2.x, s3.x, s4.x, s2.y, s4.y]));
++    at = 'MW5'; await p.keyboard.down('Alt'); await p.keyboard.down('Shift'); await p.mouse.wheel(0, 100); await p.keyboard.up('Shift'); await p.keyboard.up('Alt'); await p.waitForTimeout(100); const s5 = await st();
++    check('MW5 Alt+Shift+wheel moves the view north and south only', Math.abs(s5.y - (s4.y - 100)) < 1 && s5.x === s4.x && s5.k === s4.k, JSON.stringify([s4.y, s5.y, s4.x, s5.x]));
++    at = 'MW2'; await p.evaluate(() => TopoForge.embed({ mapwheel: false })); const s6 = await st(); await p.mouse.wheel(0, -200); await p.waitForTimeout(150); const s7 = await st();
++    check('MW2 with the mapwheel switch off the wheel over the map changes nothing', s7.k === s6.k && s7.x === s6.x && s7.y === s6.y && s7.scale === s6.scale, JSON.stringify({ s6, s7 }));
++    await c.close(); }
++  // MM: the modes, the messages, the card, the highlight
++  { const r = await parentRun(A, A + '/index.html?embed=preview,map&load=/fixture.json', async (p, fr) => {
++      await fr.evaluate(() => { window.r = {}; const id = P().nodes.find(x => x.text === 'Edge Router').id; window.r.def = TopoForge.mapMode();
++        window.r.a = TopoForge.mapMode('cards'); window.r.b = TopoForge.mapMode('cards'); window.r.bad = TopoForge.mapMode('nope');
++        window.r.p = TopoForge.preview([id], { card: { title: 'The edge', facts: [['Host', 'gw4'], ['Role', 'edge']], statement: 'Where the shop meets the internet.', art: 'matches' } }); });
++      await p.waitForTimeout(200);
++    }, { after: (p, fr) => fr.evaluate(() => window.r) });
++    const mm = msgs(r.got, 'mapmode'), pv = msgs(r.got, 'preview');
++    check('MM1 mapMode: both by default; mapMode(\'cards\') sets it and tells the page once (topoforge:mapmode), again changes nothing, a wrong name is false; each preview() tells the page its caption and card (topoforge:preview)',
++      r.extra.def.mode === 'both' && r.extra.def.mapCaption === false && r.extra.a.mode === 'cards' && r.extra.bad === false && mm.length === 1 && mm[0].mode === 'cards' && mm[0].mapCaption === false &&
++      pv.length === 1 && pv[0].mode === 'cards' && pv[0].caption === 'Edge Router' && pv[0].count === 1 && pv[0].card && pv[0].card.title === 'The edge' && pv[0].card.facts.length === 2, JSON.stringify({ extra: r.extra, mm, pv })); }
++  { const { c, p } = await open(A + '/index.html?embed=preview,map&load=/fixture.json');
++    const look = () => p.evaluate(() => { const card = document.querySelector('#minimap .mm-card'), cap = document.querySelector('#minimap .mm-cap'), b = document.querySelector('#minimap').getBoundingClientRect();
++      return { map: [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)].join(','), card: !!card && !card.hidden, title: card && card.querySelector('.mc-t').textContent, facts: card ? [...card.querySelectorAll('.mc-f div')].map(d => d.textContent) : [], st: card && card.querySelector('.mc-s').textContent, art: !!(card && card.querySelector('.mc-a svg')),
++        cap: !!cap && !cap.hidden, rings: document.querySelectorAll('#mmPrev rect').length, hi: document.querySelectorAll('#tfHi rect').length, fade: +getComputedStyle(document.querySelector('#mmSvg')).opacity }; });
++    await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.focus('#mmwrap .mm-grip'); await p.keyboard.press('Shift+ArrowUp');   // a place and size of the person's own
++    const own = await look();
++    at = 'MM2'; const id = await p.evaluate(() => P().nodes.find(x => x.text === 'Edge Router').id);
++    await p.evaluate(i => { TopoForge.mapMode('rings'); TopoForge.preview([i]); }, id); const rg = await look();
++    await p.evaluate(() => TopoForge.mapMode('rings', { mapCaption: true })); const rc = await look();
++    check('MM2 rings: the match is ringed in the map, no card, no highlight in the drawing; the caption is not in the map (it goes to the page) unless mapCaption: true',
++      rg.rings === 1 && !rg.card && rg.hi === 0 && !rg.cap && rc.cap, JSON.stringify({ rg, rc }));
++    at = 'MM3'; await p.evaluate(i => { TopoForge.mapMode('cards'); TopoForge.preview([i], { card: { title: 'The edge', facts: [['Host', 'gw4'], ['Role', 'edge']], statement: 'Where the shop meets the internet.' } }); }, id); const cd = await look();
++    check('MM3 cards: the map shows the page\'s card (title, facts, statement, the shape\'s picture), the map fades behind it, nothing is lit in the drawing; the map keeps the place and size the person gave it through every mode',
++      cd.card && cd.title === 'The edge' && cd.facts.join('|') === 'Hostgw4|Roleedge' && cd.st === 'Where the shop meets the internet.' && cd.art && cd.fade < 0.3 && cd.hi === 0 && !cd.cap && [rg.map, rc.map, cd.map].every(m => m === own.map) && own.map.split(',')[2] === '254', JSON.stringify({ cd, maps: [own.map, rg.map, rc.map, cd.map] }));
++    at = 'MM4'; await p.evaluate(i => { TopoForge.mapMode('both'); TopoForge.preview([i]); }, id); const bo = await look();
++    await p.evaluate(() => TopoForge.preview(null)); const cl = await look();
++    check('MM4 both: the match is lit in the drawing itself and the map shows a card the app makes when the page gives none (the name, its facts, what it is); preview(null) clears both and the map no longer fades',
++      bo.hi === 1 && bo.card && bo.title === 'Edge Router' && bo.st === 'Where the shop meets the internet.' && bo.facts.some(f => /^On this page1$/.test(f)) && bo.art && bo.rings === 0 && bo.map === cd.map &&
++      cl.hi === 0 && !cl.card && cl.fade === 1, JSON.stringify({ bo, cl }));
++    at = 'MM5'; const mk = await p.evaluate(i => { TopoForge.preview([i], { card: { title: '<b>bold</b>', facts: [['<i>a</i>', '<img src=x>']], art: '<svg onload=alert(1)>' } }); const c = document.querySelector('#minimap .mm-card'); return { t: c.querySelector('.mc-t').textContent, el: c.querySelectorAll('b, i, img').length, art: c.querySelector('.mc-a').innerHTML.includes('onload') }; }, id);
++    check('MM5 the card\'s words are text, never markup from the page; art is only the app\'s own picture', mk.t === '<b>bold</b>' && mk.el === 0 && !mk.art, JSON.stringify(mk));
++    at = 'MM6'; await p.click('#mmwrap .mm-mode'); const items = await p.evaluate(() => [...document.querySelectorAll('.menu .mi')].map(b => (b.querySelector('.ck').textContent ? '✓' : '') + b.querySelector('.lb').textContent));
++    await p.click('.menu .mi:has-text("Rings")'); const m1 = await p.evaluate(() => TopoForge.mapMode().mode);
++    await p.click('#mmwrap .mm-mode'); await p.click('.menu .mi:has-text("Closer")'); const sc = await p.evaluate(() => TopoForge.mapScale());
++    check('MM6 the map\'s Mode menu offers the three modes (the current one checked) and the map\'s scale, with one pointer', items.length === 6 && items.some(t => t.startsWith('✓Both')) && m1 === 'rings' && sc === 1.5, JSON.stringify({ items, m1, sc }));
++    at = 'MM8'; await p.reload(); await p.waitForFunction(() => window.TopoForge && document.querySelector('#mmwrap')); await p.waitForTimeout(500);
++    const kept = await p.evaluate(() => ({ mode: TopoForge.mapMode().mode, scale: TopoForge.mapScale() }));
++    check('MM8 the mode and the map\'s scale chosen are kept in this browser across a reload', kept.mode === 'rings' && kept.scale === 1.5, JSON.stringify(kept));
++    await c.close(); }
++  for (const dark of [false, true]) {
++    const { c, p } = await open(A + '/index.html?embed=preview&load=/fixture.json', { dark });
++    const k = await p.evaluate(() => { TopoForge.mapMode('both'); TopoForge.preview([P().nodes.find(x => x.text === 'Edge Router').id]);
++      const r = document.querySelector('#tfHi rect'), L = h => { const v = hexToRgb(h).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
++      const a = L(r.getAttribute('stroke')), b = L(curPal().paper); return { stroke: r.getAttribute('stroke'), paper: curPal().paper, ratio: Math.round((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) * 100) / 100, motion: getComputedStyle(r).transitionDuration }; });
++    check(`MM7 the drawing's highlight has at least 3 to 1 contrast with the drawing's paper (WCAG 1.4.11), ${dark ? 'dark' : 'light'}, and does not move`, k.ratio >= 3 && k.motion === '0s', JSON.stringify(k));
++    await c.close();
++  }
++  { const r = await parentRun(B, A + '/index.html?embed=preview&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.preview({ category: 'net' }); }); });
++    check('E9 topoforge:preview and topoforge:mapmode never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
++
+   // ---- X: axe with every switch on; reduced motion ----
+   for (const dark of [false, true]) {
+     const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist&load=/fixture.json', { dark, reduce: true });
+--- topoforge-1.9/tests/run.sh
++++ topoforge-1.10/tests/run.sh
+@@ -38,7 +38,7 @@
+ # 1.8: the patches from Bryant's 1.5 rebuild the app byte for byte (the index.html part of each patch)
+ chain() { # $1 = the app to compare
+   cp "$here/../upstream/topoforge-1.5.html" "$tmp/c0.html" || return 2; n=0
+-  for p in "$here"/../patches/topoforge-*.patch; do
++  for p in $(ls "$here"/../patches/topoforge-*.patch | sort -V); do   # 1.10: by version, so 1.10 comes after 1.9 (a glob puts it before 1.5)
+     awk '/^--- topoforge-/ { on = ($2 ~ /\/index\.html$/) } on' "$p" > "$tmp/c.patch"
+     patch -s -o "$tmp/c$((n + 1)).html" "$tmp/c$n.html" "$tmp/c.patch" >/dev/null 2>&1 || { echo "$(basename "$p") does not apply"; return 1; }
+     n=$((n + 1))
+--- topoforge-1.9/index.html
++++ topoforge-1.10/index.html
+@@ -14,6 +14,9 @@
+   of them in ?embed=all or bare: TopoForge.view and setView, selectionRect, place(null), setProps (one undo step), the
+   overview map moved and resized by handles outside its frame, a preview in the map; and, everywhere, page tabs that
+   overflow show the ones that fit, with < and > and a list of all of them. By Mentat (for Corwin, claude-opus-5-5).
++  1.10: the map's modes for a preview (mapMode: cards, both, rings; both by default), a card in the map, the matches
++  highlighted in the drawing, the map's own scale (mapScale), and, with the switch mapwheel, the wheel over the map.
++  Nothing changes for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -316,6 +319,18 @@
+ #ptFlyList li.cur{font-weight:600}
+ #ptFlyList li[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+ #ptFlyList li.pt-none{color:var(--text-2);cursor:default}
++/* 1.10: map modes (cards, both, rings) and the card; the drawing's highlight; each hung on what only that code adds */
++#minimap .mm-card{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;gap:3px 8px;padding:6px 8px;color:var(--text);pointer-events:none;overflow:hidden;text-align:left}
++#minimap .mm-card[hidden]{display:none}
++#minimap .mm-card .mc-t{grid-column:1;grid-row:1;margin:0;font-size:12.5px;font-weight:650;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++#minimap .mm-card .mc-a{grid-column:2;grid-row:1/span 2;width:40px;height:40px}
++#minimap .mm-card .mc-a svg{width:100%;height:100%;display:block}
++#minimap .mm-card .mc-f{grid-column:1;grid-row:2;margin:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:1px 10px;font-size:11px;line-height:1.3;overflow:hidden}
++#minimap .mm-card .mc-f div{display:flex;gap:4px;min-width:0}
++#minimap .mm-card .mc-f dt{color:var(--text-2)}
++#minimap .mm-card .mc-f dd{margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++#minimap .mm-card .mc-s{grid-column:1/-1;grid-row:3;margin:0;font-size:11px;line-height:1.3;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
++#minimap.mm-carded #mmSvg{opacity:.14}
+ @media print{body *{visibility:hidden}}
+ 
+ </style>
+@@ -397,7 +412,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.9';
++const TF_VERSION = '1.10';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -2920,7 +2935,7 @@
+   applyMinimapVisibility(); if (!ST().minimap || !P().nodes.length) return;
+   const b = boundsOf(P().nodes.filter(visible)); if (b.empty) return;
+   const pad = 40; MM = { x: b.x - pad, y: b.y - pad, w: b.w + pad * 2, h: b.h + pad * 2 };
+-  const svg = $('#mmSvg'); svg.setAttribute('viewBox', `${rnd(MM.x)} ${rnd(MM.y)} ${rnd(MM.w)} ${rnd(MM.h)}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
++  const svg = $('#mmSvg'), B = mmBox(); svg.setAttribute('viewBox', `${rnd(B.x)} ${rnd(B.y)} ${rnd(B.w)} ${rnd(B.h)}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');   // 1.10: mmBox is MM unless the map's own scale is up
+   svg.innerHTML = `<rect x="${MM.x}" y="${MM.y}" width="${MM.w}" height="${MM.h}" fill="${curPal().paper}"/>` + $('#content').innerHTML.replace(/<text[\s\S]*?<\/text>/g, '') + `<rect id="mmView" fill="${curPal().sel}" fill-opacity=".08" stroke="${curPal().sel}" vector-effect="non-scaling-stroke" stroke-width="1.5"/>`;
+   drawMinimapViewport();
+   if (PREVIEW) drawPreview();   // 1.9: the preview, when an embedding page asked for one
+@@ -2928,13 +2943,14 @@
+ function drawMinimapViewport() {
+   const v = $('#mmView'); if (!v || !MM) return; const r = svgEl().getBoundingClientRect();
+   v.setAttribute('x', rnd(-S.view.x / S.view.k)); v.setAttribute('y', rnd(-S.view.y / S.view.k)); v.setAttribute('width', rnd(r.width / S.view.k)); v.setAttribute('height', rnd(r.height / S.view.k));
++  if (MAPSCALE > 1) mmScaleBox();   // 1.10: a nearer map follows the view
+ }
+ function initMinimap() {
+   const mm = $('#minimap'); let down = false;
+   const go = e => {
+-    if (!MM) return; const r = mm.getBoundingClientRect(); const sc = Math.min(r.width / MM.w, r.height / MM.h);
+-    const ox = (r.width - MM.w * sc) / 2, oy = (r.height - MM.h * sc) / 2;
+-    const wx = MM.x + (e.clientX - r.left - ox) / sc, wy = MM.y + (e.clientY - r.top - oy) / sc; const cr = svgEl().getBoundingClientRect();
++    if (!MM) return; const B = mmBox(), r = mm.getBoundingClientRect(); const sc = Math.min(r.width / B.w, r.height / B.h);   // 1.10: the part the map shows
++    const ox = (r.width - B.w * sc) / 2, oy = (r.height - B.h * sc) / 2;
++    const wx = B.x + (e.clientX - r.left - ox) / sc, wy = B.y + (e.clientY - r.top - oy) / sc; const cr = svgEl().getBoundingClientRect();
+     S.view.x = cr.width / 2 - wx * S.view.k; S.view.y = cr.height / 2 - wy * S.view.k; applyView();
+   };
+   mm.addEventListener('pointerdown', e => { down = true; mm.setPointerCapture(e.pointerId); go(e); });
+@@ -4121,7 +4137,7 @@
+    for any other, and nothing is posted from file://).
+    ============================================================ */
+ const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
+-  'view', 'keys', 'context', 'pagelist', 'map', 'preview'];   // 1.9: the last six, never turned on by 'all' or 'bare'
++  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];   // 1.9: view to preview; 1.10: mapwheel; never turned on by 'all' or 'bare'
+ const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
+ const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+ const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
+@@ -4329,7 +4345,7 @@
+    its own); each message waits for its own switch: view, keys, context, pagelist. None is in 'all' or 'bare'. ---- */
+ let _viewKey = null, _viewT = null, _pagesKey = null, _pagesPrev = null, _wired19 = false, KEYSEQ = null, _lp = null, _lpAt = 0;
+ function embed19(was) {
+-  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview'].some(k => EMBED[k])) wire19();
++  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'].some(k => EMBED[k])) wire19();
+   if (EMBED.view && !was.view) { _viewKey = null; tellView(); }
+   if (EMBED.pagelist && !was.pagelist) { _pagesPrev = DOC.pages.map(p => p.name); _pagesKey = JSON.stringify(_pagesPrev); }
+   if (!EMBED.keys) KEYSEQ = null;
+@@ -4471,6 +4487,7 @@
+   mapFloat(EMBED.map);
+   document.body.classList.toggle('tf-preview', EMBED.preview);
+   if (!EMBED.preview && was.preview) preview(null, undefined, true);
++  embed110(was);
+ }
+ function mmSaved() { const o = uiLoad().minimap || {}; const ok = k => Number.isFinite(o[k]); return ok('r') && ok('b') && ok('w') && ok('h') ? { r: o.r, b: o.b, w: o.w, h: o.h } : { ...MMW_DEF }; }
+ function mmSave() { const o = uiLoad(); o.minimap = { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h }; try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ } }
+@@ -4487,7 +4504,8 @@
+     wrap.innerHTML = '<div class="mm-handles" role="group" aria-label="Overview map controls">' +
+       '<button type="button" class="mm-h mm-size" aria-label="Resize the overview map: drag, or the arrow keys (left and up make it bigger; Shift goes further)"><span aria-hidden="true">⤡</span></button>' +
+       '<button type="button" class="mm-h mm-grip" aria-label="Move the overview map: drag, or the arrow keys (Shift goes further)"><span aria-hidden="true">⠿</span> Move</button>' +
+-      '<button type="button" class="mm-h mm-pos menu-btn" aria-haspopup="menu" aria-expanded="false">Position</button></div>';
++      '<button type="button" class="mm-h mm-pos menu-btn" aria-haspopup="menu" aria-expanded="false">Position</button>' +
++      '<button type="button" class="mm-h mm-mode menu-btn" aria-haspopup="menu" aria-expanded="false">Mode</button></div>';   // 1.10: Mode
+     $('#stage').appendChild(wrap);
+     MMW = { wrap, ...mmSaved() };
+     const grip = wrap.querySelector('.mm-grip'), size = wrap.querySelector('.mm-size'), pos = wrap.querySelector('.mm-pos');
+@@ -4512,6 +4530,15 @@
+         '-', { label: 'Larger', action: () => mmSize(FL_BIG, Math.round(FL_BIG * 0.7), true) }, { label: 'Smaller', action: () => mmSize(-FL_BIG, -Math.round(FL_BIG * 0.7), true) },
+         '-', { label: 'Back to its starting place', action: () => { Object.assign(MMW, MMW_DEF); mmApply(); mmSave(); flSay('The overview map is back in its starting place.'); } }], r.left, r.bottom + 4, pos);
+     });
++    const modeB = wrap.querySelector('.mm-mode');   // 1.10: the map's mode and its own scale, from a menu
++    modeB.addEventListener('click', () => {
++      if (modeB.classList.contains('open')) { closeMenus(); return; }
++      const r = modeB.getBoundingClientRect(), set = m => () => { mapMode(m); flSay(`Overview map: ${m} mode.`); }, sc = n => () => { mapScale(n); flSay(`Overview map: scale ${MAPSCALE}.`); };
++      openMenuAt([{ header: 'Map mode' }, { label: 'Cards: a card about what you point at', checked: MAPMODE === 'cards', action: set('cards') },
++        { label: 'Both: the card, and matches lit in the drawing', checked: MAPMODE === 'both', action: set('both') },
++        { label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') },
++        '-', { header: 'Map scale' }, { label: 'Closer', action: sc(MAPSCALE * 1.5) }, { label: 'Farther', action: sc(MAPSCALE / 1.5) }, { label: 'The whole drawing', checked: MAPSCALE === 1, action: sc(1) }], r.left, r.bottom + 4, modeB);
++    });
+     // the door handle: shown while the pointer is within 40 pixels of the map or its handles, or one has focus
+     document.addEventListener('pointermove', e => {
+       if (!MMW || !EMBED.map) return; const b = MMW.wrap.getBoundingClientRect(), near = 40;
+@@ -4545,12 +4572,13 @@
+   if (what && typeof what === 'object' && typeof what.kind === 'string') return n => n.type === what.kind;
+   return null;
+ }
+-function preview(what, caption, quiet) {
++function preview(what, opt, quiet) {
+   if (!EMBED.preview && !quiet) return false;
+-  if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }
++  if (what === null || what === undefined) { PREVIEW = null; drawPreview(); if (!quiet) tellPreview(null); return true; }
+   const m = previewMatch(what); if (!m) return false;
+-  PREVIEW = { m, what, caption: typeof caption === 'string' ? caption : null };
+-  return drawPreview();
++  const o = typeof opt === 'string' ? { caption: opt } : opt && typeof opt === 'object' ? opt : {};   // 1.9: a caption; 1.10: { caption, card }
++  PREVIEW = { m, what, caption: typeof o.caption === 'string' ? o.caption : null, card: cleanCard(o.card) };
++  const r = drawPreview(); tellPreview(r); return r;
+ }
+ function previewCaption(hits, other) {
+   if (PREVIEW.caption !== null) return PREVIEW.caption;
+@@ -4564,13 +4592,16 @@
+   const svg = $('#mmSvg'), mm = $('#minimap'); let cap = mm.querySelector('.mm-cap');
+   const old = svg.querySelector('#mmPrev'); if (old) old.remove();
+   svg.classList.remove('mm-dim'); $$('.mm-rest', svg).forEach(g => g.replaceWith(...g.childNodes));
+-  if (!PREVIEW) { if (cap) cap.hidden = true; return true; }
++  if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }
+   const hits = P().nodes.filter(n => visible(n) && PREVIEW.m(n));
+   const other = DOC.pages.reduce((a, pg, i) => a + (i === DOC.cur ? 0 : pg.nodes.filter(PREVIEW.m).length), 0);
+   const text = previewCaption(hits, other);
++  const rings = MAPMODE === 'rings', card = rings ? null : cardOf(hits, other, text);
+   if (!cap) { cap = document.createElement('div'); cap.className = 'mm-cap'; mm.appendChild(cap); }
+-  cap.textContent = text; cap.hidden = false;
+-  if (MM && hits.length) {
++  cap.textContent = text; cap.hidden = !(rings && MAPCAP);   // 1.10: the caption goes to the page (topoforge:preview); in the map only when asked
++  drawCard(card, hits);
++  drawHighlight(MAPMODE === 'both' ? hits : null);
++  if (rings && MM && hits.length) {
+     const kids = [...svg.childNodes].filter(n => n.id !== 'mmView' && n !== svg.firstChild), rest = document.createElementNS(SVGNS, 'g');
+     rest.setAttribute('class', 'mm-rest'); kids.forEach(k => rest.appendChild(k)); svg.insertBefore(rest, svg.querySelector('#mmView'));
+     svg.classList.add('mm-dim');
+@@ -4578,7 +4609,114 @@
+     g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2)}" rx="${rnd(pad)}" fill="${c}" fill-opacity=".28" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
+     svg.insertBefore(g, svg.querySelector('#mmView'));
+   }
+-  return { count: hits.length, other, caption: text, ids: hits.map(n => n.id) };
++  return { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
++}
++/* ---- 1.10: the map's modes, its own scale, and the wheel over it ----
++   mapMode('cards' | 'both' | 'rings'): what a preview shows. cards: a card about what the page points at, in the
++   map (the map fades behind it); both (the default): that card, and the matches highlighted in the drawing itself;
++   rings: the matches ringed in the map (1.9's look; its caption now goes to the page, or stays in the map with
++   { mapCaption: true }). The map's place and size never change with the mode. mapScale(n): the map's own zoom.
++   The switch mapwheel: the wheel over the map zooms the drawing (about the middle of the view); Alt+wheel the map's
++   own scale; Shift+wheel moves the view east and west; Alt+Shift+wheel north and south. */
++const MAP_MODES = ['cards', 'both', 'rings'];
++let MAPMODE = 'both', MAPCAP = false, MAPSCALE = 1, _mapWheelWired = false, _mapStateRead = false;
++function uiPut(k, v) { const o = uiLoad(); o[k] = v; try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ } }
++function mapStateRead() {
++  if (_mapStateRead) return; _mapStateRead = true;
++  const o = uiLoad(), m = o.mapMode || {};
++  if (MAP_MODES.includes(m.mode)) { MAPMODE = m.mode; MAPCAP = !!m.mapCaption; }
++  if (Number.isFinite(o.mapScale)) MAPSCALE = clamp(o.mapScale, 1, 8);
++}
++function embed110(was) {
++  if (EMBED.preview || EMBED.map || EMBED.mapwheel) mapStateRead();
++  if (EMBED.mapwheel && !_mapWheelWired) { _mapWheelWired = true; $('#minimap').addEventListener('wheel', onMapWheel, { passive: false }); }
++  if (MAPSCALE > 1) scheduleMinimap();
++}
++function mapMode(mode, opts) {
++  if (mode === undefined) return { mode: MAPMODE, mapCaption: MAPCAP };
++  if (!MAP_MODES.includes(mode)) return false;
++  const cap = opts && typeof opts === 'object' && 'mapCaption' in opts ? !!opts.mapCaption : MAPCAP;
++  const changed = mode !== MAPMODE || cap !== MAPCAP;
++  MAPMODE = mode; MAPCAP = cap;
++  if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview(); if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap }); }
++  return { mode, mapCaption: cap };
++}
++function mapScale(s) {
++  if (typeof s === 'number' && Number.isFinite(s)) {
++    const n = rnd(clamp(s, 1, 8), 3);
++    if (n !== MAPSCALE) { MAPSCALE = n; uiPut('mapScale', n); drawMinimap(); }
++  }
++  return MAPSCALE;
++}
++// the part of the drawing the map shows: all of it at scale 1; nearer, centred on the view, at a larger scale
++function mmBox() {
++  if (!MM || MAPSCALE <= 1) return MM;
++  const r = svgEl().getBoundingClientRect(), k = S.view.k, cx = (r.width / 2 - S.view.x) / k, cy = (r.height / 2 - S.view.y) / k;
++  const w = MM.w / MAPSCALE, h = MM.h / MAPSCALE;
++  return { x: clamp(cx - w / 2, MM.x, MM.x + MM.w - w), y: clamp(cy - h / 2, MM.y, MM.y + MM.h - h), w, h };
++}
++function mmScaleBox() { const b = mmBox(); if (b) $('#mmSvg').setAttribute('viewBox', `${rnd(b.x)} ${rnd(b.y)} ${rnd(b.w)} ${rnd(b.h)}`); }
++function onMapWheel(e) {
++  if (!EMBED.mapwheel) return;
++  e.preventDefault(); e.stopPropagation();
++  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
++  // Shift+wheel often arrives as deltaX with deltaY 0 (Chromium, Firefox on Windows and Linux): take whichever moved most
++  const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit; if (!d) return;
++  if (e.altKey && e.shiftKey) { S.view.y -= d; applyView(); }
++  else if (e.shiftKey) { S.view.x -= d; applyView(); }
++  else if (e.altKey) mapScale(MAPSCALE * Math.exp(-d * 0.002));
++  else zoomAt(S.view.k * Math.exp(-d * 0.0022));   // about the middle of the view: the map stays a map, the view zooms in place
++  updateStatus(); scheduleMinimap();
++}
++// the card: what the page gave, field by field, over what the app knows; text only (never markup from the page)
++function cleanCard(c) {
++  if (!c || typeof c !== 'object') return null;
++  const t = v => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 200) : null;
++  const facts = Array.isArray(c.facts) ? c.facts.filter(f => Array.isArray(f) && f.length >= 2).slice(0, 8).map(f => [String(f[0]).slice(0, 40), String(f[1]).slice(0, 60)]) : null;
++  const art = c.art === 'matches' || c.art === 'none' ? c.art : c.art && typeof c.art === 'object' && typeof c.art.shape === 'string' && SHAPES[c.art.shape] ? { shape: c.art.shape } : null;
++  return { title: t(c.title), facts, statement: t(c.statement), art };
++}
++function cardOf(hits, other, text) {
++  const w = PREVIEW.what, pc = PREVIEW.card || {}, one = hits.length === 1 ? hits[0] : null;
++  const catName = w && w.category ? (CATS.find(c => c.id === w.category) || {}).name || w.category : w && w.kind ? (SHAPES[w.kind] || {}).name || w.kind : null;
++  const tip = one ? String((one.data || {}).tooltip || (one.data || {}).what || (one.props || {}).notes || '') : '';
++  const facts = [['On this page', String(hits.length)]];
++  if (other) facts.push(['On other pages', String(other)]);
++  if (one) facts.push(['Kind', (SHAPES[one.type] || {}).name || one.type]);
++  else if (catName) facts.push(['Kind', catName]);
++  const art = pc.art || (one ? { shape: one.type } : w && w.kind && SHAPES[w.kind] ? { shape: w.kind } : hits.length ? 'matches' : 'none');
++  return { title: pc.title || PREVIEW.caption || (one ? nodeName(one) : catName || text), facts: pc.facts || facts, statement: pc.statement || tip || text, art };
++}
++function artSVG(art, hits) {
++  if (art && art.shape) return previewSVG(art.shape);
++  if (art === 'matches' && hits.length) {
++    const b = boundsOf(hits), pad = 20, ids = new Set(hits.map(n => n.id));
++    const parts = [...$('#content').querySelectorAll('g[data-id]')].filter(g => ids.has(g.getAttribute('data-id'))).map(g => g.outerHTML.replace(/<text[\s\S]*?<\/text>/g, '')).join('');
++    return `<svg viewBox="${rnd(b.x - pad)} ${rnd(b.y - pad)} ${rnd(b.w + pad * 2)} ${rnd(b.h + pad * 2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${parts}</svg>`;
++  }
++  return '';
++}
++function drawCard(card, hits) {
++  const mm = $('#minimap'); let el = mm.querySelector('.mm-card');
++  if (!card) { if (el) el.hidden = true; mm.classList.remove('mm-carded'); return; }
++  if (!el) { el = document.createElement('div'); el.className = 'mm-card'; el.innerHTML = '<p class="mc-t"></p><div class="mc-a" aria-hidden="true"></div><dl class="mc-f"></dl><p class="mc-s"></p>'; mm.appendChild(el); }
++  el.querySelector('.mc-t').textContent = card.title || '';
++  el.querySelector('.mc-a').innerHTML = artSVG(card.art, hits);   // the app's own pictures only
++  const dl = el.querySelector('.mc-f'); dl.textContent = '';
++  for (const [k, v] of card.facts || []) { const d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; d.append(dt, dd); dl.appendChild(d); }
++  el.querySelector('.mc-s').textContent = card.statement || '';
++  el.hidden = false; mm.classList.add('mm-carded');
++}
++function drawHighlight(hits) {
++  let g = $('#tfHi');
++  if (!hits) { if (g) g.remove(); return; }
++  if (!g) { g = document.createElementNS(SVGNS, 'g'); g.id = 'tfHi'; g.setAttribute('pointer-events', 'none'); $('#world').insertBefore(g, $('#overlay')); }
++  const c = curPal().sel, pad = 8;
++  g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2 + (isDevice(n) ? 18 : 0))}" rx="10" fill="${c}" fill-opacity=".10" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
++}
++function tellPreview(r) {
++  tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card }
++    : { mode: MAPMODE, caption: '', count: 0, other: 0, ids: [], card: null });
+ }
+ /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
+    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
+@@ -4705,7 +4843,9 @@
+   version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
+   commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; },
+   // 1.9
+-  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, caption) => preview(what, caption) };
++  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, opt) => preview(what, opt),
++  // 1.10
++  mapMode, mapScale };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

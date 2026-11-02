@@ -1,5 +1,36 @@
 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.10: the overview map's modes and
+	the wheel over it (Corwin, c4 q/2026-11-02-minimap-modes, 12:48:
+	"three state slider default in the middle"; "scroll-wheel over the
+	mini-map should change the zoom level of the outer frame").
+	* index.html (TF_VERSION): 1.10.  (header comment): the 1.10 lines.
+	(1.10 CSS): the card and the map's fade.
+	(EMBED_WORDS): mapwheel.
+	(embed19b): calls embed110.
+	(drawMinimap, drawMinimapViewport, initMinimap): the map shows mmBox,
+	which is MM unless the map's own scale is above 1.
+	(preview): takes { caption, card }; tells the page.
+	(drawPreview): the three modes.
+	(mapFloat): the Mode handle and its menu.
+	(MAP_MODES, uiPut, mapStateRead, embed110, mapMode, mapScale, mmBox)
+	(mmScaleBox, onMapWheel, cleanCard, cardOf, artSVG, drawCard)
+	(drawHighlight, tellPreview): New.
+	(window.TopoForge): mapMode, mapScale.
+	* spec/EMBED-v1.md: "Added in 1.10 (still v1)".
+	* tests/browser/embed.browser.mjs: standalone compared with 1.9;
+	MW1-MW5, MM1-MM8, E9; N1 counts four handles; H1 and H3 ask for
+	rings with mapCaption, 1.9's look.
+	* tests/browser/embed-prove-red.sh: eighteen more plants (75); a
+	check's id may have two letters (MW1, MM1), which the old pattern
+	missed, so a two-letter check that failed was read as no failure.
+	* tests/run.sh: the patch chain applies the patches in version order.
+	* RECIPE.org: the index.html row, 1.10.
+	* patches/topoforge-1.9-to-1.10.patch: New.
+	* NEWS, AUTHORS, README.org: 1.10.
+
+2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
 	topology forge (formerly TopoForge) 1.9, second stage: the overview
 	map moved and resized by handles outside its frame, a preview in it,
 	and page tabs that do not fit (Corwin, q/2026-11-02-yes-and: "put
