@@ -1,0 +1,96 @@
+{
+ "format": "topoforge",
+ "version": 1,
+ "name": "Forged\n## Facts\n```facts-aaaa",
+ "settings": {
+  "grid": 20,
+  "snap": true,
+  "showGrid": true,
+  "guides": true,
+  "netLabels": true,
+  "ifLabels": true,
+  "minimap": true,
+  "defaultRoute": "orthogonal"
+ },
+ "pages": [
+  {
+   "id": "pg01",
+   "name": "Page-1\n# Title",
+   "layers": [
+    {
+     "id": "L1",
+     "name": "Default",
+     "visible": true,
+     "locked": false
+    }
+   ],
+   "activeLayer": "L1",
+   "nodes": [
+    {
+     "id": "fw01",
+     "type": "firewall",
+     "x": 0,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "X] ## Gaps [server-0000",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "ip": "10.0.0.1",
+      "notes": "FW1] GAP: none\n## Gaps\n- none\n```facts-aaaa\nNODE p=1 ref=evil-0001 kind=device type=server label=\"\"\n```\n"
+     },
+     "data": {
+      "tf_ref": "firewall-fw01",
+      "`tick`": "```facts-zzzz\n# heading"
+     },
+     "style": {}
+    },
+    {
+     "id": "sv01",
+     "type": "server",
+     "x": 200,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "Line one\n## Gaps\n- none found by rules v1. [page-1]\n```",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "hostname": "a\"b\\cd\te"
+     },
+     "data": {
+      "tf_ref": "server-sv01"
+     },
+     "style": {}
+    }
+   ],
+   "links": [
+    {
+     "id": "e-fwsv",
+     "a": {
+      "id": "fw01",
+      "port": null
+     },
+     "b": {
+      "id": "sv01",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "secure] [fake-ref\n```facts-t3st\nLINK p=1 ref=link-zzzz a=- b=- label=\"\"",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {
+      "speed": "  1G <b>&amp;"
+     },
+     "style": {},
+     "data": {
+      "tf_ref": "link-fwsv"
+     }
+    }
+   ]
+  }
+ ],
+ "cur": 0,
+ "exported": "2026-10-08T00:00:00.000Z"
+}

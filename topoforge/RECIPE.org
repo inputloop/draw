@@ -1,0 +1,346 @@
+#+TITLE: TopoForge: the recipe
+#+SUBTITLE: How this copy of TopoForge is checked, tested and shipped
+#+AUTHOR: Bryant Frankford and Corwin Brust
+#+LANGUAGE: en
+#+STARTUP: showall
+#+OPTIONS: toc:nil num:nil
+#+PROPERTY: header-args:sh :tangle no :mkdirp yes
+
+#+begin_example
+TopoForge -- a single-file, offline network-topology designer.
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors
+
+Code (index.html, and every source block below that tangles to a file):
+  SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+Prose (this text, and the other documents):
+  SPDX-License-Identifier: CC-BY-SA-4.0
+
+TopoForge was created by Bryant Frankford, written with Alfred
+(for Bryant; claude-opus-5-5), for Corwin, who gave inputs to the prompt.
+This recipe and the project files around it: Mentat (for Corwin;
+claude-opus-5-5).
+#+end_example
+
+This file is the ship vehicle.  It says what goes into a release, how to
+check each part, how to test it and how to ship it.  The shell scripts in
+=bin/= are tangled from the source blocks here; edit them here, not there.
+Everything here is said as it stood on 2026-10-08, except the 1.7 lines, added
+on 2026-10-27.  Where a step is not built yet, it says so.
+
+* Ingredients
+
+| file                          | what it is                                   | sha256                                                             |
+|-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+| =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+| =index.html=                  | v1.7: Bryant's v1.5 plus our changes (1.6, then 1.7) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, then =patches/topoforge-1.6-to-1.7.patch=, turn v1.5 into it byte for byte |
+| =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+| =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+| =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+| =COPYING=                     | same bytes as the GPL text above             | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+| =COPYING.LESSER=              | same bytes as the LGPL text above            | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+
+1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
+
+The licence texts were copied (not moved) from Bryant's Tavern-Setup-2.3.1
+=LICENSES/= (GPL, LGPL) and from his nexus drop of 2026-10-05 (CC BY-SA); the
+GPL and LGPL copies in both places are byte-equal.
+
+The documents (=README.org=, =AUTHORS=, =NEWS=, =ChangeLog=, =INSTALL=,
+=REUSE.toml=, this file) change as the work goes on, so their sums are not
+written here; =SHA256SUMS= carries them, made by =bin/sums.sh=.
+
+Also in a release, so an unpacked copy can test itself:
+- =spec/= (what the story must say), =tests/= (the jq kit, its fixtures and
+  prove-red cases, and =tests/browser/=, the real-browser kit with the
+  =RESULT.txt= it writes, and =prove-red.sh=, which plants faults in the
+  =?load= code and requires the kit to catch each), and =patches/= (v1.5 to
+  v1.6 and v1.6 to v1.7, each one =diff -u=).
+- No release has been cut from this tree yet.  =dist/= does not exist yet.
+
+* Tangle
+
+With Emacs: open this file and press =C-c C-v t= (=org-babel-tangle=).
+
+Without Emacs: =sh bin/tangle.sh= does the same for the blocks in this file
+(one block per file, =:shebang= honoured, org's leading-comma escapes
+removed).  To make =bin/tangle.sh= the first time, from nothing but this file:
+
+#+begin_example
+sed -n '/^#+begin_src sh :tangle bin\/tangle.sh/,/^#+end_src/p' RECIPE.org | sed '1d;$d' > bin/tangle.sh
+#+end_example
+
+That one-liner drops the =#!/bin/sh= line (it rides on =:shebang=); run the
+result with =sh bin/tangle.sh=.  Not yet tried in Emacs: the two tanglers are
+expected to agree, and the kit checks the shell one against a second reader
+written in Python, not against Emacs.
+
+#+begin_src sh :tangle bin/tangle.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+# Tangled from RECIPE.org; edit it there.
+#
+# tangle.sh -- write each source block that names ":tangle PATH" to PATH.
+# usage: sh bin/tangle.sh [-d DIR] [FILE.org]   (defaults: DIR ., RECIPE.org)
+# exit:  0 written, 2 usage error, missing file, bad path or a path named twice
+set -u
+dir=.
+if [ "${1-}" = -d ]; then
+  [ $# -ge 2 ] || { echo "tangle.sh: -d needs a directory" >&2; exit 2; }
+  dir=$2; shift 2
+fi
+org=${1:-RECIPE.org}
+[ -f "$org" ] || { echo "tangle.sh: no such file: $org" >&2; exit 2; }
+[ -d "$dir" ] || { echo "tangle.sh: no such directory: $dir" >&2; exit 2; }
+awk -v dir="$dir" '
+function bad(m) { print "tangle.sh: " FILENAME ":" NR ": " m > "/dev/stderr"; err = 2; exit 2 }
+BEGIN { inblk = 0; err = 0 }
+{
+  low = tolower($0)
+  if (!inblk && low ~ /^#\+begin_src[ \t]/) {
+    path = ""; sheb = ""
+    if (match($0, /:tangle[ \t]+[^ \t]+/)) {
+      path = substr($0, RSTART, RLENGTH); sub(/^:tangle[ \t]+/, "", path)
+    }
+    if (match($0, /:shebang[ \t]+"[^"]*"/)) {
+      sheb = substr($0, RSTART, RLENGTH); sub(/^:shebang[ \t]+"/, "", sheb); sub(/"$/, "", sheb)
+    }
+    inblk = 1
+    if (path == "" || path == "no") { out = ""; next }
+    if (path ~ /^\// || path ~ /\.\./ || path ~ /["'"'"'\\$`]/) bad("refusing path " path)
+    if (path in seen) bad("path named twice: " path)
+    seen[path] = 1
+    out = dir "/" path
+    d = out; sub(/\/[^\/]*$/, "", d)
+    if (d != out && system("mkdir -p \"" d "\"") != 0) bad("cannot make " d)
+    printf "" > out
+    if (sheb != "") print sheb > out
+    n++; names[n] = path
+    next
+  }
+  if (inblk && low ~ /^#\+end_src/) { if (out != "") close(out); inblk = 0; out = ""; next }
+  if (inblk && out != "") {
+    line = $0
+    if (line ~ /^,(\*|#\+)/) line = substr(line, 2)
+    print line > out
+  }
+}
+END {
+  if (err) exit err
+  if (inblk) { print "tangle.sh: unclosed source block" > "/dev/stderr"; exit 2 }
+  for (i = 1; i <= n; i++) print "tangled " names[i]
+}' "$org"
+#+end_src
+
+* Verify a copy
+
+What it checks: that =upstream/= still holds Bryant's v1.5 byte for byte, and,
+when =SHA256SUMS= is present, that every file it lists still matches.  It does
+not check =index.html= against anything fixed, because =index.html= is the
+working copy.
+
+#+begin_src sh :tangle bin/verify.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+# Tangled from RECIPE.org; edit it there.
+#
+# verify.sh -- is upstream/ still Bryant's v1.5, and do the files match SHA256SUMS?
+# usage: sh bin/verify.sh
+# exit:  0 all match, 1 something differs, 2 cannot check (missing tool or file)
+set -u
+cd "$(dirname "$0")/.." || exit 2
+command -v sha256sum >/dev/null 2>&1 || { echo "verify.sh: sha256sum not found" >&2; exit 2; }
+want=6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a
+up=upstream/topoforge-1.5.html
+[ -f "$up" ] || { echo "verify.sh: missing $up" >&2; exit 2; }
+rc=0
+got=$(sha256sum "$up" | cut -d' ' -f1)
+if [ "$got" = "$want" ]; then
+  echo "OK      $up is Bryant's v1.5"
+else
+  echo "CHANGED $up: $got, expected $want"; rc=1
+fi
+if [ -f SHA256SUMS ]; then
+  if sha256sum -c --quiet SHA256SUMS; then
+    echo "OK      every file in SHA256SUMS matches ($(wc -l < SHA256SUMS | tr -d ' ') files)"
+  else
+    echo "CHANGED see the lines above"; rc=1
+  fi
+else
+  echo "NOTE    no SHA256SUMS yet: make one with sh bin/sums.sh"
+fi
+exit $rc
+#+end_src
+
+* Write the sums
+
+=bin/sums.sh= writes =SHA256SUMS= in the project root: one =sha256sum= line
+per file, paths relative to the root, sorted in byte order, no temporary file
+(these folders may not allow deleting one).  With no file names it sums the
+ship list: the working copy, the upstream copy, the documents, the licences,
+the scripts, and every file under =tests/=, =spec/= and =patches/= (leaving
+out =node_modules/= and a kit's =out-*= folders).  Give names to sum only those.  =--check= runs
+=sha256sum -c=.
+
+#+begin_src sh :tangle bin/sums.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+# Tangled from RECIPE.org; edit it there.
+#
+# sums.sh -- write SHA256SUMS for TopoForge's files.
+# usage: sh bin/sums.sh [-o OUT] [FILE...]   sum FILEs (default: the ship list) into OUT
+#        sh bin/sums.sh --check [SUMSFILE]   check them (default SHA256SUMS)
+# exit:  0 written / all match, 1 a file is missing or differs, 2 usage or tool error
+set -u
+cd "$(dirname "$0")/.." || exit 2
+command -v sha256sum >/dev/null 2>&1 || { echo "sums.sh: sha256sum not found" >&2; exit 2; }
+LC_ALL=C; export LC_ALL
+out=SHA256SUMS
+case ${1-} in
+  --check)
+    f=${2:-SHA256SUMS}
+    [ -f "$f" ] || { echo "sums.sh: no such file: $f" >&2; exit 2; }
+    if sha256sum -c "$f"; then exit 0; else exit 1; fi ;;
+  -o)
+    [ $# -ge 2 ] || { echo "sums.sh: -o needs a file name" >&2; exit 2; }
+    out=$2; shift 2 ;;
+  -h|--help)
+    sed -n '7,10p' "$0"; exit 0 ;;
+  -*)
+    echo "sums.sh: unknown option: $1" >&2; exit 2 ;;
+esac
+if [ $# -eq 0 ]; then
+  set -- index.html upstream/topoforge-1.5.html \
+    README.org FOR-BRYANT.md AUTHORS COPYING COPYING.LESSER NEWS ChangeLog INSTALL \
+    RECIPE.org REUSE.toml LICENSES/*.txt bin/*.sh kit/project-files/* \
+    $(find tests spec patches -type f ! -path '*/node_modules/*' ! -path '*/out-*' | sort)
+fi
+missing=0
+for f do
+  [ "$f" = "$out" ] && continue
+  [ -f "$f" ] || { echo "sums.sh: missing: $f" >&2; missing=1; }
+done
+[ $missing -eq 0 ] || exit 1
+sums=$(for f do [ "$f" = "$out" ] || printf '%s\n' "$f"; done | sort -u |
+  while IFS= read -r f; do sha256sum -- "$f" || exit 2; done) || exit 2
+[ -n "$sums" ] || { echo "sums.sh: nothing to sum" >&2; exit 2; }
+printf '%s\n' "$sums" > "$out" || exit 2
+echo "sums.sh: wrote $out ($(printf '%s\n' "$sums" | wc -l | tr -d ' ') files)"
+#+end_src
+
+* Test
+
+TopoForge's own tests are builder T1's (=tests/run.sh=, POSIX sh with jq,
+checked against =spec/FACTS-v1.md=, with its own prove-red cases).  If
+=tests/run.sh= is missing this step says so and exits 2 rather than
+pretending.  Then the project-files kit (=kit/project-files/=, Python,
+checking these shell scripts) runs.  Exit 0 all green, 1 something red, 2 a
+kit is missing or broken.
+
+The browser kit (=tests/browser/topoforge.browser.mjs=, Node with Playwright
+and axe-core) needs a browser, so =bin/test.sh= does not run it.  It writes
+=tests/browser/RESULT.txt= itself: the first line is =GREEN= or =RED=, worked
+out from its checks, and a later line names the =index.html= it tested by
+sha256.  =bin/ship.sh= refuses to pack unless that file says =GREEN= for the
+=index.html= being shipped.  From 1.7 the kit has a =--load-only= mode (the
+=?load= checks alone, no axe-core) that writes =tests/browser/RESULT-load.txt=
+(first line =PARTIAL-GREEN= or =PARTIAL-RED=); =ship.sh= does not read it, so it
+never stands in for =RESULT.txt=.  =tests/browser/prove-red.sh= runs that mode on
+copies of =index.html= with a fault planted in each of three places and requires
+the check that watches the place to go red.
+
+#+begin_src sh :tangle bin/test.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+# Tangled from RECIPE.org; edit it there.
+#
+# test.sh -- run every test kit this tree carries.
+# usage: sh bin/test.sh
+# exit:  0 all green, 1 something red, 2 a kit is missing or broken
+set -u
+cd "$(dirname "$0")/.." || exit 2
+red=0 broken=0
+note() { r=$1; shift; echo "$* -> exit $r"
+  case $r in 0) ;; 1) red=1 ;; *) broken=1 ;; esac; }
+if [ -f tests/run.sh ]; then
+  sh tests/run.sh; note $? "tests/run.sh"
+elif ls tests/*.sh >/dev/null 2>&1; then
+  for t in tests/*.sh; do sh "$t"; note $? "$t"; done
+else
+  echo "NOT BUILT: tests/ (TopoForge's own tests, builder T1) is not here yet"; broken=1
+fi
+if command -v python3 >/dev/null 2>&1; then
+  PYTHONDONTWRITEBYTECODE=1 python3 -I kit/project-files/check.py; note $? "kit/project-files/check.py"
+else
+  echo "SKIP: python3 not found; kit/project-files not run"; broken=1
+fi
+[ $red -eq 1 ] && exit 1
+[ $broken -eq 1 ] && exit 2
+exit 0
+#+end_src
+
+* Ship
+
+Not run yet; no release has been cut from this tree.  The order, when it is
+(an unpacked release can repeat steps 2 and 3 on itself):
+
+1. =index.html= is final for the version, its About box names that version
+   (1.7 does, from =TF_VERSION=), and
+   =NEWS= and =ChangeLog= say what changed.
+2. =sh bin/verify.sh= exits 0.
+3. =sh bin/test.sh= exits 0.  Exit 2 (a kit missing) is not good enough.
+   The browser kit has been run on this =index.html= and its =RESULT.txt=
+   says =GREEN= (ship.sh checks this).
+4. =sh bin/sums.sh= writes =SHA256SUMS= over the whole ship list.
+5. =sh bin/ship.sh VERSION= makes =dist/topoforge-VERSION.tar.gz=.
+6. Corwin signs it; the script prints the command and never signs for him.
+7. Publishing (code.bru.st, and back to Bryant) is a separate step, not
+   scripted here.
+
+#+begin_src sh :tangle bin/ship.sh :shebang "#!/bin/sh"
+# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+# Corwin Brust <corwin@bru.st> and Contributors
+# Tangled from RECIPE.org; edit it there.
+#
+# ship.sh -- verify, test, sum, and pack one release into dist/.
+# usage: sh bin/ship.sh VERSION      (e.g. 1.6)
+# exit:  0 packed, 1 a check was red or the tarball already exists, 2 usage or tool error
+set -u
+cd "$(dirname "$0")/.." || exit 2
+v=${1-}
+case $v in ''|*[!0-9.]*) echo "usage: sh bin/ship.sh VERSION (digits and dots)" >&2; exit 2 ;; esac
+tgz=dist/topoforge-$v.tar.gz
+[ -e "$tgz" ] && { echo "ship.sh: $tgz exists; not overwriting" >&2; exit 1; }
+sh bin/verify.sh || { echo "ship.sh: verify not green; stopping" >&2; exit 1; }
+sh bin/test.sh   || { echo "ship.sh: tests not green; stopping" >&2; exit 1; }
+res=tests/browser/RESULT.txt
+want_ix=$(sha256sum index.html | cut -d' ' -f1)
+[ "$(sed -n 1p "$res" 2>/dev/null)" = GREEN ] && grep -q "^File tested: index.html sha256 $want_ix\$" "$res" || {
+  echo "ship.sh: $res is not GREEN for this index.html ($want_ix); run the browser kit" >&2; exit 1; }
+sh bin/sums.sh   || exit 2
+sh bin/verify.sh || exit 1
+mkdir -p dist || exit 2
+# The tarball holds the ship list as sums.sh names it (tests/, spec/ and
+# patches/ included), plus SHA256SUMS itself, under one top folder topoforge-VERSION/.
+files=$(cut -c67- SHA256SUMS) || exit 2
+# shellcheck disable=SC2086
+tar -czf "$tgz" --transform "s,^,topoforge-$v/," SHA256SUMS $files || exit 2
+sha256sum "$tgz"
+echo "ship.sh: packed $tgz. To sign (Corwin):"
+echo "  gpg --armor --detach-sign $tgz"
+#+end_src
+
+* Accessibility
+
+The same plain statement as in =README.org=, kept here because a release must
+not make it untrue.  Before shipping, check by hand with the keyboard alone:
+open, draw a device, name it, connect two, export JSON; and that the story
+panel (v1.6) reads the drawing as text.  The browser kit scripts part of
+this (Tab order, arrow keys on the tabs, Enter and Space, the menu buttons,
+focus rings, no keyboard trap, and an axe scan in light and dark themes); a
+real screen reader and drawing a shape by keyboard alone are still by hand.

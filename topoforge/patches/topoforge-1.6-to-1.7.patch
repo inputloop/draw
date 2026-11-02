@@ -1,0 +1,449 @@
+--- topoforge-1.6/index.html
++++ topoforge-1.7/index.html
+@@ -4,6 +4,8 @@
+   Prose and art in this file: CC-BY-SA-4.0
+   Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+   Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5)
++  1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
++  ?load= by Mentat (for Corwin; claude-sonnet-5-5)
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -306,7 +308,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.6';
++const TF_VERSION = '1.7';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -3989,8 +3991,18 @@
+   buildPages(); render(); refreshPanels(true); updateUndoButtons();
+   new ResizeObserver(() => { applyView(); scheduleMinimap(); }).observe($('#stage'));
+   if (saved && P().nodes.length) setTimeout(fitView, 0);
+-  else if (!saved) setTimeout(() => { loadSample(); H.undo.length = 0; updateUndoButtons(); }, 0);
++  else if (!saved && !new URLSearchParams(location.search).get('load')) setTimeout(() => { loadSample(); H.undo.length = 0; updateUndoButtons(); }, 0);
+   window.addEventListener('beforeunload', saveNow);
++  loadFromQuery();
++}
++// ?load=<path>: open a CSV or TopoForge JSON the serving page points at. Same origin only; anything else is refused and said.
++async function loadFromQuery() {
++  const q = new URLSearchParams(location.search).get('load'); if (!q) return;
++  let u; try { u = new URL(q, location.href); } catch (e) { toast('load: not a URL', 'error'); return; }
++  if (location.protocol === 'file:' || u.origin !== location.origin) { toast(`load refused: ${u.origin} is not this page's origin`, 'error'); return; }
++  try { const r = await fetch(u, { credentials: 'same-origin' }); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
++    const text = await r.text();
++    if (/^\s*(name|hostname)\s*,/i.test(text)) importCSV(text); else { DOC = normalizeDoc(JSON.parse(text)); reindex(); buildPages(); render(); refreshPanels(true); toast(`Loaded ${u.pathname}`, 'ok'); } } catch (e) { toast(`load failed: ${e.message}`, 'error'); }
+ }
+ // small surface for automation / debugging
+ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex } };
+--- topoforge-1.6/ChangeLog
++++ topoforge-1.7/ChangeLog
+@@ -1,3 +1,52 @@
++2026-10-27  Mentat (for Corwin; claude-sonnet-5-5, directed and checked by claude-mythos-5-1)  <corwin@bru.st>
++
++	TopoForge 1.7: a page on the same origin can open a drawing with
++	?load=<path> (a CSV or TopoForge JSON); any other origin, and file://,
++	is refused and said; window.TopoForge.importCSV for the kit.  From
++	h/PATCH-2026-10-27-topoforge-load-same-origin.md, with the changes to
++	it listed under index.html below.
++	* index.html (TF_VERSION): 1.7.  (header comment): The 1.7 line and
++	who made ?load=.
++	(loadFromQuery): New; boot() calls it last.  Reads ?load=, resolves it
++	against the page, refuses file: and any other origin with a toast
++	before any request is made, then fetches with same-origin
++	credentials.  A body whose first header cell is name or hostname goes
++	to importCSV; anything else to normalizeDoc as TopoForge JSON.  A bad
++	status says "load failed: 404 Not Found" and the like.
++	(boot): The sample drawing is not loaded on a first visit when ?load=
++	names something.  Without this a first visit showed the sample with
++	the rows added to it: 23 nodes for a 4-row CSV.
++	Changes to the patch as proposed: toasts use 'error', since the page
++	has no 'warn' style; a CSV load does not add a "Loaded" toast, since
++	importCSV already says "Imported N devices" or its own error, and the
++	extra toast would say Loaded after a failure; importCSV was already in
++	window.TopoForge in 1.6, so it is not listed twice; the sample guard
++	is new.
++	* tests/browser/topoforge.browser.mjs: New checks "load 1" to "load 5"
++	(the five the patch owes) and "load 1b" (a JSON drawing opens) and
++	"load 1c" (without ?load= a first visit still shows the sample).  They
++	serve index.html from a throwaway server on 127.0.0.1, with a second
++	server on another port as the other origin (it allows any origin and
++	holds a good CSV, so only the page's own test can refuse it; the
++	checks also require it was never asked).  New --load-only mode: those
++	checks alone, no axe-core, written to RESULT-load.txt (first line
++	PARTIAL-GREEN or PARTIAL-RED), never to RESULT.txt.
++	* tests/browser/prove-red.sh: New.  Plants a fault in a copy of
++	index.html (the origin test, the sample guard, the file: test) and
++	requires exactly the check that watches it to go red; a control run
++	on the unplanted file must be green first.  All three are caught.
++	* tests/browser/RESULT.txt: Rewritten by the full kit against the 1.7
++	index.html where axe-core is (Chromium 153, Playwright 1.63, axe-core
++	4.14): GREEN, 41 of 41 checks, no axe finding of any level, with
++	Bryant's 1.5 beside it.  RESULT-load.txt, which --load-only writes,
++	is a local note and is not shipped.
++	* README.org, NEWS, RECIPE.org: The 1.7 line; how to run --load-only
++	and prove-red.sh; the Files table and the ingredients row say 1.7.
++	* patches/topoforge-1.6-to-1.7.patch: New.  v1.6 to v1.7 as one diff -u
++	over the files above that changed, index.html first (not RESULT.txt
++	or SHA256SUMS, which the kit and bin/sums.sh write).
++	* SHA256SUMS: Regenerated with bin/sums.sh over the whole tree.
++
+ 2026-10-08  Mentat (for Corwin; claude-opus-5-5), fixer FT2  <corwin@bru.st>
+ 
+ 	Fixes from QA pass 2 (FOLD-QA2 rows 1, 8, 9 and 10).
+--- topoforge-1.6/NEWS
++++ topoforge-1.7/NEWS
+@@ -4,6 +4,14 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.7 (2026-10-27; built and checked: tests/run.sh and the project-files
++check green, the browser kit 41 of 41 in Chromium 153 with axe-core 4.14 and no
++axe finding of any level; no release packed or signed yet)
++
++- A page on the same origin can open a drawing with ?load=<path> (a CSV or
++  TopoForge JSON); any other origin, and file://, is refused and said;
++  window.TopoForge.importCSV for the kit.
++
+ Version 1.6 (2026-10-08; built and tested; no release packed or signed yet)
+ 
+ - The drawing tells its own story: a Story panel beside Properties, Layers
+--- topoforge-1.6/README.org
++++ topoforge-1.7/README.org
+@@ -35,6 +35,9 @@
+   downloaded as Markdown for a person or an AI to read beside the picture;
+   and a lasting handle on each shape (=tf_ref=, written into its data as you
+   draw), so a sentence can always be traced to its shape.
++- New in 1.7: a page on the same origin can open a drawing with
++  =?load=<path>= (a CSV or TopoForge JSON); any other origin, and =file://=, is
++  refused and said; =window.TopoForge.importCSV= for the kit.
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+@@ -75,9 +78,13 @@
+ =tests/browser/topoforge.browser.mjs= opens =index.html= from =file://= in
+ Chromium, draws a small network, works the panels by keyboard alone, saves
+ the story, and runs the axe-core accessibility scan in the light and dark
+-themes.  It needs Node (18 or later), Playwright and axe-core.  Install the
+-two packages in a scratch folder, or beside this tree, and run the kit from
+-that folder:
++themes.  From 1.7 it also serves =index.html= from a throwaway server on
++127.0.0.1 (and a second server on another port, as "the other origin") to
++check =?load=<path>=: a CSV and a JSON drawing open from the page's own
++origin on a first visit, another origin and =file://= are refused and said,
++a 404 is said, and =importCSV= is there.  It needs Node (18 or later),
++Playwright and axe-core.  Install the two packages in a scratch folder, or
++beside this tree, and run the kit from that folder:
+ #+begin_src sh
+ mkdir -p ~/tf-kit && cd ~/tf-kit
+ npm i playwright axe-core
+@@ -103,6 +110,19 @@
+ - Exit 0 green, 1 red, 2 kit broken (Playwright, axe-core or the file
+   not found).
+ 
++For the =?load= checks alone (no axe-core needed):
++#+begin_src sh
++node /path/to/topoforge/tests/browser/topoforge.browser.mjs --load-only /path/to/topoforge/index.html
++sh /path/to/topoforge/tests/browser/prove-red.sh /path/to/topoforge/index.html
++#+end_src
++The first writes =tests/browser/RESULT-load.txt=, whose first line is
++PARTIAL-GREEN or PARTIAL-RED.  It is not =RESULT.txt= (no axe scan, no keyboard
++checks were run), and =bin/ship.sh= does not read it.  The second plants three
++faults in copies of =index.html= (the origin test, the =file:= test, and the
++guard that keeps the sample drawing out of a =?load=); each must turn its own
++check, and only that one, red.  Exit 0 every plant was caught, 1 one was not,
++2 it could not run.
++
+ * The recipe
+ =RECIPE.org= is how this copy is checked, tested and shipped.  The scripts in
+ =bin/= are tangled from it.
+@@ -114,8 +134,8 @@
+ | =bin/=                | verify, test, sums, ship, tangle (POSIX sh)    |
+ | =kit/project-files/=  | the check for =bin/= (its own spec, in Python)  |
+ | =tests/=, =spec/=     | TopoForge's own tests and what they check against |
+-| =tests/browser/=      | the real-browser kit and the =RESULT.txt= it writes |
+-| =patches/=            | v1.5 to v1.6 as one =diff -u=                  |
++| =tests/browser/=      | the real-browser kit, =prove-red.sh=, and the =RESULT.txt= it writes |
++| =patches/=            | v1.5 to v1.6, v1.6 to v1.7: each a =diff -u=   |
+ | =NEWS=, =ChangeLog=   | what changed, for users and in detail          |
+ | =AUTHORS=             | who made it                                    |
+ | =COPYING=, =COPYING.LESSER=, =LICENSES/= | the licence texts           |
+--- topoforge-1.6/RECIPE.org
++++ topoforge-1.7/RECIPE.org
+@@ -25,21 +25,23 @@
+ This file is the ship vehicle.  It says what goes into a release, how to
+ check each part, how to test it and how to ship it.  The shell scripts in
+ =bin/= are tangled from the source blocks here; edit them here, not there.
+-Everything here is said as it stood on 2026-10-08.  Where a step is not built
+-yet, it says so.
++Everything here is said as it stood on 2026-10-08, except the 1.7 lines, added
++on 2026-10-27.  Where a step is not built yet, it says so.
+ 
+ * Ingredients
+ 
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.6: Bryant's v1.5 plus our changes          | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch= turns v1.5 into it byte for byte |
++| =index.html=                  | v1.7: Bryant's v1.5 plus our changes (1.6, then 1.7) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, then =patches/topoforge-1.6-to-1.7.patch=, turn v1.5 into it byte for byte |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+ | =COPYING=                     | same bytes as the GPL text above             | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =COPYING.LESSER=              | same bytes as the LGPL text above            | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ 
++1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
++
+ The licence texts were copied (not moved) from Bryant's Tavern-Setup-2.3.1
+ =LICENSES/= (GPL, LGPL) and from his nexus drop of 2026-10-05 (CC BY-SA); the
+ GPL and LGPL copies in both places are byte-equal.
+@@ -51,7 +53,9 @@
+ Also in a release, so an unpacked copy can test itself:
+ - =spec/= (what the story must say), =tests/= (the jq kit, its fixtures and
+   prove-red cases, and =tests/browser/=, the real-browser kit with the
+-  =RESULT.txt= it writes), and =patches/= (v1.5 to v1.6 as one =diff -u=).
++  =RESULT.txt= it writes, and =prove-red.sh=, which plants faults in the
++  =?load= code and requires the kit to catch each), and =patches/= (v1.5 to
++  v1.6 and v1.6 to v1.7, each one =diff -u=).
+ - No release has been cut from this tree yet.  =dist/= does not exist yet.
+ 
+ * Tangle
+@@ -241,7 +245,12 @@
+ =tests/browser/RESULT.txt= itself: the first line is =GREEN= or =RED=, worked
+ out from its checks, and a later line names the =index.html= it tested by
+ sha256.  =bin/ship.sh= refuses to pack unless that file says =GREEN= for the
+-=index.html= being shipped.
++=index.html= being shipped.  From 1.7 the kit has a =--load-only= mode (the
++=?load= checks alone, no axe-core) that writes =tests/browser/RESULT-load.txt=
++(first line =PARTIAL-GREEN= or =PARTIAL-RED=); =ship.sh= does not read it, so it
++never stands in for =RESULT.txt=.  =tests/browser/prove-red.sh= runs that mode on
++copies of =index.html= with a fault planted in each of three places and requires
++the check that watches the place to go red.
+ 
+ #+begin_src sh :tangle bin/test.sh :shebang "#!/bin/sh"
+ # SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+@@ -280,7 +289,7 @@
+ (an unpacked release can repeat steps 2 and 3 on itself):
+ 
+ 1. =index.html= is final for the version, its About box names that version
+-   (1.6 does, from =TF_VERSION=), and
++   (1.7 does, from =TF_VERSION=), and
+    =NEWS= and =ChangeLog= say what changed.
+ 2. =sh bin/verify.sh= exits 0.
+ 3. =sh bin/test.sh= exits 0.  Exit 2 (a kit missing) is not good enough.
+--- topoforge-1.6/tests/browser/prove-red.sh
++++ topoforge-1.7/tests/browser/prove-red.sh
+@@ -0,0 +1,60 @@
++#!/bin/sh
++# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
++# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
++# Corwin Brust <corwin@bru.st> and Contributors
++# Written by Mentat (for Corwin; claude-sonnet-5-5), 2026-10-27.
++#
++# prove-red.sh -- show that the ?load= checks of the browser kit can go red.
++# It plants a fault in a COPY of index.html, runs the kit's --load-only checks on the
++# copy, and requires that the one check watching that fault fails and no other does.
++# A control run on the untouched file comes first: it must be green, or nothing is proved.
++#   plant 1: the origin test commented out  -> "load 2" must go red (another origin is let in)
++#   plant 2: the sample guard removed       -> "load 1" must go red (a first visit gets the sample AND the rows)
++#   plant 3: the file: test removed         -> "load 3" must go red (a relative ?load= from file:// is no longer refused and said)
++# usage: sh tests/browser/prove-red.sh /path/to/index.html [outdir]    (default outdir: out-prove-red)
++# Needs what the kit needs, except axe-core (Node, Playwright, Chromium; see README.org).
++# Nothing is deleted: the copies and notes stay in outdir (git ignores out-*/).
++# exit:  0 every plant was caught, 1 a plant was NOT caught, 2 cannot run (no file, no kit, control not green)
++set -u
++ix=${1-}; out=${2:-out-prove-red}
++here=$(cd "$(dirname "$0")" && pwd) || exit 2
++kit=$here/topoforge.browser.mjs
++[ -f "$ix" ] || { echo "prove-red.sh: usage: sh prove-red.sh /path/to/index.html [outdir]" >&2; exit 2; }
++[ -f "$kit" ] || { echo "prove-red.sh: no kit at $kit" >&2; exit 2; }
++command -v node >/dev/null 2>&1 || { echo "prove-red.sh: node not found" >&2; exit 2; }
++mkdir -p "$out" || exit 2
++out=$(cd "$out" && pwd) || exit 2
++
++# run NAME FILE: run the load-only kit on FILE; its notes go to $out/RESULT-NAME.txt; sets rc and, in $fails, the failing check numbers
++run() {
++  RESULT=$out/RESULT-$1.txt node "$kit" --load-only "$2" "$out/out-$1" > "$out/log-$1.txt" 2>&1; rc=$?
++  fails=$(sed -n 's/^FAIL load \([0-9a-z]*\):.*/\1/p' "$out/RESULT-$1.txt" 2>/dev/null | tr '\n' ' ' | sed 's/ $//')
++}
++
++run control "$ix"
++if [ "$rc" -ne 0 ]; then
++  echo "prove-red.sh: the control run on $ix is not green (exit $rc, failing: ${fails:-none}); see $out/log-control.txt. Nothing proved." >&2
++  exit 2
++fi
++echo "control   exit 0, no check failed (index.html as given)"
++
++bad=0
++# plant NAME WANT SED-EXPR: apply SED-EXPR to a copy, require it to change the copy, run, and require exactly WANT to fail
++plant() {
++  name=$1 want=$2 expr=$3
++  sed "$expr" "$ix" > "$out/plant-$name.html" || exit 2
++  if cmp -s "$ix" "$out/plant-$name.html"; then
++    echo "prove-red.sh: plant $name did not change the copy (index.html no longer has the line it plants in); fix the plant" >&2; exit 2
++  fi
++  run "$name" "$out/plant-$name.html"
++  if [ "$rc" -eq 1 ] && [ "$fails" = "$want" ]; then
++    echo "caught    plant $name: kit exit 1, failing check: load $fails"
++  else
++    echo "NOT CAUGHT plant $name: kit exit $rc, failing checks: ${fails:-none}, wanted exactly: load $want (see $out/log-$name.txt)" >&2; bad=1
++  fi
++}
++plant origin-test 2 's#|| u\.origin !== location\.origin#/* & */#'
++plant sample-guard 1 "s# && !new URLSearchParams(location\.search)\.get('load')##"
++plant file-test 3 "s#location\.protocol === 'file:' || ##"
++[ $bad -eq 0 ] && echo "prove-red.sh: every plant was caught" || echo "prove-red.sh: a plant got through; the check is not watching what it says" >&2
++exit $bad
+--- topoforge-1.6/tests/browser/topoforge.browser.mjs
++++ topoforge-1.7/tests/browser/topoforge.browser.mjs
+@@ -4,17 +4,25 @@
+ // fixer FT 2026-10-08: dark-theme scan, menu-button keyboard checks, writes RESULT.txt itself.
+ // fixer FT2 2026-10-08: heading-order check; header says what the code does; finds
+ // playwright and Chromium beside the kit as well as at the cloud paths.
++// 1.7 2026-10-27, Mentat (for Corwin; claude-sonnet-5-5): the ?load= checks (served from a
++// throwaway server on 127.0.0.1, with a second server as "the other origin"), and --load-only,
++// which runs only those checks, needs no axe-core, and writes RESULT-load.txt, never RESULT.txt.
+ //
+ // TopoForge browser kit: real Chromium, index.html opened from file://.
+ // Draws a small office network, checks tf_ref handles, the Story tab (live region,
+ // download .md: one facts block, sha256 header lines, Gaps section), the keyboard path,
+-// an axe-core scan of the main page and the Story tab, and console errors.
++// an axe-core scan of the main page and the Story tab, and console errors. Then (1.7) the
++// ?load= checks: a CSV and a JSON drawing open from the page's own origin on a first visit;
++// another origin and file:// are refused and said; a 404 is said; importCSV is exposed.
+ //
+-//   node topoforge.browser.mjs /path/to/index.html [outdir]
++//   node topoforge.browser.mjs [--load-only] /path/to/index.html [outdir]
+ // outdir (default: out-topoforge in the current folder) gets the axe scans, the tab
+ // order, the downloaded files and checks.txt.
+ // Writes RESULT.txt (first line GREEN or RED, computed from the checks) to $RESULT,
+ // default: RESULT.txt beside this kit.
++// --load-only runs the ?load= checks alone: no axe-core, no keyboard checks. It writes
++// RESULT-load.txt (first line PARTIAL-GREEN or PARTIAL-RED) to $RESULT, default beside this
++// kit. It is not RESULT.txt, and bin/ship.sh does not read it.
+ // Needs, all looked for from the CURRENT folder (run it where you did `npm i`):
+ //   playwright: $PW_MODULE, else ./node_modules/playwright, else /opt/npm-tools/node_modules/playwright
+ //   axe-core:   $AXE (path to axe.min.js), else ./node_modules/axe-core/axe.min.js
+@@ -22,25 +30,107 @@
+ //               playwright installed for itself (`npx playwright install chromium`)
+ // Exit 0 green, 1 red, 2 kit broken. Prints one line per check.
+ import { createRequire } from 'module';
+-import fs from 'fs'; import path from 'path'; import crypto from 'crypto'; import os from 'os';
++import fs from 'fs'; import path from 'path'; import crypto from 'crypto'; import os from 'os'; import http from 'http';
+ import { fileURLToPath } from 'url';
+ const require = createRequire(import.meta.url);
+ const PW = process.env.PW_MODULE || [path.resolve('node_modules/playwright'), '/opt/npm-tools/node_modules/playwright'].find(p => fs.existsSync(p)) || 'playwright';
+ const AXE = process.env.AXE || path.resolve('node_modules/axe-core/axe.min.js');
+ const CHROMIUM = process.env.CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
+-const file = process.argv[2]; const outdir = process.argv[3] || 'out-topoforge';
+-if (!file || !fs.existsSync(file)) { console.error('usage: node topoforge.browser.mjs index.html [outdir]'); process.exit(2); }
++const args = process.argv.slice(2); const LOAD_ONLY = args.includes('--load-only');
++const [file, outdirArg] = args.filter(a => !a.startsWith('--')); const outdir = outdirArg || 'out-topoforge';
++if (!file || !fs.existsSync(file)) { console.error('usage: node topoforge.browser.mjs [--load-only] index.html [outdir]'); process.exit(2); }
+ fs.mkdirSync(outdir, { recursive: true });
+ let chromium; try { ({ chromium } = require(PW)); } catch (e) { console.error('KIT BROKEN: playwright not found at ' + PW); process.exit(2); }
+-let axeSrc; try { axeSrc = fs.readFileSync(AXE, 'utf8'); } catch (e) { console.error('KIT BROKEN: axe-core not found at ' + AXE); process.exit(2); }
+-const RESULT = process.env.RESULT || path.join(path.dirname(fileURLToPath(import.meta.url)), 'RESULT.txt');
++let axeSrc; if (!LOAD_ONLY) try { axeSrc = fs.readFileSync(AXE, 'utf8'); } catch (e) { console.error('KIT BROKEN: axe-core not found at ' + AXE); process.exit(2); }
++const RESULT = process.env.RESULT || path.join(path.dirname(fileURLToPath(import.meta.url)), LOAD_ONLY ? 'RESULT-load.txt' : 'RESULT.txt');
+ const sha = f => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+ 
+ const results = []; let red = 0;
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ const note = s => results.push('NOTE ' + s);
+ 
++// --- 1.7: ?load=<path>. A throwaway server on 127.0.0.1 serves index.html and the fixtures; a second one, on
++// another port, is "the other origin". It holds a good CSV and allows any origin (CORS *), so only the page's own
++// origin test can keep it out. The fixtures arrive 100 ms late, so the sample's 0 ms timer always fires first,
++// as it does on any real network. Every case opens in a fresh browser context: a first visit, nothing autosaved. ---
++async function loadChecks(browser) {
++  const html = fs.readFileSync(file);
++  const CSV = 'name,type,ip,connects_to\r\nEdge,firewall,10.0.0.1,Core\r\nCore,switch,10.0.0.2,PC 1;PC 2\r\nPC 1,desktop,10.0.10.21,\r\nPC 2,desktop,10.0.10.22,\r\n';
++  const serve = (routes, hits, cors) => new Promise(ok => {
++    const s = http.createServer((q, r) => {
++      const p = q.url.split('?')[0]; hits.push(p); const f = routes[p];
++      if (cors) r.setHeader('access-control-allow-origin', '*');
++      if (!f) { r.statusCode = 404; r.end('not found'); return; }
++      r.setHeader('content-type', f.type); setTimeout(() => r.end(f.body), f.delay || 0);
++    });
++    s.listen(0, '127.0.0.1', () => ok(s));
++  });
++  const hitsA = [], hitsB = [];
++  const routesA = { '/': { type: 'text/html', body: html }, '/index.html': { type: 'text/html', body: html }, '/x.csv': { type: 'text/csv', body: CSV, delay: 100 } };
++  const sA = await serve(routesA, hitsA, false), sB = await serve({ '/x.csv': { type: 'text/csv', body: CSV } }, hitsB, true);
++  const A = 'http://127.0.0.1:' + sA.address().port, B = 'http://127.0.0.1:' + sB.address().port;
++  const open = async (url, wantToast = true) => {
++    const c = await browser.newContext({ viewport: { width: 1400, height: 900 } }); const pg = await c.newPage();
++    await pg.goto(url); await pg.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
++    if (wantToast) await pg.waitForFunction(() => document.querySelector('#toasts .toast'), null, { timeout: 5000 }).catch(() => {});
++    await pg.waitForTimeout(700); // the fetch, the import and the sample's timer have all had their turn
++    const s = await pg.evaluate(() => ({ names: P().nodes.map(n => (n.text || '').split('\n')[0]), links: P().links.length, doc: DOC.name, toasts: [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent), imp: typeof window.TopoForge.importCSV }));
++    await c.close(); return s;
++  };
++  const gotCsv = s => s.names.includes('Edge') || s.names.includes('Core'); // names only the CSV has (the sample has 'Edge Firewall', 'Core Switch')
++  const shown = s => `nodes=${s.names.length} links=${s.links} toasts=${s.toasts.join(' / ')}`;
++  try {
++    // a small TopoForge JSON drawing, made by the app itself, for the JSON branch
++    const jc = await browser.newContext(); const jp = await jc.newPage();
++    await jp.goto(A + '/index.html'); await jp.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
++    const json = await jp.evaluate(() => {
++      DOC = newDoc(); DOC.name = 'Loaded by query'; S.sel.clear(); reindex(); buildPages();
++      edit(() => { const a = makeNode('router', 0, 0, { text: 'Query Router' }), b = makeNode('switch', 240, 0, { text: 'Query Switch' }); P().nodes.push(a, b); P().links.push(makeLink({ id: a.id, port: null }, { id: b.id, port: null })); });
++      return snapshot();
++    });
++    await jc.close();
++    routesA['/x.json'] = { type: 'application/json', body: json, delay: 100 };
++
++    const base = await open(A + '/index.html', false);
++    check('load 1c: without ?load= a first visit still shows the sample (the sample guard acts only on ?load=)', base.names.includes('Edge Firewall') && base.names.length > 10, 'nodes=' + base.names.length);
++    const r1 = await open(A + '/index.html?load=/x.csv');
++    check('load 1: ?load=/x.csv from the page\'s own origin imports the rows, and only the rows, on a first visit',
++      r1.names.length === 4 && ['Edge', 'Core', 'PC 1', 'PC 2'].every(n => r1.names.includes(n)) && r1.links === 3 && r1.toasts.some(t => /Imported 4 devices, 3 links/.test(t)), shown(r1));
++    const r1b = await open(A + '/index.html?load=/x.json');
++    check('load 1b: ?load=/x.json opens the TopoForge JSON drawing in place of the sample', r1b.doc === 'Loaded by query' && r1b.names.join('|') === 'Query Router|Query Switch' && r1b.links === 1 && r1b.toasts.some(t => /Loaded \/x\.json/.test(t)), shown(r1b) + ' doc=' + r1b.doc);
++    const r2 = await open(A + '/index.html?load=' + encodeURIComponent(B + '/x.csv'));
++    check('load 2: ?load= another origin is refused: nothing imported, the toast names the refusal, the other server is never asked',
++      !gotCsv(r2) && r2.toasts.some(t => /load refused/.test(t) && t.includes(B)) && hitsB.length === 0, shown(r2) + ' otherServerHits=' + hitsB.length);
++    const dir = path.join(outdir, 'file-origin'); fs.mkdirSync(dir, { recursive: true });
++    fs.writeFileSync(path.join(dir, 'index.html'), html); fs.writeFileSync(path.join(dir, 'x.csv'), CSV); // a double-clicked copy with its CSV beside it
++    const r3 = await open('file://' + path.resolve(dir, 'index.html') + '?load=x.csv');
++    check('load 3: file://...index.html?load=x.csv imports nothing and says it is refused', !gotCsv(r3) && r3.toasts.some(t => /load refused/.test(t)), shown(r3));
++    const r4 = await open(A + '/index.html?load=/missing.csv');
++    check('load 4: ?load= a path that is not there says "load failed: 404" and imports nothing', !gotCsv(r4) && r4.toasts.some(t => /load failed: 404/.test(t)), shown(r4));
++    check('load 5: window.TopoForge.importCSV is a function', base.imp === 'function', base.imp);
++  } finally { for (const s of [sA, sB]) { s.close(); if (s.closeAllConnections) s.closeAllConnections(); } }
++}
++
+ const browser = await chromium.launch({ executablePath: CHROMIUM, headless: true });
++if (LOAD_ONLY) { // the ?load= checks alone: no axe-core, no keyboard checks; written to RESULT-load.txt, which is not RESULT.txt
++  note('browser ' + browser.version() + ', playwright ' + require(PW + '/package.json').version + ' (--load-only: no axe-core scan, no keyboard checks)');
++  await loadChecks(browser); await browser.close();
++  fs.writeFileSync(path.join(outdir, 'checks-load.txt'), results.join('\n') + '\n');
++  console.log(results.join('\n'));
++  console.log(red ? `TOPOFORGE LOAD CHECKS RED (${red} failed)` : 'TOPOFORGE LOAD CHECKS GREEN');
++  const passed = results.filter(r => r.startsWith('PASS')).length;
++  fs.writeFileSync(RESULT, [red ? 'PARTIAL-RED' : 'PARTIAL-GREEN',
++    'TopoForge ?load= checks only -- written by tests/browser/topoforge.browser.mjs --load-only (do not edit by hand)',
++    'This is not RESULT.txt: no axe-core scan and no keyboard checks were run, and bin/ship.sh reads RESULT.txt only.',
++    'Licence of this note: CC-BY-SA-4.0',
++    'Run at: ' + new Date().toISOString() + ' on ' + os.type() + ' ' + os.release() + ', node ' + process.version,
++    'File tested: ' + path.basename(file) + ' sha256 ' + sha(file),
++    'Kit: tests/browser/topoforge.browser.mjs sha256 ' + sha(fileURLToPath(import.meta.url)),
++    `Result: ${passed} checks passed, ${red} failed. Exit ${red ? 1 : 0} (0 green, 1 red, 2 kit broken).`,
++    '', 'CHECKS', ...results, ''].join('\n'));
++  console.log('wrote ' + RESULT);
++  process.exit(red ? 1 : 0);
++}
+ const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1400, height: 900 } });
+ const page = await ctx.newPage();
+ const consoleErrors = [];
+@@ -219,6 +309,7 @@
+ check('headings do not skip a level (no axe heading-order in any scan)', !AXE_IDS.some(x => x.endsWith(':heading-order')),
+   AXE_IDS.filter(x => x.endsWith(':heading-order')).join(', ') || 'none');
+ check('no console errors', consoleErrors.length === 0, consoleErrors.join(' | ').slice(0, 600));
++await loadChecks(browser); // 1.7: in their own contexts, so a 404 or a refusal does not touch the console check above
+ await browser.close();
+ fs.writeFileSync(path.join(outdir, 'checks.txt'), results.join('\n') + '\n');
+ console.log(results.join('\n'));

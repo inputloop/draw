@@ -1,0 +1,15 @@
+{
+ "format": "topoforge", "version": 1, "name": "Loose in box",
+ "pages": [{
+  "id": "pg01", "name": "Page-1",
+  "layers": [{ "id": "L1", "name": "Default", "visible": true, "locked": false }],
+  "activeLayer": "L1",
+  "nodes": [
+   { "id": "dmz1", "type": "dmz",    "x": 0,   "y": 0,  "w": 320, "h": 220, "text": "Public", "layer": "L1", "parent": null, "props": { "subnet": "192.0.2.0/24" } },
+   { "id": "srvA", "type": "server", "x": 20,  "y": 60, "w": 80,  "h": 92,  "text": "In",     "layer": "L1", "parent": "dmz1", "props": { "ip": "192.0.2.10" } },
+   { "id": "srvB", "type": "server", "x": 140, "y": 60, "w": 80,  "h": 92,  "text": "Loose",  "layer": "L1", "parent": null,   "props": { "ip": "192.0.2.11" } },
+   { "id": "srvC", "type": "server", "x": 400, "y": 60, "w": 80,  "h": 92,  "text": "Out",    "layer": "L1", "parent": null,   "props": { "ip": "198.51.100.5" } }
+  ],
+  "links": []
+ }]
+}

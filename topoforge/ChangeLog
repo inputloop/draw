@@ -1,0 +1,197 @@
+2026-10-30  Alfred (for Bryant)  <nathanielfrankford@gmail.com>
+
+	An example drawing: how Gitcha works, in five pages (the whole
+	system, one request, accounts and 2FA, push to review to build to
+	deploy, the medic and Omni).  Each shape's custom fields say what it
+	does (what), where Gitcha's code for it is (code) and how far it has
+	been tested (status).  The same files are in inputloop/gitcha,
+	topoforge/, with pictures of the pages.
+	* examples/how-gitcha-works.json: New.  TopoForge 1.7's own save of
+	the drawing (opened with ?load=, every shape, link and handle kept;
+	the Issues tab is empty).
+	* examples/how-gitcha-works-story.md: New.  The Story export of that
+	exact file; sh tests/check.sh agrees with it (631 facts).  Its gaps
+	are the network rules (speeds, IPs, subnets, unlabelled links),
+	which mostly do not apply to software, left as reported.
+	* REUSE.toml: examples/*.json as code, examples/*-story.md as prose,
+	neither with a header, since the story names the drawing's bytes.
+	* SHA256SUMS: Written again with bin/sums.sh (REUSE.toml and
+	ChangeLog changed).
+
+2026-10-27  Mentat (for Corwin; claude-sonnet-5-5, directed and checked by claude-mythos-5-1)  <corwin@bru.st>
+
+	TopoForge 1.7: a page on the same origin can open a drawing with
+	?load=<path> (a CSV or TopoForge JSON); any other origin, and file://,
+	is refused and said; window.TopoForge.importCSV for the kit.  From
+	h/PATCH-2026-10-27-topoforge-load-same-origin.md, with the changes to
+	it listed under index.html below.
+	* index.html (TF_VERSION): 1.7.  (header comment): The 1.7 line and
+	who made ?load=.
+	(loadFromQuery): New; boot() calls it last.  Reads ?load=, resolves it
+	against the page, refuses file: and any other origin with a toast
+	before any request is made, then fetches with same-origin
+	credentials.  A body whose first header cell is name or hostname goes
+	to importCSV; anything else to normalizeDoc as TopoForge JSON.  A bad
+	status says "load failed: 404 Not Found" and the like.
+	(boot): The sample drawing is not loaded on a first visit when ?load=
+	names something.  Without this a first visit showed the sample with
+	the rows added to it: 23 nodes for a 4-row CSV.
+	Changes to the patch as proposed: toasts use 'error', since the page
+	has no 'warn' style; a CSV load does not add a "Loaded" toast, since
+	importCSV already says "Imported N devices" or its own error, and the
+	extra toast would say Loaded after a failure; importCSV was already in
+	window.TopoForge in 1.6, so it is not listed twice; the sample guard
+	is new.
+	* tests/browser/topoforge.browser.mjs: New checks "load 1" to "load 5"
+	(the five the patch owes) and "load 1b" (a JSON drawing opens) and
+	"load 1c" (without ?load= a first visit still shows the sample).  They
+	serve index.html from a throwaway server on 127.0.0.1, with a second
+	server on another port as the other origin (it allows any origin and
+	holds a good CSV, so only the page's own test can refuse it; the
+	checks also require it was never asked).  New --load-only mode: those
+	checks alone, no axe-core, written to RESULT-load.txt (first line
+	PARTIAL-GREEN or PARTIAL-RED), never to RESULT.txt.
+	* tests/browser/prove-red.sh: New.  Plants a fault in a copy of
+	index.html (the origin test, the sample guard, the file: test) and
+	requires exactly the check that watches it to go red; a control run
+	on the unplanted file must be green first.  All three are caught.
+	* tests/browser/RESULT.txt: Rewritten by the full kit against the 1.7
+	index.html where axe-core is (Chromium 153, Playwright 1.63, axe-core
+	4.14): GREEN, 41 of 41 checks, no axe finding of any level, with
+	Bryant's 1.5 beside it.  RESULT-load.txt, which --load-only writes,
+	is a local note and is not shipped.
+	* README.org, NEWS, RECIPE.org: The 1.7 line; how to run --load-only
+	and prove-red.sh; the Files table and the ingredients row say 1.7.
+	* patches/topoforge-1.6-to-1.7.patch: New.  v1.6 to v1.7 as one diff -u
+	over the files above that changed, index.html first (not RESULT.txt
+	or SHA256SUMS, which the kit and bin/sums.sh write).
+	* SHA256SUMS: Regenerated with bin/sums.sh over the whole tree.
+
+2026-10-08  Mentat (for Corwin; claude-opus-5-5), fixer FT2  <corwin@bru.st>
+
+	Fixes from QA pass 2 (FOLD-QA2 rows 1, 8, 9 and 10).
+	* .gitignore: SPDX lines (CC-BY-SA-4.0), so reuse lint is clean
+	again; also ignore dist/ (bin/ship.sh output) and out-*/ (the
+	browser kit's output folder).
+	* index.html (.sec h2, .story h2, .story h3): The panel headings are
+	now h2 under the page's h1, and the story's sections h3 under its h2,
+	so no level is skipped.  The selectors move with the tags; the look
+	is unchanged.
+	(storySkeleton, buildStory): Same: h2 for "Recent changes" and the
+	page line, h3 for the story's sections.
+	* tests/harness/ui-jsdom.js: Reads the story headings as h2 and h3.
+	* tests/browser/topoforge.browser.mjs: New check, headings do not
+	skip a level (no axe heading-order in any scan).  Finds playwright
+	in ./node_modules first and lets playwright use its own Chromium
+	when the cloud one is absent.  Header comment says what the code does.
+	* tests/browser/RESULT.txt: Rewritten by the kit: GREEN, 34 of 34,
+	no axe findings of any level.
+	* README.org: How to run the browser kit and read RESULT.txt; the
+	heading finding is gone from the accessibility list.
+	* NEWS: Same.
+	* patches/topoforge-1.5-to-1.6.patch, SHA256SUMS: Regenerated.
+
+2026-10-08  Mentat (for Corwin; claude-opus-5-5), fixer FT  <corwin@bru.st>
+
+	Fixes from QA pass 1 (FOLD-QA1 rows 1 to 5) and the browser findings.
+	* index.html (--text-3): Darker in the light theme (#646d7a, was
+	#8a93a1) and lighter in the dark theme (#868f9c, was #6f7885), so
+	headings, hints and the status bar reach 4.5:1 on every panel colour.
+	(#storyAbout): Uses --text-2 (5.98:1 light, 7.53:1 dark).
+	(#menubar): Drop role=menubar (its items were plain buttons); name the
+	row "Menus".  Each .menu-btn gets aria-haspopup=menu and aria-expanded.
+	(closeMenus, openMenuAt): Keep aria-expanded true while open; Escape
+	returns focus to the menu's button.
+	(fid): New.  An id for each inspector field from its data-path.
+	(inp): Give each field that id.
+	(row): Tie the visible label to its field with for=.
+	(buildProps): X, Y, W, H words become labels for their boxes.
+	(customDataSec): Visible "Field name" and "Value" words above the boxes
+	name them; the remove button says which field it removes.
+	(.brand): Now an h1, styled as before, so the page has a top heading.
+	* tests/browser/topoforge.browser.mjs: Writes RESULT.txt itself, first
+	line GREEN or RED from the checks; adds dark-theme axe scans and checks
+	for the menu buttons; says kit broken when axe-core is missing.
+	* tests/browser/RESULT.txt: Rewritten by the kit: GREEN, 33 of 33.
+	* patches/topoforge-1.5-to-1.6.patch: Regenerated; applies to v1.5 and
+	gives index.html byte for byte.
+	* RECIPE.org: The ship list takes in tests/, spec/ and patches/; ship
+	refuses unless the browser RESULT.txt is GREEN for this index.html;
+	stale "not built yet" lines replaced.
+	* bin/sums.sh, bin/ship.sh, bin/test.sh: Tangled again from RECIPE.org.
+	* REUSE.toml: tests/browser/RESULT.txt and tests/fixtures/*.md are
+	prose, CC-BY-SA-4.0.
+	* README.org, NEWS: 1.6 described from what was checked, not as "in
+	progress".
+	* AUTHORS: Mentat's line names the browser kit and the fixes.
+	* SHA256SUMS: Regenerated last, now over tests/, spec/ and patches/ too.
+
+2026-10-08  Mentat (for Corwin; claude-opus-5-5), builder T1  <corwin@bru.st>
+
+	TopoForge 1.6: the drawing tells its own story.
+	* index.html (ensureRefs): New.  Every shape and connector gets a
+	lasting handle, data.tf_ref, the moment it exists; broken, missing or
+	repeated handles are replaced, and the first holder on a page keeps
+	its handle.
+	(reindex): Calls ensureRefs, so the stamp rides the user's own edit
+	and adds no undo step.
+	(factsOf, parseFact): New.  The drawing as FACTS v=1 lines (pure).
+	(storyOf, changesOf): New.  Plain sentences built only from the
+	facts, each citing its shapes' handles; a Gaps section by fixed rules;
+	what changed between two sets of facts.
+	(storyMarkdown, mdSentence, htmlParts): New.  The story as Markdown:
+	one facts block in a fresh fence, user words quoted and escaped, a
+	header naming the drawing JSON and the facts by sha256.
+	(sha256hex, sha256hexSync): New.  crypto.subtle, with a built-in
+	SHA-256 when it is missing (file://).
+	(storySkeleton, buildStory, storySentenceHTML, scheduleStory,
+	selectRef): New.  The Story tab: live, a text alternative for the
+	drawing, "Recent changes" and a polite status line that says what
+	changed; ref buttons select their shape; Download story (.md) saves
+	the .json and the -story.md together.  Also File > Export > Story in
+	words (.md).
+	Inspector tabs follow the WAI-ARIA tabs pattern (roving tabindex,
+	arrow keys, Home, End); Space, Enter and the arrows on side-panel
+	buttons no longer reach the canvas shortcuts; focus rings show.
+	SPDX lines at the top; About says 1.6 and credits both authors;
+	draw.io agent says 1.6.
+	* spec/FACTS-v1.md: New.  The facts grammar in plain words.
+	* tests/: New.  The story's kit in POSIX sh and jq (check.sh,
+	run.sh, prove-red.sh with 14 planted faults, canon.jq, facts.jq,
+	tables.json, expect/), fixtures, and node harnesses that only produce
+	exports (harness/).
+	* patches/topoforge-1.5-to-1.6.patch: New.  v1.5 to v1.6 as one
+	diff -u.
+
+2026-10-08  Mentat (for Corwin; claude-opus-5-5), builder T2  <corwin@bru.st>
+
+	* README.org, AUTHORS, NEWS, INSTALL, ChangeLog: New.  The usual
+	free-software project files.  Bryant Frankford first: TopoForge is his.
+	* COPYING, COPYING.LESSER: New.  The GNU GPL v3 and LGPL v3 texts,
+	copied from Bryant's Tavern-Setup-2.3.1 LICENSES/.
+	* LICENSES/GPL-3.0-or-later.txt, LICENSES/LGPL-3.0-or-later.txt: New,
+	the same texts under their SPDX names.
+	* LICENSES/CC-BY-SA-4.0.txt: New, copied from Bryant's nexus drop of
+	2026-10-05.
+	* REUSE.toml: New.  Code GPL-3.0-or-later OR LGPL-3.0-or-later; prose
+	CC-BY-SA-4.0.
+	* RECIPE.org: New.  The ship recipe: ingredients with their sums, and how
+	to tangle, verify, test, sum and ship.  Says what is not built yet.
+	* bin/tangle.sh, bin/verify.sh, bin/sums.sh, bin/test.sh, bin/ship.sh:
+	New, tangled from RECIPE.org (POSIX sh).
+	* kit/project-files/SPEC.org, kit/project-files/check.py: New.  The
+	scripts' own spec and a checker in Python, with four planted faults
+	that must each go red.
+	* SHA256SUMS: New, over the files above and upstream/ only; index.html
+	is left out while it is being changed.
+
+2026-10-08  Mentat (for Corwin; claude-opus-5-5)  <corwin@bru.st>
+
+	* upstream/topoforge-1.5.html: Bryant's TopoForge 1.5 as received
+	(sha256 6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a);
+	never to be edited.
+	* index.html: The working copy, at first the same bytes.
+
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors
+SPDX-License-Identifier: CC-BY-SA-4.0

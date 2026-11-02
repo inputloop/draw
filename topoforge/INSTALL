@@ -1,0 +1,48 @@
+TopoForge -- installation
+
+There is nothing to install.  TopoForge is one HTML file, index.html.  Open it
+in a web browser (double-click it, or drag it onto a browser window).  It runs
+from file://, offline, with no server and no network calls.  Your work is
+saved in that browser; use File > Export to keep copies elsewhere.
+
+Check a copy
+------------
+Every file in a release is listed in SHA256SUMS.  From the folder holding it:
+
+    sha256sum -c SHA256SUMS            # GNU coreutils; each line should say OK
+    shasum -a 256 -c SHA256SUMS        # the same, where sha256sum is missing
+
+Bryant's version 1.5 has this sha256:
+
+    6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a
+
+so a single file can be checked by hand:
+
+    sha256sum upstream/topoforge-1.5.html
+
+A signed release also carries a detached signature by Corwin Brust:
+
+    gpg --verify topoforge-VERSION.tar.gz.asc topoforge-VERSION.tar.gz
+
+His key's fingerprint is
+
+    ECE7 7CF4 17C7 6C1A CFCE  7C2B 5B61 3551 1580 F007
+
+(no signed release yet, as of 2026-10-08).
+
+The scripts
+-----------
+From a source tree (POSIX sh; run each with sh, since a copy may have no
+execute bit):
+
+    sh bin/verify.sh       is upstream/ still v1.5; do files match SHA256SUMS
+    sh bin/test.sh         every test kit (TopoForge's own need jq; the
+                           project-files kit needs python3)
+    sh bin/sums.sh         write SHA256SUMS
+    sh bin/ship.sh 1.6     verify, test, sum, pack dist/topoforge-1.6.tar.gz
+                           (GNU tar, for --transform)
+    sh bin/tangle.sh       remake bin/ from RECIPE.org (or C-c C-v t in Emacs)
+
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors
+SPDX-License-Identifier: CC-BY-SA-4.0

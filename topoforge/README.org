@@ -1,0 +1,160 @@
+#+TITLE: TopoForge
+#+SUBTITLE: A single-file, offline network-topology designer
+#+AUTHOR: Bryant Frankford and Corwin Brust
+#+LANGUAGE: en
+#+OPTIONS: toc:nil num:nil
+#+STARTUP: showall
+
+TopoForge draws networks: devices (routers, firewalls, switches, servers,
+desktops and some thirty more), groups that hold them (site, zone, VLAN,
+subnet, DMZ, VPC, rack; groups can sit inside groups), and connections glued
+to the devices' sides, across pages and layers.  It checks the drawing as you
+go (bad or duplicate addresses, an address outside its subnet, VLAN
+mismatches, loose connection ends) and lists what it finds.
+
+It is one HTML file, =index.html=.  It needs no server, no install and no
+network: everything runs in your browser, and your work is saved in that
+browser as you go.
+
+TopoForge was created by Bryant Frankford, written with Alfred (for Bryant;
+claude-opus-5-5), for Corwin Brust, who gave inputs to the prompt.
+
+* Open it
+Open =index.html= in a web browser: double-click it, or drag it onto a browser
+window.  It works from =file://=, offline.  Use File › Export to keep copies
+of your work outside the browser.
+
+* What it reads and writes
+- Saves and opens its own format, TopoForge JSON (=.json=).
+- Exports SVG, PNG, PDF (vector, by way of print), CSV (with a template),
+  draw.io (=.drawio=), Visio 2003-2010 XML (=.vdx=) and Visio (=.vsdx=).
+- Imports its JSON, CSV, draw.io and Visio files.
+- Visio export has been tried lightly by hand in Visio 2010 on Corwin's
+  machine (avalon); this is reported, not yet a scripted test.
+- New in 1.6: a live story of the drawing, in plain sentences, that can be
+  downloaded as Markdown for a person or an AI to read beside the picture;
+  and a lasting handle on each shape (=tf_ref=, written into its data as you
+  draw), so a sentence can always be traced to its shape.
+- New in 1.7: a page on the same origin can open a drawing with
+  =?load=<path>= (a CSV or TopoForge JSON); any other origin, and =file://=, is
+  refused and said; =window.TopoForge.importCSV= for the kit.
+
+* Accessibility
+We want TopoForge usable without a mouse, without colour, and without seeing
+the picture.  What is true of version 1.6, checked on 2026-10-08 in Chromium
+with the browser kit (=tests/browser/=), and what is not yet:
+- *Keyboard.* Tab reaches every panel; the arrow keys move between the
+  Properties, Layers, Issues and Story tabs; Enter and Space work on them and
+  on Download; the menu buttons open with Enter and close with Escape; the
+  focus ring shows; and there is no place Tab gets stuck.  The menus'
+  commands also have keyboard shortcuts (open, save, print, undo and redo,
+  cut, copy, paste, duplicate, delete, select all, edit text with F2, front
+  and back, group and ungroup, layout, zoom and fit).  Not checked yet:
+  drawing and moving shapes on the canvas with the keyboard alone.
+- *Labels.* Every field in the Properties panel is tied to its visible
+  words, and an automatic scan (axe-core) finds no serious or critical
+  problem in the light or the dark theme.  Headings go in order: the page
+  heading is level one, the panel headings level two, the story's
+  sections level three.  The scan finds nothing at any level.
+- *A text alternative to the picture.* The story panel says in words what
+  the drawing shows: which devices there are, which group holds which, what
+  connects to what, and what the drawing does not say.  Changing text is
+  announced to screen readers.
+- *Not tried yet:* a real screen reader (NVDA, Narrator, Orca) and browsers
+  on Windows.
+- *Colour.* Meaning should never be carried by colour alone; where it is
+  today, that is a bug to report.
+- *Plain words.* Messages and the story use common words.
+If something gets in your way, please say so; it counts as a bug.
+
+* Check a copy
+=INSTALL= says how to check a copy with =sha256sum=.  In short:
+#+begin_src sh
+sh bin/verify.sh     # is upstream/ Bryant's v1.5, and do the files match SHA256SUMS?
+sh bin/test.sh       # every test kit this tree carries
+#+end_src
+
+* Check it in a real browser
+=tests/browser/topoforge.browser.mjs= opens =index.html= from =file://= in
+Chromium, draws a small network, works the panels by keyboard alone, saves
+the story, and runs the axe-core accessibility scan in the light and dark
+themes.  From 1.7 it also serves =index.html= from a throwaway server on
+127.0.0.1 (and a second server on another port, as "the other origin") to
+check =?load=<path>=: a CSV and a JSON drawing open from the page's own
+origin on a first visit, another origin and =file://= are refused and said,
+a 404 is said, and =importCSV= is there.  It needs Node (18 or later),
+Playwright and axe-core.  Install the two packages in a scratch folder, or
+beside this tree, and run the kit from that folder:
+#+begin_src sh
+mkdir -p ~/tf-kit && cd ~/tf-kit
+npm i playwright axe-core
+npx playwright install chromium     # once; skip if you already have one
+node /path/to/topoforge/tests/browser/topoforge.browser.mjs /path/to/topoforge/index.html
+#+end_src
+It looks for =./node_modules/playwright= and
+=./node_modules/axe-core/axe.min.js= in the folder you run it from; set
+=PW_MODULE=, =AXE= or =CHROMIUM= to point it elsewhere.  The second
+argument names a folder for its scans and downloads (default
+=out-topoforge/= where you run it; git ignores =out-*/=).
+
+It prints one line per check and writes =tests/browser/RESULT.txt= beside
+itself (set =RESULT= to write it elsewhere).  Reading =RESULT.txt=:
+- The first line is GREEN (every check passed) or RED (at least one
+  failed), computed by the kit, never typed by hand.
+- It names the =index.html= it tested by sha256; =bin/ship.sh= refuses to
+  pack unless that line matches the =index.html= being shipped and the
+  first line is GREEN.
+- A check fails on any critical or serious axe finding; moderate and
+  minor ones are listed after =::= but do not fail it, except heading
+  order, which has its own check.
+- Exit 0 green, 1 red, 2 kit broken (Playwright, axe-core or the file
+  not found).
+
+For the =?load= checks alone (no axe-core needed):
+#+begin_src sh
+node /path/to/topoforge/tests/browser/topoforge.browser.mjs --load-only /path/to/topoforge/index.html
+sh /path/to/topoforge/tests/browser/prove-red.sh /path/to/topoforge/index.html
+#+end_src
+The first writes =tests/browser/RESULT-load.txt=, whose first line is
+PARTIAL-GREEN or PARTIAL-RED.  It is not =RESULT.txt= (no axe scan, no keyboard
+checks were run), and =bin/ship.sh= does not read it.  The second plants three
+faults in copies of =index.html= (the origin test, the =file:= test, and the
+guard that keeps the sample drawing out of a =?load=); each must turn its own
+check, and only that one, red.  Exit 0 every plant was caught, 1 one was not,
+2 it could not run.
+
+* The recipe
+=RECIPE.org= is how this copy is checked, tested and shipped.  The scripts in
+=bin/= are tangled from it.
+
+* Files
+| =index.html=          | TopoForge itself (the working copy)            |
+| =upstream/=           | Bryant's v1.5 exactly as received; never edited |
+| =RECIPE.org=          | the ship recipe; =bin/= is tangled from it     |
+| =bin/=                | verify, test, sums, ship, tangle (POSIX sh)    |
+| =kit/project-files/=  | the check for =bin/= (its own spec, in Python)  |
+| =tests/=, =spec/=     | TopoForge's own tests and what they check against |
+| =tests/browser/=      | the real-browser kit, =prove-red.sh=, and the =RESULT.txt= it writes |
+| =patches/=            | v1.5 to v1.6, v1.6 to v1.7: each a =diff -u=   |
+| =NEWS=, =ChangeLog=   | what changed, for users and in detail          |
+| =AUTHORS=             | who made it                                    |
+| =COPYING=, =COPYING.LESSER=, =LICENSES/= | the licence texts           |
+| =REUSE.toml=          | which licence covers which file                |
+
+* Licences
+- Code (=index.html=, =bin/=, =kit/=): GPL-3.0-or-later OR LGPL-3.0-or-later,
+  your choice.  =COPYING= is the GPL, =COPYING.LESSER= the LGPL.
+- Prose (this file, the other documents, the story text TopoForge writes
+  about itself): CC-BY-SA-4.0.
+- =REUSE.toml= says which applies to which file; the texts are in =LICENSES/=.
+
+* Authors
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin
+Brust <corwin@bru.st> and Contributors.
+
+- Bryant Frankford: creator of TopoForge.  Written with Alfred (for Bryant;
+  claude-opus-5-5).
+- Corwin Brust: gave inputs to the prompt; the project files and the 1.6
+  work.  Our changes: Mentat (for Corwin; claude-opus-5-5).
+
+See =AUTHORS=.

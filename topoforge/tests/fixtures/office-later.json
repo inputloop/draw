@@ -1,0 +1,328 @@
+{
+ "format": "topoforge",
+ "version": 1,
+ "name": "Small office",
+ "settings": {
+  "grid": 20,
+  "snap": true,
+  "showGrid": true,
+  "guides": true,
+  "netLabels": true,
+  "ifLabels": true,
+  "minimap": true,
+  "defaultRoute": "orthogonal"
+ },
+ "pages": [
+  {
+   "id": "pg01",
+   "name": "Page-1",
+   "layers": [
+    {
+     "id": "L1",
+     "name": "Default",
+     "visible": true,
+     "locked": false
+    }
+   ],
+   "activeLayer": "L1",
+   "nodes": [
+    {
+     "id": "dmz1",
+     "type": "dmz",
+     "x": 400,
+     "y": 0,
+     "w": 320,
+     "h": 220,
+     "text": "DMZ",
+     "layer": "L1",
+     "parent": null,
+     "props": {},
+     "data": {
+      "tf_ref": "dmz-dmz1"
+     },
+     "style": {}
+    },
+    {
+     "id": "lan1",
+     "type": "vlan",
+     "x": 400,
+     "y": 300,
+     "w": 420,
+     "h": 220,
+     "text": "LAN",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "vlan": "10"
+     },
+     "data": {
+      "tf_ref": "vlan-lan1"
+     },
+     "style": {}
+    },
+    {
+     "id": "gw01",
+     "type": "router",
+     "x": 0,
+     "y": 100,
+     "w": 80,
+     "h": 92,
+     "text": "Gateway",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "ip": "203.0.113.1"
+     },
+     "data": {
+      "tf_ref": "router-gw01"
+     },
+     "style": {}
+    },
+    {
+     "id": "fw01",
+     "type": "firewall",
+     "x": 200,
+     "y": 100,
+     "w": 80,
+     "h": 92,
+     "text": "FW1",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "ip": "192.168.1.1"
+     },
+     "data": {
+      "tf_ref": "firewall-fw01"
+     },
+     "style": {}
+    },
+    {
+     "id": "web1",
+     "type": "server",
+     "x": 420,
+     "y": 60,
+     "w": 80,
+     "h": 92,
+     "text": "Web1",
+     "layer": "L1",
+     "parent": "dmz1",
+     "props": {},
+     "data": {
+      "tf_ref": "server-web1"
+     },
+     "style": {}
+    },
+    {
+     "id": "mai1",
+     "type": "server",
+     "x": 540,
+     "y": 60,
+     "w": 80,
+     "h": 92,
+     "text": "Mail1",
+     "layer": "L1",
+     "parent": "dmz1",
+     "props": {},
+     "data": {
+      "tf_ref": "server-mai1"
+     },
+     "style": {}
+    },
+    {
+     "id": "sw01",
+     "type": "switch",
+     "x": 420,
+     "y": 360,
+     "w": 80,
+     "h": 92,
+     "text": "SW1",
+     "layer": "L1",
+     "parent": "lan1",
+     "props": {},
+     "data": {
+      "tf_ref": "switch-sw01"
+     },
+     "style": {}
+    },
+    {
+     "id": "pc01",
+     "type": "desktop",
+     "x": 560,
+     "y": 360,
+     "w": 80,
+     "h": 92,
+     "text": "PC 1",
+     "layer": "L1",
+     "parent": "lan1",
+     "props": {},
+     "data": {
+      "tf_ref": "desktop-pc01"
+     },
+     "style": {}
+    },
+    {
+     "id": "pc02",
+     "type": "desktop",
+     "x": 680,
+     "y": 360,
+     "w": 80,
+     "h": 92,
+     "text": "Reception PC",
+     "layer": "L1",
+     "parent": "lan1",
+     "props": {},
+     "data": {
+      "tf_ref": "desktop-pc02"
+     },
+     "style": {}
+    },
+    {
+     "id": "pc03",
+     "type": "desktop",
+     "x": 560,
+     "y": 420,
+     "w": 80,
+     "h": 92,
+     "text": "PC 3",
+     "layer": "L1",
+     "parent": "lan1",
+     "props": {},
+     "data": {
+      "tf_ref": "desktop-pc03"
+     },
+     "style": {}
+    }
+   ],
+   "links": [
+    {
+     "id": "e-gwfw",
+     "a": {
+      "id": "gw01",
+      "port": null
+     },
+     "b": {
+      "id": "fw01",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {
+      "speed": "1G",
+      "medium": "fiber"
+     },
+     "style": {},
+     "data": {
+      "tf_ref": "link-gwfw"
+     }
+    },
+    {
+     "id": "e-fwwb",
+     "a": {
+      "id": "fw01",
+      "port": null
+     },
+     "b": {
+      "id": "web1",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {},
+     "style": {},
+     "data": {
+      "tf_ref": "link-fwwb"
+     }
+    },
+    {
+     "id": "e-fwsw",
+     "a": {
+      "id": "fw01",
+      "port": null
+     },
+     "b": {
+      "id": "sw01",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "trunk",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {
+      "speed": "1G",
+      "medium": "copper"
+     },
+     "style": {},
+     "data": {
+      "tf_ref": "link-fwsw"
+     }
+    },
+    {
+     "id": "e-swp1",
+     "a": {
+      "id": "sw01",
+      "port": null
+     },
+     "b": {
+      "id": "pc01",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {},
+     "style": {},
+     "data": {
+      "tf_ref": "link-swp1"
+     }
+    },
+    {
+     "id": "e-swp2",
+     "a": {
+      "id": "sw01",
+      "port": null
+     },
+     "b": {
+      "id": "pc02",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {},
+     "style": {},
+     "data": {
+      "tf_ref": "link-swp2"
+     }
+    },
+    {
+     "id": "e-swp3",
+     "a": {
+      "id": "sw01",
+      "port": null
+     },
+     "b": {
+      "id": "pc03",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {},
+     "style": {},
+     "data": {
+      "tf_ref": "link-swp3"
+     }
+    }
+   ]
+  }
+ ],
+ "cur": 0,
+ "exported": "2026-10-08T00:00:00.000Z"
+}

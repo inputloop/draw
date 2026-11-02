@@ -1,0 +1,217 @@
+{
+ "format": "topoforge",
+ "version": 1,
+ "name": "Small office",
+ "pages": [
+  {
+   "id": "pg01",
+   "name": "Page-1",
+   "layers": [
+    {
+     "id": "L1",
+     "name": "Default",
+     "visible": true,
+     "locked": false
+    }
+   ],
+   "activeLayer": "L1",
+   "nodes": [
+    {
+     "id": "dmz1",
+     "type": "dmz",
+     "x": 400,
+     "y": 0,
+     "w": 320,
+     "h": 220,
+     "text": "DMZ",
+     "layer": "L1",
+     "parent": null
+    },
+    {
+     "id": "lan1",
+     "type": "vlan",
+     "x": 400,
+     "y": 300,
+     "w": 420,
+     "h": 220,
+     "text": "LAN",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "vlan": "10"
+     }
+    },
+    {
+     "id": "gw01",
+     "type": "router",
+     "x": 0,
+     "y": 100,
+     "w": 80,
+     "h": 92,
+     "text": "Gateway",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "ip": "203.0.113.1"
+     }
+    },
+    {
+     "id": "fw01",
+     "type": "firewall",
+     "x": 200,
+     "y": 100,
+     "w": 80,
+     "h": 92,
+     "text": "FW1",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "ip": "192.168.1.1"
+     }
+    },
+    {
+     "id": "web1",
+     "type": "server",
+     "x": 420,
+     "y": 60,
+     "w": 80,
+     "h": 92,
+     "text": "Web1",
+     "layer": "L1",
+     "parent": "dmz1"
+    },
+    {
+     "id": "mai1",
+     "type": "server",
+     "x": 540,
+     "y": 60,
+     "w": 80,
+     "h": 92,
+     "text": "Mail1",
+     "layer": "L1",
+     "parent": "dmz1"
+    },
+    {
+     "id": "sw01",
+     "type": "switch",
+     "x": 420,
+     "y": 360,
+     "w": 80,
+     "h": 92,
+     "text": "SW1",
+     "layer": "L1",
+     "parent": "lan1"
+    },
+    {
+     "id": "pc01",
+     "type": "desktop",
+     "x": 560,
+     "y": 360,
+     "w": 80,
+     "h": 92,
+     "text": "PC 1",
+     "layer": "L1",
+     "parent": "lan1"
+    },
+    {
+     "id": "pc02",
+     "type": "desktop",
+     "x": 680,
+     "y": 360,
+     "w": 80,
+     "h": 92,
+     "text": "Reception PC",
+     "layer": "L1",
+     "parent": "lan1"
+    },
+    {
+     "id": "pc03",
+     "type": "desktop",
+     "x": 560,
+     "y": 420,
+     "w": 80,
+     "h": 92,
+     "text": "PC 3",
+     "layer": "L1",
+     "parent": "lan1"
+    }
+   ],
+   "links": [
+    {
+     "id": "e-gwfw",
+     "a": {
+      "id": "gw01"
+     },
+     "b": {
+      "id": "fw01"
+     },
+     "text": "",
+     "layer": "L1",
+     "props": {
+      "medium": "fiber",
+      "speed": "1G"
+     }
+    },
+    {
+     "id": "e-fwwb",
+     "a": {
+      "id": "fw01"
+     },
+     "b": {
+      "id": "web1"
+     },
+     "text": "",
+     "layer": "L1"
+    },
+    {
+     "id": "e-fwsw",
+     "a": {
+      "id": "fw01"
+     },
+     "b": {
+      "id": "sw01"
+     },
+     "text": "trunk",
+     "layer": "L1",
+     "props": {
+      "medium": "copper",
+      "speed": "1G"
+     }
+    },
+    {
+     "id": "e-swp1",
+     "a": {
+      "id": "sw01"
+     },
+     "b": {
+      "id": "pc01"
+     },
+     "text": "",
+     "layer": "L1"
+    },
+    {
+     "id": "e-swp2",
+     "a": {
+      "id": "sw01"
+     },
+     "b": {
+      "id": "pc02"
+     },
+     "text": "",
+     "layer": "L1"
+    },
+    {
+     "id": "e-swp3",
+     "a": {
+      "id": "sw01"
+     },
+     "b": {
+      "id": "pc03"
+     },
+     "text": "",
+     "layer": "L1"
+    }
+   ]
+  }
+ ]
+}

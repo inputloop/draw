@@ -1,5 +1,20 @@
 2026-11-01  Corwin Brust  <corwin@bru.st>
 
+	TopoForge's own kits come forward into this branch, so work on
+	TopoForge can go on here (Corwin, 2026-11-01 18:31).
+
+	* topoforge/: the TopoForge repository at e5b646c, by git archive,
+	without index.html (the app stays at www/topoforge/index.html,
+	unchanged), FOR-BRYANT.md, .github/, SHA256SUMS and the Gitcha
+	example drawing.  context/SOURCES.md says why for each.
+	* topoforge/tests/run.sh, topoforge/tests/regen.sh: read the app from
+	../../www/topoforge/index.html, or $TF_HTML.
+	* RECIPE.org (bin/test.sh): run topoforge/tests/run.sh and
+	topoforge/kit/project-files/check.py; an ingredients row.
+	* README.org: a row for topoforge/.
+
+2026-11-01  Corwin Brust  <corwin@bru.st>
+
 	The drawing first: TopoForge gets the width, and nothing on the page
 	offers what it cannot do.  From the UI audit of 2026-11-01 (in
 	corwin.cloud, docs/UI-AUDIT-2026-11-01.md).

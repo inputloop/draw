@@ -25,6 +25,23 @@ branch unless the last column says so.
 | `https://fastapi.metacpan.org/v1/release/<dist>` | (per dist) | authors and dates of the CPAN modules we vendor (`vendor/VENDOR.org`) |
 | Corwin's memory notes for this project (egad, inputloop, cards, design direction, build rules) | n/a | the egad distribution idea; "undersell us, sell the opportunity"; tiered offerings |
 
+## Brought forward on 2026-11-01
+
+Corwin, 2026-11-01 18:31: work on TopoForge now moves forward here, on this branch; the TopoForge
+repository stays as Bryant's last pass, for others to rebuild from, and may be archived. So its
+companion files were copied into `topoforge/` from its commit `e5b646c` (`git archive`), byte for
+byte, except:
+
+- `index.html` is not copied: the app stays where it was, `www/topoforge/index.html`, unchanged and
+  the same bytes (`c6c0fbc0e2ba99fd`). `topoforge/tests/run.sh` and `regen.sh` read it from there
+  (`TF_HTML` overrides); those two lines are the only edits.
+- Left out: `FOR-BRYANT.md` (a letter to Bryant, his to keep), `.github/`, `SHA256SUMS` (it sums
+  the app at the old place; `topoforge/kit/project-files/check.py` remakes sums in a scratch tree),
+  and Bryant's example drawing `examples/how-gitcha-works.json` with its story (held for Corwin's
+  word; corwin.cloud already stages it from gitcha, checked by sha256).
+
+`sh bin/test.sh` now runs both TopoForge kits against `www/topoforge/index.html`.
+
 ## Inputs we did not have
 
 - Bryant's own version of topology, and his notes from the last few days' talk. The repository was

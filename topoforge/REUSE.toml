@@ -1,0 +1,48 @@
+# Which licence covers which file (REUSE specification 3.x).
+# Licence texts: LICENSES/.  COPYING and COPYING.LESSER are the GPL and LGPL texts.
+version = 1
+
+# Code: TopoForge itself, Bryant's upstream copy, the scripts and the kits.
+[[annotations]]
+path = ["index.html", "upstream/**", "bin/**", "kit/**/*.py", "tests/**", "patches/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "GPL-3.0-or-later OR LGPL-3.0-or-later"
+
+# Prose: the documents and the specs.
+[[annotations]]
+path = ["README.org", "AUTHORS", "NEWS", "ChangeLog", "INSTALL", "SHA256SUMS", "spec/**", "kit/**/*.org", "REUSE.toml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# The recipe is prose with code blocks that tangle into bin/.
+[[annotations]]
+path = "RECIPE.org"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0 AND (GPL-3.0-or-later OR LGPL-3.0-or-later)"
+
+# Prose inside tests/: the browser kit's RESULT.txt (a note it writes, which
+# names its own licence) and the story documents among the fixtures.  Listed
+# after the code entry so these win over its tests/** match.
+[[annotations]]
+path = ["tests/browser/RESULT.txt", "tests/fixtures/*.md"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# examples/: drawings made with TopoForge, each with the story TopoForge wrote
+# from it.  A story's third line names its drawing's sha256 and tests/check.sh
+# checks it byte for byte, so neither file takes a header.
+[[annotations]]
+path = "examples/*.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "GPL-3.0-or-later OR LGPL-3.0-or-later"
+
+[[annotations]]
+path = "examples/*-story.md"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"

@@ -5,6 +5,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- TopoForge's own test kits, story spec, project files and recipe now live
+  in topoforge/, and sh bin/test.sh runs them against the app in
+  www/topoforge/ (unchanged).
+
 - The app gives the drawing the whole width.  Its settings are one closed
   line above it; Draw and Go appear only once a graph server is chosen;
   Copy as a prompt now carries the drawing's own story, as TopoForge writes it.

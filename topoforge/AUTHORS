@@ -1,0 +1,18 @@
+TopoForge -- authors and makers
+
+Bryant Frankford <nathanielfrankford@gmail.com>   creator of TopoForge
+Corwin Brust <corwin@bru.st>                      inputs to the prompt; project
+                                                  files, recipe, 1.6 work
+
+Makers (the AI help each author worked with):
+  Alfred (for Bryant; claude-opus-5-5)    wrote TopoForge with Bryant
+  Mentat (for Corwin; claude-opus-5-5)    our changes: the project files, the
+                                          recipe and its scripts, 1.6, the
+                                          browser kit, and accessibility
+                                          fixes (some to parts from 1.5)
+
+TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+and on everything that grows from it.
+
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors

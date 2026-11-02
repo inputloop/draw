@@ -1,0 +1,17 @@
+FACTS v=1
+DOC name="Loose in box"
+PAGE p=1 name="Page-1"
+LAYER p=1 n=1 visible=1 name="Default"
+NODE p=1 ref=dmz-dmz1 kind=container type=dmz label="Public"
+TOP p=1 ref=dmz-dmz1
+PROP p=1 ref=dmz-dmz1 key=subnet value="192.0.2.0/24"
+NODE p=1 ref=server-srva kind=device type=server label="In"
+IN p=1 ref=server-srva parent=dmz-dmz1
+PROP p=1 ref=server-srva key=ip value="192.0.2.10"
+NODE p=1 ref=server-srvb kind=device type=server label="Loose"
+TOP p=1 ref=server-srvb
+PROP p=1 ref=server-srvb key=ip value="192.0.2.11"
+GAP p=1 kind=LOOSE_IN_BOX ref=server-srvb box=dmz-dmz1
+NODE p=1 ref=server-srvc kind=device type=server label="Out"
+TOP p=1 ref=server-srvc
+PROP p=1 ref=server-srvc key=ip value="198.51.100.5"

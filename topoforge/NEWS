@@ -1,0 +1,82 @@
+TopoForge NEWS -- user-visible changes
+
+Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+Corwin Brust <corwin@bru.st> and Contributors
+SPDX-License-Identifier: CC-BY-SA-4.0
+
+Version 1.7 (2026-10-27; built and checked: tests/run.sh and the project-files
+check green, the browser kit 41 of 41 in Chromium 153 with axe-core 4.14 and no
+axe finding of any level; no release packed or signed yet)
+
+- A page on the same origin can open a drawing with ?load=<path> (a CSV or
+  TopoForge JSON); any other origin, and file://, is refused and said;
+  window.TopoForge.importCSV for the kit.
+
+Version 1.6 (2026-10-08; built and tested; no release packed or signed yet)
+
+- The drawing tells its own story: a Story panel beside Properties, Layers
+  and Issues says in plain sentences what the drawing shows (devices, which
+  group holds which, what connects to what) and, apart from that, what the
+  drawing does not say (no address, no subnet, a loose end, a shape drawn over
+  a group but not in it).  It updates as you draw.
+- Export the story as Markdown, meant to be given to a person or an AI
+  together with the picture.  It carries the facts it was built from, so
+  anyone can check it against the drawing.
+- Lasting handles: each shape and connection gets a handle in its data
+  (tf_ref) when it is drawn; handles survive export and import, where the
+  internal ids do not.
+- The project files a free-software package carries: README.org, AUTHORS,
+  COPYING, COPYING.LESSER, LICENSES/, REUSE.toml, NEWS, ChangeLog, INSTALL,
+  and RECIPE.org, from which the scripts in bin/ are made.
+  Licences: code GPL-3.0-or-later OR LGPL-3.0-or-later; prose CC-BY-SA-4.0.
+- Accessibility fixes, including some in what came from 1.5:
+  - The menu buttons (File, Edit, ...) are plain buttons that say they
+    open a menu and whether it is open; Escape closes a menu and puts you
+    back on its button.  (1.5 called the row a "menubar" but its items were
+    ordinary buttons, which misled screen readers.)
+  - Every field in the Properties panel is tied to the words beside it,
+    so a screen reader says "IP address", not just "edit text".  The X, Y, W,
+    H boxes and the custom-data name and value boxes are named the same way;
+    custom data now shows "Field name" and "Value" above its boxes.
+  - The faint grey text (headings in the panels, hints, the status bar) is
+    darker in the light theme and lighter in the dark theme, so it is
+    readable (at least 4.5 to 1 against its background); the story's
+    "text alternative" note uses the stronger grey.
+  - Headings no longer skip a level: the page title is level one, the
+    panel headings level two, the story's sections level three.  They
+    look as before.
+- How we know: tests/run.sh (the story checked against the drawing by a
+  second program, with planted faults that must be caught) is green, and
+  the browser kit tests/browser/topoforge.browser.mjs, run in Chromium 141
+  with axe-core 4.14, passes all 34 of its checks in light and dark themes, with no
+  axe finding of any level,
+  (tests/browser/RESULT.txt, which the kit writes itself).  Not yet tried: a
+  real screen reader, browsers on Windows, and drawing a shape with the
+  keyboard alone.
+
+Version 1.5 (Bryant Frankford, 2026-10-08)
+
+The version received from Bryant (sha256
+6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a).  What it
+does, read from the file itself:
+- Devices (33 kinds, each with a role from outside world to endpoint), groups
+  (zone, site, VLAN, subnet, DMZ, VPC, rack; nestable), basic shapes,
+  connections glued to a side or free, pages and layers.
+- Network fields on devices (hostname, IP, MAC, VLAN, status, vendor, model,
+  subnet, notes) and connections (speed, medium, interfaces, notes), plus
+  free custom data.
+- Issues panel: bad and duplicate IPs, an IP outside its subnet, VLAN range
+  and mismatch, duplicate hostnames and interface names, loose ends,
+  self-loops.
+- Save and open TopoForge JSON; export SVG, PNG, PDF, CSV (and a CSV
+  template), draw.io, Visio .vdx (2003-2010) and .vsdx; import JSON, CSV,
+  draw.io and Visio.
+- Autosave in the browser; undo and redo; keyboard shortcuts for the menus.
+- Note: its About box still says "Version 1.0".
+
+Versions 1.0 to 1.4
+
+Not written here yet.  Alfred's release notes (the Tavern drop
+TopoForge-results.md) have the history; the Tavern was not reachable when
+this file was written (2026-10-08), so this section waits for them rather
+than guessing.

@@ -1,0 +1,827 @@
+--- topoforge-1.5/index.html
++++ topoforge-1.6/index.html
+@@ -1,3 +1,10 @@
++<!--
++  TopoForge — network topology designer (single offline file)
++  SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
++  Prose and art in this file: CC-BY-SA-4.0
++  Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
++  Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5)
++-->
+ <!doctype html>
+ <html lang="en">
+ <head>
+@@ -9,7 +16,7 @@
+ <style>
+ :root{
+   --bg:#f3f4f6; --panel:#ffffff; --panel-2:#f8fafc; --border:#e2e5ea; --border-2:#cfd4dc;
+-  --text:#1f2937; --text-2:#5b6472; --text-3:#8a93a1;
++  --text:#1f2937; --text-2:#5b6472; --text-3:#646d7a;
+   --accent:#2563eb; --accent-2:#dbe7ff; --accent-ink:#ffffff;
+   --danger:#dc2626; --warn:#d97706; --ok:#16a34a;
+   --canvas:#ffffff; --grid:#eceef2; --grid-major:#dde1e7;
+@@ -20,7 +27,7 @@
+ @media (prefers-color-scheme: dark){
+   :root:not([data-theme="light"]){
+     --bg:#0f1115; --panel:#171a1f; --panel-2:#1c2026; --border:#2a2f37; --border-2:#39404a;
+-    --text:#e6e8eb; --text-2:#a3abb7; --text-3:#6f7885;
++    --text:#e6e8eb; --text-2:#a3abb7; --text-3:#868f9c;
+     --accent:#60a5fa; --accent-2:#1e3a5f; --accent-ink:#0b1220;
+     --canvas:#14171b; --grid:#1d2127; --grid-major:#262b33;
+     --shadow:0 8px 28px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
+@@ -29,7 +36,7 @@
+ }
+ :root[data-theme="dark"]{
+   --bg:#0f1115; --panel:#171a1f; --panel-2:#1c2026; --border:#2a2f37; --border-2:#39404a;
+-  --text:#e6e8eb; --text-2:#a3abb7; --text-3:#6f7885;
++  --text:#e6e8eb; --text-2:#a3abb7; --text-3:#868f9c;
+   --accent:#60a5fa; --accent-2:#1e3a5f; --accent-ink:#0b1220;
+   --canvas:#14171b; --grid:#1d2127; --grid-major:#262b33;
+   --shadow:0 8px 28px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
+@@ -41,7 +48,7 @@
+ button{cursor:pointer}
+ #app{display:grid;grid-template-columns:236px minmax(0,1fr) 296px;grid-template-rows:46px minmax(0,1fr) 30px;height:100vh;height:100dvh}
+ #topbar{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--border);min-width:0}
+-.brand{display:flex;align-items:center;gap:8px;font-weight:650;letter-spacing:.2px;margin-right:6px;white-space:nowrap}
++.brand{display:flex;align-items:center;gap:8px;font-weight:650;letter-spacing:.2px;margin:0 6px 0 0;font-size:inherit;white-space:nowrap}
+ .brand svg{width:22px;height:22px}
+ #menubar{display:flex;gap:1px}
+ .menu-btn{background:none;border:0;padding:6px 9px;border-radius:6px}
+@@ -101,7 +108,7 @@
+ .tabpane[hidden]{display:none}
+ .sec{padding:10px 14px;border-bottom:1px solid var(--border)}
+ .sec:last-child{border-bottom:0}
+-.sec h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);font-weight:650;display:flex;align-items:center;justify-content:space-between}
++.sec h2{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);font-weight:650;display:flex;align-items:center;justify-content:space-between}
+ .row{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:8px;margin:5px 0}
+ .row>label{color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .row.full{grid-template-columns:1fr}
+@@ -112,7 +119,7 @@
+ .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+ .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+ .mini{display:flex;flex-direction:column;gap:2px}
+-.mini span{font-size:10.5px;color:var(--text-3)}
++.mini span,.mini label{font-size:10.5px;color:var(--text-3)}
+ .color{display:flex;align-items:center;gap:4px}
+ .color input[type=color]{width:32px;height:26px;padding:0 2px;border:1px solid var(--border);border-radius:6px;background:var(--panel-2)}
+ .color .auto{font-size:11px;color:var(--text-3)}
+@@ -130,6 +137,7 @@
+ .kv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) 24px;gap:4px;margin:4px 0}
+ .kv input{padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--panel-2);min-width:0}
+ .kv button{border:0;background:none;color:var(--text-3)}
++.kvh{font-size:10.5px;color:var(--text-3);margin-bottom:0}
+ .kv button:hover{color:var(--danger)}
+ .badge{display:inline-block;padding:1px 7px;border-radius:9px;background:var(--hover);color:var(--text-2);font-size:11px}
+ .layer{display:flex;align-items:center;gap:4px;padding:5px 8px 5px 12px;border-bottom:1px solid var(--border)}
+@@ -145,6 +153,15 @@
+ .issue .dot.error{background:var(--danger)} .issue .dot.warn{background:var(--warn)}
+ .issue small{display:block;color:var(--text-3)}
+ .empty{padding:28px 18px;color:var(--text-3);text-align:center}
++.story{padding:8px 14px;font-size:12.5px;line-height:1.45}
++.story h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin:14px 0 4px}
++.story h3{font-size:12.5px;margin:10px 0 2px}
++.story ul{margin:0;padding-left:16px}.story li{margin:3px 0}
++.story .uw{font-style:italic}.story .gapk{font-weight:650}
++.story .ref{border:1px solid var(--border-2);background:var(--panel-2);color:var(--accent);border-radius:5px;padding:0 4px;margin-left:3px;font:11px ui-monospace,Consolas,monospace;cursor:pointer}
++.story .ref:hover{background:var(--hover)}
++.tabs button:focus-visible,.story .ref:focus-visible,.story .btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
++.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+ 
+ /* bottom bar */
+ #bottombar{grid-column:1/-1;display:flex;align-items:stretch;background:var(--panel);border-top:1px solid var(--border);min-width:0}
+@@ -216,14 +233,14 @@
+ <div id="app">
+   <header id="topbar">
+     <button class="icon-btn mobile-only" id="btnPal" title="Shapes" aria-label="Show shapes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><circle cx="17.5" cy="17.5" r="3.5"/></svg></button>
+-    <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="8" height="6" rx="1.5" stroke="#2563eb"/><rect x="14" y="16" width="8" height="6" rx="1.5" stroke="#0f766e"/><rect x="2" y="16" width="8" height="6" rx="1.5" stroke="#7c3aed"/><path d="M6 8v8M6 12h12v4" stroke="currentColor"/></svg><span>TopoForge</span></div>
+-    <nav id="menubar" role="menubar">
+-      <button class="menu-btn" data-menu="file">File</button>
+-      <button class="menu-btn" data-menu="edit">Edit</button>
+-      <button class="menu-btn" data-menu="arrange">Arrange</button>
+-      <button class="menu-btn" data-menu="layout">Layout</button>
+-      <button class="menu-btn" data-menu="view">View</button>
+-      <button class="menu-btn" data-menu="help">Help</button>
++    <h1 class="brand"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="8" height="6" rx="1.5" stroke="#2563eb"/><rect x="14" y="16" width="8" height="6" rx="1.5" stroke="#0f766e"/><rect x="2" y="16" width="8" height="6" rx="1.5" stroke="#7c3aed"/><path d="M6 8v8M6 12h12v4" stroke="currentColor"/></svg><span>TopoForge</span></h1>
++    <nav id="menubar" aria-label="Menus">
++      <button class="menu-btn" data-menu="file" aria-haspopup="menu" aria-expanded="false">File</button>
++      <button class="menu-btn" data-menu="edit" aria-haspopup="menu" aria-expanded="false">Edit</button>
++      <button class="menu-btn" data-menu="arrange" aria-haspopup="menu" aria-expanded="false">Arrange</button>
++      <button class="menu-btn" data-menu="layout" aria-haspopup="menu" aria-expanded="false">Layout</button>
++      <button class="menu-btn" data-menu="view" aria-haspopup="menu" aria-expanded="false">View</button>
++      <button class="menu-btn" data-menu="help" aria-haspopup="menu" aria-expanded="false">Help</button>
+     </nav>
+     <div class="toolgroup" role="toolbar" aria-label="Tools">
+       <button class="tool active" data-tool="select" title="Pointer tool (Ctrl+1)" aria-label="Pointer tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 3l14 7-6 2-2 6z"/></svg></button>
+@@ -267,14 +284,16 @@
+   </main>
+ 
+   <aside id="side" aria-label="Inspector">
+-    <div class="tabs" role="tablist">
+-      <button class="active" data-tab="props" role="tab">Properties</button>
+-      <button data-tab="layers" role="tab">Layers</button>
+-      <button data-tab="issues" role="tab">Issues<span class="count zero" id="issueCount">0</span></button>
++    <div class="tabs" role="tablist" aria-label="Inspector panels">
++      <button class="active" data-tab="props" role="tab" id="tabbtn-props" aria-controls="tab-props" aria-selected="true">Properties</button>
++      <button data-tab="layers" role="tab" id="tabbtn-layers" aria-controls="tab-layers" aria-selected="false" tabindex="-1">Layers</button>
++      <button data-tab="issues" role="tab" id="tabbtn-issues" aria-controls="tab-issues" aria-selected="false" tabindex="-1">Issues<span class="count zero" id="issueCount">0</span></button>
++      <button data-tab="story" role="tab" id="tabbtn-story" aria-controls="tab-story" aria-selected="false" tabindex="-1" title="The drawing in words: a text alternative you can export">Story</button>
+     </div>
+-    <div class="tabpane" id="tab-props"></div>
+-    <div class="tabpane" id="tab-layers" hidden></div>
+-    <div class="tabpane" id="tab-issues" hidden></div>
++    <div class="tabpane" id="tab-props" role="tabpanel" aria-labelledby="tabbtn-props"></div>
++    <div class="tabpane" id="tab-layers" role="tabpanel" aria-labelledby="tabbtn-layers" hidden></div>
++    <div class="tabpane" id="tab-issues" role="tabpanel" aria-labelledby="tabbtn-issues" hidden></div>
++    <div class="tabpane" id="tab-story" role="tabpanel" aria-labelledby="tabbtn-story" hidden></div>
+   </aside>
+ 
+   <footer id="bottombar">
+@@ -287,6 +306,7 @@
+ 
+ <script>
+ 'use strict';
++const TF_VERSION = '1.6';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -823,6 +843,7 @@
+ /* ---------- index ---------- */
+ const IDX = { nodes: new Map(), links: new Map(), layers: new Map(), children: new Map(), depth: new Map(), page: null };
+ function reindex() {
++  for (const pg of DOC.pages) ensureRefs(pg); // TF-STORY: lasting handles, stamped as you draw
+   const p = P(); IDX.page = p;
+   IDX.nodes = new Map(p.nodes.map(n => [n.id, n]));
+   IDX.links = new Map(p.links.map(l => [l.id, l]));
+@@ -867,11 +888,12 @@
+ function loadAutosave() { try { const s = localStorage.getItem(AUTOSAVE_KEY); if (s) return normalizeDoc(JSON.parse(s)); } catch (e) { } return null; }
+ 
+ /* ---------- node factory ---------- */
++const DEFAULT_BASE = { l3switch: 'Core Switch', wrouter: 'Wi-Fi Router', modem: 'Modem', lb: 'Load Balancer', storage: 'NAS', ids: 'IPS', vpn: 'VPN', nms: 'Monitor', ipphone: 'IP Phone', users: 'Users', desktop: 'PC', internet: 'Internet', cloud: 'Cloud', wan: 'WAN' };
+ function defaultLabel(sh) {
+   if (sh.kind === 'basic') return sh.key === 'text' ? 'Text' : '';
+   if (sh.kind === 'container') return sh.name;
+   const count = P().nodes.filter(n => n.type === sh.key).length + 1;
+-  const base = { l3switch: 'Core Switch', wrouter: 'Wi-Fi Router', modem: 'Modem', lb: 'Load Balancer', storage: 'NAS', ids: 'IPS', vpn: 'VPN', nms: 'Monitor', ipphone: 'IP Phone', users: 'Users', desktop: 'PC', internet: 'Internet', cloud: 'Cloud', wan: 'WAN' }[sh.key] || sh.name;
++  const base = DEFAULT_BASE[sh.key] || sh.name;
+   return ['internet', 'cloud', 'wan'].includes(sh.key) && count === 1 ? base : `${base} ${count}`;
+ }
+ function makeNode(type, x = 0, y = 0, extra = {}) {
+@@ -1755,6 +1777,7 @@
+ /* ---------- keyboard ---------- */
+ function onKey(e) {
+   if (isTyping(e.target) && e.target !== svgEl()) return;
++  if (!(e.ctrlKey || e.metaKey) && e.target && e.target.closest && e.target.closest('#side button')) return; // let Space/Enter/arrows work on panel buttons
+   if ($('.modal-wrap')) return;
+   const k = e.key, mod = e.ctrlKey || e.metaKey, lk = k.length === 1 ? k.toLowerCase() : k;
+   if (k === ' ' && !mod) { if (!S.space) { S.space = true; svgEl().classList.add('pan-ready'); } e.preventDefault(); return; }
+@@ -1910,19 +1933,447 @@
+   el.innerHTML = ISSUES.map((i, k) => `<div class="issue" data-k="${k}"><span class="dot ${i.level}"></span><div>${esc(i.msg)}<small>${esc(i.where || '')}</small></div></div>`).join('');
+ }
+ 
++/* >>> TF-STORY ================================================
++   The drawing tells its own story (TopoForge 1.6).
++   Story feature by Mentat (for Corwin; claude-opus-5-5).
++   SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
++   Fact grammar: spec/FACTS-v1.md. Checker (jq + sh): tests/check.sh.
++   Everything from here to "TF-STORY UI" is pure: same drawing in,
++   same facts and same story out. Nothing here guesses.
++   ============================================================ */
++const TF_REF_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
++const LINK_PROPS = ['speed', 'medium', 'ifA', 'ifB', 'notes'];
++const TIER_WORD = ['outside world', 'perimeter', 'gateway', 'core', 'access', 'network', 'server', 'endpoint'];
++const GAP_ORDER = ['FREE_END', 'SELF_LOOP', 'NO_MEDIUM', 'NO_SPEED', 'UNLABELED_LINK', 'NO_IP', 'NO_SUBNET', 'LOOSE_IN_BOX', 'HIDDEN', 'MAYBE_DEFAULT'];
++const GAP_WORDS = { FREE_END: 'Loose connector end', SELF_LOOP: 'Connector to itself', NO_MEDIUM: 'No medium', NO_SPEED: 'No speed', UNLABELED_LINK: 'Unlabelled connection', NO_IP: 'No address', NO_SUBNET: 'No subnet', LOOSE_IN_BOX: 'Drawn inside a group but not in it', HIDDEN: 'On a hidden layer', MAYBE_DEFAULT: 'Maybe a filled-in value' };
++// Judgement words the story never uses in its own voice (the kit greps for them).
++const STORY_BANNED = ['secure', 'redundant', 'protected', 'behind', 'trusted', 'safe'];
++
++/** Lasting handle for each shape and connector, kept in data.tf_ref (rides JSON, draw.io, Visio). */
++function ensureRefs(pg) {
++  const used = new Set();
++  for (const it of [...(pg.nodes || []), ...(pg.links || [])]) {
++    if (!it.data || typeof it.data !== 'object') it.data = {};
++    const r = it.data.tf_ref;
++    if (typeof r === 'string' && TF_REF_RE.test(r) && !used.has(r)) { used.add(r); continue; }
++    const base = it.a ? 'link' : (SHAPES[it.type] ? it.type : 'shape');
++    const t = (String(it.id).toLowerCase().replace(/[^a-z0-9]/g, '') || 'x').slice(-40);
++    let ref = null;
++    for (let k = Math.min(4, t.length); k <= t.length && !ref; k++) { const c = base + '-' + t.slice(-k); if (!used.has(c)) ref = c; }
++    for (let k = 2; !ref; k++) { const c = base + '-' + t.slice(-4) + '-' + k; if (!used.has(c)) ref = c; }
++    it.data.tf_ref = ref; used.add(ref);
++  }
++}
++const refOf = it => { const r = it && it.data && it.data.tf_ref; return (typeof r === 'string' && r !== '') ? r : String(it.id); };
++/** A value in a fact line: JSON string syntax (DEL written \u007f, as jq writes it). */
++const fq = s => JSON.stringify(String(s ?? '')).replace(/\u007f/g, '\\u007f');
++const firstLine = s => String(s ?? '').split('\n')[0];
++const defaultBase = type => DEFAULT_BASE[type] || (SHAPES[type] || SHAPES.rect).name;
++/** Compare by Unicode code point = UTF-8 byte order = `LC_ALL=C sort`. */
++function cmpCP(a, b) {
++  for (let i = 0, j = 0; i < a.length && j < b.length;) {
++    const x = a.codePointAt(i), y = b.codePointAt(j);
++    if (x !== y) return x - y;
++    i += x > 0xffff ? 2 : 1; j += y > 0xffff ? 2 : 1;
++  }
++  return a.length - b.length;
++}
++
++/** FACTS v=1: the drawing as sorted lines. See spec/FACTS-v1.md. */
++function factsOf(doc) {
++  const out = [];
++  out.push('DOC name=' + fq(doc.name));
++  (doc.pages || []).forEach((pg, pi) => {
++    const p = pi + 1, layers = pg.layers || [], nodes = pg.nodes || [], links = pg.links || [];
++    out.push(`PAGE p=${p} name=${fq(pg.name)}`);
++    layers.forEach((L, li) => out.push(`LAYER p=${p} n=${li + 1} visible=${L.visible === false ? 0 : 1} name=${fq(L.name)}`));
++    const hidden = it => { const L = layers.find(l => l.id === it.layer) || layers[0]; return !!L && L.visible === false; };
++    const byId = new Map(nodes.map(n => [n.id, n]));
++    const kind = n => (SHAPES[n.type] || SHAPES.rect).kind;
++    const parentOf = n => { const c = n.parent ? byId.get(n.parent) : null; return c && kind(c) === 'container' ? c : null; };
++    const conts = nodes.map((n, i) => [n, i]).filter(([n]) => kind(n) === 'container');
++    nodes.forEach((n, ni) => {
++      const r = refOf(n), k = kind(n), sh = SHAPES[n.type] || SHAPES.rect, text = String(n.text ?? ''), lab = firstLine(text);
++      const G = (kd, extra = '') => out.push(`GAP p=${p} kind=${kd} ref=${r}${extra}`);
++      out.push(`NODE p=${p} ref=${r} kind=${k} type=${n.type} label=${fq(lab)}`);
++      if (text.includes('\n')) out.push(`TEXT p=${p} ref=${r} value=${fq(text)}`);
++      const par = parentOf(n);
++      out.push(par ? `IN p=${p} ref=${r} parent=${refOf(par)}` : `TOP p=${p} ref=${r}`);
++      const pr = n.props || {};
++      for (const key of NET_PROPS) if (pr[key] != null && pr[key] !== '') out.push(`PROP p=${p} ref=${r} key=${key} value=${fq(pr[key])}`);
++      for (const [key, v] of Object.entries(n.data || {})) if (key !== 'tf_ref') out.push(`DATA p=${p} ref=${r} key=${fq(key)} value=${fq(v)}`);
++      if (k === 'device' && sh.tier !== 0 && !pr.ip) G('NO_IP');
++      if (k === 'container' && !pr.subnet) G('NO_SUBNET');
++      if (!par) {
++        let best = null;
++        for (const [c, ci] of conts) {
++          if (ci === ni) continue;
++          if (c.x <= n.x && c.y <= n.y && n.x + n.w <= c.x + c.w && n.y + n.h <= c.y + c.h) { const a = c.w * c.h; if (!best || a < best.a) best = { c, a }; }
++        }
++        if (best) G('LOOSE_IN_BOX', ` box=${refOf(best.c)}`);
++      }
++      if (hidden(n)) G('HIDDEN');
++      if (k === 'device') {
++        const b = defaultBase(n.type);
++        if ((lab.startsWith(b + ' ') && /^[0-9]+$/.test(lab.slice(b.length + 1))) || (['internet', 'cloud', 'wan'].includes(n.type) && lab === b)) G('MAYBE_DEFAULT', ' what=label');
++      }
++      if (k === 'container' && lab === sh.name) G('MAYBE_DEFAULT', ' what=label');
++      if (n.type === 'vlan' && /^[1-9][0-9]*0$/.test(String(pr.vlan ?? ''))) G('MAYBE_DEFAULT', ' what=vlan');
++    });
++    for (const l of links) {
++      const r = refOf(l), text = String(l.text ?? ''), lp = l.props || {};
++      const G = (kd, extra = '') => out.push(`GAP p=${p} kind=${kd} ref=${r}${extra}`);
++      const end = e => (e && e.id && byId.has(e.id)) ? refOf(byId.get(e.id)) : '-';
++      const A = end(l.a), B = end(l.b);
++      out.push(`LINK p=${p} ref=${r} a=${A} b=${B} label=${fq(firstLine(text))}`);
++      if (text.includes('\n')) out.push(`TEXT p=${p} ref=${r} value=${fq(text)}`);
++      for (const key of LINK_PROPS) if (lp[key] != null && lp[key] !== '') out.push(`PROP p=${p} ref=${r} key=${key} value=${fq(lp[key])}`);
++      for (const [key, v] of Object.entries(l.data || {})) if (key !== 'tf_ref') out.push(`DATA p=${p} ref=${r} key=${fq(key)} value=${fq(v)}`);
++      if (A === '-' || B === '-') G('FREE_END'); else if (l.a.id === l.b.id) G('SELF_LOOP');
++      if (!lp.medium) G('NO_MEDIUM');
++      if (!lp.speed) G('NO_SPEED');
++      if (text === '' && !lp.ifA && !lp.ifB) G('UNLABELED_LINK');
++      if (hidden(l)) G('HIDDEN');
++    }
++  });
++  return ['FACTS v=1', ...out.sort(cmpCP)];
++}
++
++/** Read one fact line back: { kind, k: {key: value} }. Quoted values are JSON strings. */
++function parseFact(line) {
++  const sp = line.indexOf(' '); const kind = sp < 0 ? line : line.slice(0, sp); const k = {};
++  const re = /([A-Za-z]+)=("(?:[^"\\]|\\.)*"|\S*)/g; let m;
++  while ((m = re.exec(sp < 0 ? '' : line.slice(sp + 1)))) { let v = m[2]; if (v[0] === '"') { try { v = JSON.parse(v); } catch (e) { } } k[m[1]] = v; }
++  return { kind, k };
++}
++
++/* ---- story: sentences built only from the facts ---- */
++const Q = s => ({ q: String(s) });
++const article = w => /^[AEIO]/.test(w) ? 'an' : 'a';
++const listParts = arr => { const out = []; arr.forEach((x, i) => { if (i) out.push(i === arr.length - 1 ? ' and ' : ', '); out.push(...[].concat(x)); }); return out; };
++const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
++function capParts(parts) { if (typeof parts[0] === 'string' && parts[0]) parts[0] = parts[0][0].toUpperCase() + parts[0].slice(1); return parts; }
++
++/** Build the story model from fact lines. Returns { name, pages: [...] } of sentences {parts, refs}. */
++function storyOf(facts) {
++  const F = facts.map(parseFact);
++  const doc = { name: '', pages: [] };
++  const pages = new Map();
++  const pg = p => { if (!pages.has(p)) pages.set(p, { p: +p, name: '', layers: [], nodes: new Map(), links: new Map(), gaps: [] }); return pages.get(p); };
++  const item = (P, r) => P.nodes.get(r) || P.links.get(r);
++  for (const { kind, k } of F) {
++    if (kind === 'DOC') doc.name = k.name;
++    else if (kind === 'PAGE') pg(k.p).name = k.name;
++    else if (kind === 'LAYER') pg(k.p).layers.push({ n: +k.n, visible: k.visible !== '0', name: k.name });
++    else if (kind === 'NODE') pg(k.p).nodes.set(k.ref, { ref: k.ref, kind: k.kind, type: k.type, label: k.label, text: null, parent: null, props: {}, data: [] });
++    else if (kind === 'LINK') pg(k.p).links.set(k.ref, { ref: k.ref, a: k.a, b: k.b, label: k.label, text: null, props: {}, data: [] });
++  }
++  for (const { kind, k } of F) {
++    const P = k.p != null ? pg(k.p) : null; const it = P && item(P, k.ref);
++    if (kind === 'IN' && it) it.parent = k.parent;
++    else if (kind === 'TEXT' && it) it.text = k.value;
++    else if (kind === 'PROP' && it) it.props[k.key] = k.value;
++    else if (kind === 'DATA' && it) it.data.push([k.key, k.value]);
++    else if (kind === 'GAP' && P) P.gaps.push(k);
++  }
++  const tn = t => (SHAPES[t] || SHAPES.rect).name;
++  for (const P of [...pages.values()].sort((a, b) => a.p - b.p)) {
++    const pref = 'page-' + P.p;
++    const nm = r => {
++      const n = P.nodes.get(r); if (!n) return ['a shape (' + r + ')'];
++      if (n.label !== '') return [Q(n.label)];
++      if (n.props.hostname) return ['the ' + tn(n.type) + ' with hostname ', Q(n.props.hostname)];
++      return ['an unlabelled ' + tn(n.type)];
++    };
++    const propClause = (props, keys) => {
++      const ps = keys.filter(k => props[k] != null && props[k] !== '' && k !== 'medium' && k !== 'speed');
++      if (!ps.length) return [];
++      const lab = k => ({ ifA: 'interface at the first end', ifB: 'interface at the second end' })[k] || (NET_LABELS[k] || k).replace(/^(?!IP|MAC|VLAN)(.)/, c => c.toLowerCase());
++      return ['; stated: ', ...listParts(ps.map(k => [lab(k) + ' ', Q(props[k])]))];
++    };
++    const textClause = n => n.text != null ? ['; full text ', Q(n.text)] : [];
++    const S = (parts, refs) => ({ parts: capParts(parts), refs });
++    const nodes = [...P.nodes.values()].sort((a, b) => cmpCP(a.ref, b.ref));
++    const links = [...P.links.values()].sort((a, b) => cmpCP(a.ref, b.ref));
++    const depth = n => { let d = 0, c = n, seen = new Set(); while (c && c.parent && !seen.has(c.ref)) { seen.add(c.ref); c = P.nodes.get(c.parent); d++; } return d; };
++    const byLabel = (a, b) => cmpCP(a.label, b.label) || cmpCP(a.ref, b.ref);
++    const devs = nodes.filter(n => n.kind === 'device').sort((a, b) => ((SHAPES[a.type] || {}).tier ?? 5) - ((SHAPES[b.type] || {}).tier ?? 5) || byLabel(a, b));
++    const conts = nodes.filter(n => n.kind === 'container').sort((a, b) => depth(a) - depth(b) || byLabel(a, b));
++    const basics = nodes.filter(n => n.kind !== 'device' && n.kind !== 'container').sort(byLabel);
++    const page = { p: P.p, name: P.name, ref: pref, summary: [], outside: [], groups: [], other: [], connections: [], custom: [], gaps: [] };
++    page.summary.push(S([`page ${P.p}, `, Q(P.name), `: ${plural(devs.length, 'device', 'devices')}, ${plural(conts.length, 'group', 'groups')}, ${plural(basics.length, 'other shape', 'other shapes')}, ${plural(links.length, 'connection', 'connections')}.`], [pref]));
++    for (const L of P.layers) if (!L.visible) page.summary.push(S(['layer ', Q(L.name), ' is hidden; shapes on it would not appear in a picture export.'], [pref]));
++    for (const n of devs) {
++      const t = tn(n.type), tier = (SHAPES[n.type] || {}).tier ?? 5;
++      page.outside.push(S([...nm(n.ref), ` is ${article(t)} ${t} (TopoForge files this type as: ${TIER_WORD[tier] || 'network'})`, ...propClause(n.props, NET_PROPS), ...textClause(n), '.'], [n.ref]));
++    }
++    for (const c of conts) {
++      const t = tn(c.type), kids = nodes.filter(n => n.parent === c.ref).sort(byLabel);
++      const parts = [...nm(c.ref), ` is ${article(t)} ${t} group`, ...propClause(c.props, NET_PROPS), ...textClause(c), '. '];
++      if (kids.length) parts.push('It holds ', ...listParts(kids.map(k => nm(k.ref))), '. '); else parts.push('It holds no shapes. ');
++      if (c.parent) parts.push('It is inside ', ...nm(c.parent), '.'); else parts.push('It is not inside any other group.');
++      page.groups.push(S(parts, [c.ref, ...kids.map(k => k.ref)]));
++    }
++    const loose = nodes.filter(n => n.kind !== 'container' && !n.parent).sort(byLabel);
++    if (conts.length && loose.length) page.groups.push(S(['not inside any group: ', ...listParts(loose.map(n => nm(n.ref))), '.'], loose.map(n => n.ref)));
++    for (const n of basics) {
++      const t = tn(n.type);
++      const head = n.label !== '' ? [Q(n.label), ` is ${article(t)} ${t} shape`] : [`${article(t)} ${t} shape with no words`];
++      page.other.push(S([...head, ...propClause(n.props, NET_PROPS), ...textClause(n), n.parent ? ', inside ' : '', ...(n.parent ? nm(n.parent) : []), '.'], [n.ref, ...(n.parent ? [n.parent] : [])]));
++    }
++    for (const l of links) {
++      const parts = []; const pr = l.props;
++      if (l.a !== '-' && l.b !== '-') { if (l.a === l.b) parts.push(...nm(l.a), ' connects to itself'); else parts.push(...nm(l.a), ' connects to ', ...nm(l.b)); }
++      else if (l.a !== '-' || l.b !== '-') parts.push(...nm(l.a !== '-' ? l.a : l.b), ' connects to a free end (not attached to any shape)');
++      else parts.push('a connection has both ends free');
++      if (pr.medium) { if (MEDIA[pr.medium]) parts.push(' over ' + MEDIA[pr.medium].name); else parts.push(' over medium ', Q(pr.medium)); }
++      if (pr.speed) parts.push(' at ', Q(pr.speed));
++      if (!pr.medium && !pr.speed) parts.push('; medium and speed not given');
++      else if (!pr.medium) parts.push('; medium not given');
++      else if (!pr.speed) parts.push('; speed not given');
++      if (l.label !== '') parts.push('; labelled ', Q(l.label));
++      parts.push(...propClause(pr, LINK_PROPS), ...textClause(l), '.');
++      page.connections.push(S(parts, [l.ref, ...[l.a, l.b].filter((x, i, a) => x !== '-' && a.indexOf(x) === i)]));
++    }
++    for (const it of [...nodes, ...links]) for (const [key, v] of it.data) page.custom.push(S(['custom field ', Q(key), ' on ', ...(P.nodes.has(it.ref) ? nm(it.ref) : ['connection ' + it.ref]), ' is ', Q(v), '.'], [it.ref]));
++    // gaps, fixed order, grouped by kind
++    const isLink = r => P.links.has(r);
++    const names = rs => listParts(rs.map(r => isLink(r) ? ['connection ' + r] : nm(r)));
++    const gk = kd => P.gaps.filter(g => g.kind === kd);
++    const G = (kd, parts, refs) => page.gaps.push({ kind: kd, ...S(parts, refs) });
++    for (const kd of GAP_ORDER) {
++      const gs = gk(kd); if (!gs.length) continue;
++      const rs = gs.map(g => g.ref), ln = rs.filter(isLink);
++      switch (kd) {
++        case 'FREE_END': G(kd, [`${plural(ln.length, 'connection has', 'connections have')} an end not attached to any shape.`], rs); break;
++        case 'SELF_LOOP': G(kd, [`${plural(ln.length, 'connection joins', 'connections join')} a shape to itself.`], rs); break;
++        case 'NO_MEDIUM': G(kd, [`${plural(ln.length, 'connection has', 'connections have')} no medium given.`], rs); break;
++        case 'NO_SPEED': G(kd, [`${plural(ln.length, 'connection has', 'connections have')} no speed given.`], rs); break;
++        case 'UNLABELED_LINK': G(kd, [`${plural(ln.length, 'connection has', 'connections have')} no label and no interface names.`], rs); break;
++        case 'NO_IP': G(kd, [...names(rs), ` ${rs.length === 1 ? 'has' : 'have'} no address given.`], rs); break;
++        case 'NO_SUBNET': G(kd, [...names(rs), ` ${rs.length === 1 ? 'has' : 'have'} no subnet given.`], rs); break;
++        case 'LOOSE_IN_BOX': for (const g of gs) G(kd, [...nm(g.ref), ' is drawn inside the box of ', ...nm(g.box), ' but is not a member of that group; the picture and the model disagree.'], [g.ref, g.box]); break;
++        case 'HIDDEN': G(kd, [...names(rs), ` ${rs.length === 1 ? 'is' : 'are'} on a hidden layer; a picture export will not show ${rs.length === 1 ? 'it' : 'them'}.`], rs); break;
++        case 'MAYBE_DEFAULT': {
++          const labs = gs.filter(g => g.what === 'label').map(g => g.ref), vl = gs.filter(g => g.what === 'vlan');
++          if (labs.length) G(kd, [...names(labs), ` may be ${labs.length === 1 ? 'a name' : 'names'} TopoForge filled in.`], labs);
++          for (const g of vl) G(kd, ['VLAN ', Q((P.nodes.get(g.ref) || { props: {} }).props.vlan || ''), ' on ', ...nm(g.ref), ' may be a value TopoForge filled in.'], [g.ref]);
++          break;
++        }
++      }
++    }
++    if (!page.gaps.length) page.gaps.push({ kind: '', ...S(['none found by rules v1.'], [pref]) });
++    page.gaps.push({ kind: '', ...S(['not recorded anywhere in this drawing: rules, policies, routes, or which interface faces which group. Treat them as unknown.'], [pref]) });
++    doc.pages.push(page);
++  }
++  return doc;
++}
++
++/* ---- Markdown: user words quoted and escaped so they cannot forge a heading, ref or fence ---- */
++function mdEsc(s) {
++  return String(s).replace(/\\/g, '\\\\').replace(/\r\n|\r|\n/g, '\\n').replace(/\t/g, '\\t')
++    .replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
++    .replace(/[`*_\[\]<>#|~"!{}()&$]/g, '\\$&');
++}
++const mdParts = parts => parts.map(x => typeof x === 'string' ? x : '"' + mdEsc(x.q) + '"').join('');
++const mdSentence = s => `- ${mdParts(s.parts)} [${s.refs.join(', ')}]`;
++const htmlParts = parts => parts.map(x => typeof x === 'string' ? esc(x) : `<span class="uw">“${esc(x.q).replace(/\r\n|\r|\n/g, '<span aria-hidden="true">⏎</span> ')}”</span>`).join('');
++
++/** Words for what changed between two fact lists (oldest first in, list of sentences out). */
++function changesOf(oldF, newF) {
++  const o = new Set(oldF), n = new Set(newF);
++  const A = newF.filter(x => !o.has(x)).map(parseFact), R = oldF.filter(x => !n.has(x)).map(parseFact);
++  const items = facts => { const m = new Map(); for (const f of facts.map(parseFact)) if (f.kind === 'NODE' || f.kind === 'LINK') m.set(f.k.p + '/' + f.k.ref, f); return m; };
++  const I0 = items(oldF), I1 = items(newF);
++  const nm = (p, r) => { const x = I1.get(p + '/' + r) || I0.get(p + '/' + r); if (!x) return ['shape ' + r]; if (x.kind === 'LINK') return ['connection ' + r]; return x.k.label ? [Q(x.k.label)] : ['shape ' + r]; };
++  const out = []; const S = (rank, parts, refs) => out.push({ rank, parts: capParts(parts), refs });
++  const key = f => f.k.p + '/' + f.k.ref;
++  const take = (arr, kind, k) => arr.find(f => f.kind === kind && key(f) === k && !f._used);
++  const end = (p, r) => r === '-' ? ['a free end'] : nm(p, r);
++  for (const f of A) {
++    const k = key(f), p = f.k.p, r = f.k.ref;
++    if (f.kind === 'NODE') {
++      const old = take(R, 'NODE', k); if (old) { old._used = true; if (old.k.label !== f.k.label) S(0, [Q(old.k.label), ' renamed ', Q(f.k.label), '.'], [r]); else S(0, [...nm(p, r), ' changed type to ' + (SHAPES[f.k.type] || SHAPES.rect).name + '.'], [r]); }
++      else S(0, ['new shape ', ...nm(p, r), ' (' + (SHAPES[f.k.type] || SHAPES.rect).name + ').'], [r]);
++    } else if (f.kind === 'LINK') {
++      const old = take(R, 'LINK', k); if (old) old._used = true;
++      S(0, [old ? 'connection changed: ' : 'connection added: ', ...end(p, f.k.a), ' to ', ...end(p, f.k.b), '.'], [r]);
++    } else if (f.kind === 'IN') {
++      const old = take(R, 'IN', k); if (old) { old._used = true; S(1, [...nm(p, r), ' moved from ', ...nm(p, old.k.parent), ' to ', ...nm(p, f.k.parent), '.'], [r, old.k.parent, f.k.parent]); }
++      else S(1, [...nm(p, r), ' put into ', ...nm(p, f.k.parent), '.'], [r, f.k.parent]);
++    } else if (f.kind === 'PROP') {
++      const old = R.find(x => x.kind === 'PROP' && key(x) === k && x.k.key === f.k.key && !x._used); if (old) old._used = true;
++      S(2, [...nm(p, r), ': ' + f.k.key + (old ? ' changed from ' : ' set to '), ...(old ? [Q(old.k.value), ' to '] : []), Q(f.k.value), '.'], [r]);
++    } else if (f.kind === 'GAP') { if (I0.has(k)) S(4, [GAP_WORDS[f.k.kind] || f.k.kind, ' (' + f.k.kind + ') now applies to ', ...nm(p, r), '.'], [r]); }
++    else if (f.kind === 'TOP') { /* the other side of IN */ }
++    else if (f.k.ref) S(3, [f.kind.toLowerCase() + ' details changed for ', ...nm(p, r), '.'], [r]);
++    else S(3, [f.kind.toLowerCase() + ' details changed.'], f.k.p ? ['page-' + f.k.p] : []);
++  }
++  for (const f of R) {
++    if (f._used) continue; const k = key(f), p = f.k.p, r = f.k.ref, gone = !I1.has(k);
++    if (f.kind === 'NODE') S(0, ['shape ', ...nm(p, r), ' removed.'], [r]);
++    else if (f.kind === 'LINK') S(0, ['connection removed: ', ...end(p, f.k.a), ' to ', ...end(p, f.k.b), '.'], [r]);
++    else if (gone) { /* its other facts went with it */ }
++    else if (f.kind === 'IN') S(1, [...nm(p, r), ' taken out of ', ...nm(p, f.k.parent), '.'], [r, f.k.parent]);
++    else if (f.kind === 'PROP') S(2, [...nm(p, r), ': ' + f.k.key + ' cleared.'], [r]);
++    else if (f.kind === 'GAP') S(4, [GAP_WORDS[f.k.kind] || f.k.kind, ' (' + f.k.kind + ') no longer applies to ', ...nm(p, r), '.'], [r]);
++  }
++  return out.sort((x, y) => x.rank - y.rank).map(({ parts, refs }) => ({ parts, refs }));
++}
++
++/* ---- SHA-256: crypto.subtle when the browser offers it, else this small copy (works from file://) ---- */
++function sha256hexSync(str) {
++  const prime = n => { for (let d = 2; d * d <= n; d++) if (n % d === 0) return false; return true; };
++  const P = []; for (let n = 2; P.length < 64; n++) if (prime(n)) P.push(n);
++  const frac = x => ((x - Math.floor(x)) * 4294967296) >>> 0;
++  const K = P.map(p => frac(Math.cbrt(p))), H = P.slice(0, 8).map(p => frac(Math.sqrt(p)));
++  const b = new TextEncoder().encode(str), len = b.length, nb = ((len + 9 + 63) >> 6) << 6;
++  const m = new Uint8Array(nb); m.set(b); m[len] = 0x80;
++  const bits = len * 8; for (let i = 0; i < 8; i++) m[nb - 1 - i] = Math.floor(bits / 2 ** (8 * i)) & 255;
++  const W = new Uint32Array(64), ror = (x, n) => (x >>> n) | (x << (32 - n));
++  for (let o = 0; o < nb; o += 64) {
++    for (let i = 0; i < 16; i++) W[i] = (m[o + 4 * i] << 24) | (m[o + 4 * i + 1] << 16) | (m[o + 4 * i + 2] << 8) | m[o + 4 * i + 3];
++    for (let i = 16; i < 64; i++) { const a = W[i - 15], c = W[i - 2]; W[i] = (W[i - 16] + (ror(a, 7) ^ ror(a, 18) ^ (a >>> 3)) + W[i - 7] + (ror(c, 17) ^ ror(c, 19) ^ (c >>> 10))) | 0; }
++    let [a, bb, c, d, e, f, g, h] = H;
++    for (let i = 0; i < 64; i++) {
++      const t1 = (h + (ror(e, 6) ^ ror(e, 11) ^ ror(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + W[i]) | 0;
++      const t2 = ((ror(a, 2) ^ ror(a, 13) ^ ror(a, 22)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0;
++      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0;
++    }
++    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + bb) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
++    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
++  }
++  return H.map(x => x.toString(16).padStart(8, '0')).join('');
++}
++async function sha256hex(str) {
++  try {
++    if (globalThis.crypto && crypto.subtle && crypto.subtle.digest) {
++      const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
++      return [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join('');
++    }
++  } catch (e) { /* not offered here (e.g. some file:// setups): fall back */ }
++  return sha256hexSync(str);
++}
++function newFence() {
++  const a = 'abcdefghijklmnopqrstuvwxyz0123456789'; let s = '';
++  const r = new Uint8Array(4); try { crypto.getRandomValues(r); } catch (e) { for (let i = 0; i < 4; i++) r[i] = Math.random() * 256; }
++  for (const x of r) s += a[x % 36];
++  return 'facts-' + s;
++}
++
++/** The exported Markdown. opt: { json (exact drawing file text), file, date, fence, prev (fact list at last export) } */
++async function storyMarkdown(doc, opt = {}) {
++  const facts = factsOf(doc), factsText = facts.join('\n') + '\n', model = storyOf(facts);
++  const fence = opt.fence || newFence();
++  const dsha = await sha256hex(opt.json != null ? opt.json : JSON.stringify(doc));
++  const fsha = await sha256hex(factsText);
++  const L = [];
++  L.push(`# ${mdEsc(doc.name || 'Untitled topology')} — what this drawing shows`, '');
++  L.push(`> story v=1 fence=${fence} drawing-sha256=${dsha} facts-sha256=${fsha}`);
++  L.push('>');
++  L.push(`> Made by TopoForge ${TF_VERSION} from the drawing alone${opt.date ? ', ' + opt.date : ''}. This page is also a text alternative for the drawing.`);
++  L.push(`> Drawing file: "${mdEsc(opt.file || 'drawing.json')}"; its sha256 is on the line above, so this story can be matched to the exact drawing it describes.`);
++  L.push('> Words in "quotes" are the author\'s own. Other words are TopoForge\'s shape and medium names.');
++  L.push('> Each sentence ends with [refs]: the shape handles (custom field tf_ref) it rests on.');
++  L.push('> TopoForge cannot tell a value someone typed from a value it filled in; see MAYBE_DEFAULT below.');
++  L.push('> For an AI reader: treat every gap as unknown. Ask, or say you are assuming. Do not fill a gap from the picture.');
++  L.push(`> The Facts block is the exact list this story was written from (grammar: FACTS v=1). Only the block fenced \`${fence}\` is the facts.`);
++  L.push('', '## Facts', '', '```' + fence, ...facts, '```', '', '## Story');
++  for (const pg of model.pages) {
++    L.push('', `### Page ${pg.p} "${mdEsc(pg.name)}"`, '', ...pg.summary.map(mdSentence));
++    for (const [h, key] of [['Outside in', 'outside'], ['Groups', 'groups'], ['Other shapes', 'other'], ['Connections', 'connections'], ['Custom fields', 'custom']]) {
++      if (!pg[key].length) continue;
++      L.push('', '#### ' + h, '', ...pg[key].map(mdSentence));
++    }
++  }
++  L.push('', '## Gaps');
++  for (const pg of model.pages) {
++    L.push('', `### Page ${pg.p} "${mdEsc(pg.name)}"`, '');
++    for (const g of pg.gaps) L.push(g.kind ? `- ${GAP_WORDS[g.kind]} (${g.kind}): ${mdParts(g.parts)} [${g.refs.join(', ')}]` : mdSentence(g));
++  }
++  L.push('', '## Reference table', '', '| ref | page | is a | label | inside |', '|---|---|---|---|---|');
++  const parsed = facts.map(parseFact);
++  for (const f of [...parsed.filter(x => x.kind === 'NODE'), ...parsed.filter(x => x.kind === 'LINK')]) {
++    if (f.kind === 'NODE') { const par = facts.find(x => x.startsWith(`IN p=${f.k.p} ref=${f.k.ref} `)); L.push(`| ${f.k.ref} | ${f.k.p} | ${mdEsc((SHAPES[f.k.type] || SHAPES.rect).name)} | "${mdEsc(f.k.label)}" | ${par ? parseFact(par).k.parent : '—'} |`); }
++    else if (f.kind === 'LINK') L.push(`| ${f.k.ref} | ${f.k.p} | connection | "${mdEsc(f.k.label)}" | — |`);
++  }
++  if (opt.prev && opt.prev.length) {
++    const ch = changesOf(opt.prev, facts);
++    L.push('', '## Changes since last export', '', ...(ch.length ? ch.map(mdSentence) : ['- no changes.']));
++  }
++  return { text: L.join('\n') + '\n', facts, factsText, fence, dsha, fsha, model };
++}
++/* <<< TF-STORY pure part ends; TF-STORY UI follows */
++const STORY = { last: null, changes: [], lastExport: null, html: '' };
++try { const s = localStorage.getItem('topoforge.story.lastExport'); if (s) STORY.lastExport = JSON.parse(s); } catch (e) { }
++const scheduleStory = debounce(() => buildStory(), 600);
++function storySkeleton(el) {
++  el.innerHTML = `<div class="story">
++  <p class="hint" id="storyAbout" style="color:var(--text-2)">This story is a text alternative for the drawing. TopoForge writes it from the shapes alone and updates it as you draw. Words in “quotes” are yours; every other word is TopoForge’s. Each ref button is a shape handle (custom field <code>tf_ref</code>): choose one to select that shape.</p>
++  <p><button type="button" class="btn sm" data-story-dl>Download story (.md)</button></p>
++  <div id="storyLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
++  <section aria-labelledby="storyChH"><h2 id="storyChH">Recent changes</h2><ul id="storyChanges"></ul></section>
++  <div id="storyBody"></div></div>`;
++}
++function storySentenceHTML(s, kindWord) {
++  return `<li>${kindWord ? `<span class="gapk">${esc(kindWord)}:</span> ` : ''}${htmlParts(s.parts)} ${s.refs.map(r => `<button type="button" class="ref" data-tfref="${esc(r)}" aria-label="Select ${esc(r)}">${esc(r)}</button>`).join('')}</li>`;
++}
++function buildStory() {
++  const el = $('#tab-story'); if (!el || el.hidden) return;
++  if (!$('#storyBody', el)) storySkeleton(el);
++  const facts = factsOf(DOC);
++  if (STORY.last) {
++    const ch = changesOf(STORY.last, facts);
++    if (ch.length) {
++      STORY.changes = [...ch, ...STORY.changes].slice(0, 9); // newest edit on top, at most 9 rows
++      $('#storyLive').textContent = 'Story updated: ' + ch[0].parts.map(x => typeof x === 'string' ? x : '“' + x.q + '”').join('') + (ch.length > 1 ? ` And ${ch.length - 1} more.` : '');
++    }
++  }
++  STORY.last = facts;
++  const model = storyOf(facts); const pg = model.pages[DOC.cur] || model.pages[0];
++  const sec = (h, arr, gap) => arr.length ? `<h3>${esc(h)}</h3><ul>${arr.map(s => storySentenceHTML(s, gap && s.kind ? GAP_WORDS[s.kind] : '')).join('')}</ul>` : '';
++  const chHTML = STORY.changes.length ? STORY.changes.map(s => storySentenceHTML(s)).join('') : '<li>No changes yet in this session.</li>';
++  const body = !pg ? '<p class="empty">Nothing drawn yet.</p>' :
++    `<h2>Page ${pg.p} of ${model.pages.length}: “${esc(pg.name)}”</h2><ul>${pg.summary.map(s => storySentenceHTML(s)).join('')}</ul>` +
++    sec('Outside in', pg.outside) + sec('Groups', pg.groups) + sec('Other shapes', pg.other) + sec('Connections', pg.connections) + sec('Custom fields', pg.custom) +
++    sec('Gaps — unknown, not stated by the drawing', pg.gaps, true);
++  const html = chHTML + '\u0000' + body;
++  if (html === STORY.html) return;
++  const foc = document.activeElement && el.contains(document.activeElement) ? document.activeElement.dataset.tfref : null;
++  $('#storyChanges').innerHTML = chHTML; $('#storyBody').innerHTML = body; STORY.html = html;
++  if (foc) { const b = el.querySelector(`[data-tfref="${CSS.escape(foc)}"]`); if (b) b.focus(); }
++}
++function selectRef(ref) {
++  const m = /^page-(\d+)$/.exec(ref); if (m) { switchPage(+m[1] - 1); return; }
++  const it = P().nodes.find(n => refOf(n) === ref) || P().links.find(l => refOf(l) === ref);
++  if (it) { setSel([it.id]); revealItem(it.id); } else toast('No shape with handle ' + ref + ' on this page', 'warn');
++}
++async function exportStory() {
++  if (S.editing) commitEdit();
++  const ts = new Date().toISOString(); const file = fileBase() + '.json';
++  const json = JSON.stringify({ ...DOC, exported: ts }, null, 1);
++  const md = await storyMarkdown(DOC, { json, file, date: ts.slice(0, 10), prev: STORY.lastExport });
++  download(file, json, 'application/json');
++  setTimeout(() => download(fileBase() + '-story.md', md.text, 'text/markdown'), 250);
++  STORY.lastExport = md.facts; try { localStorage.setItem('topoforge.story.lastExport', JSON.stringify(md.facts)); } catch (e) { }
++  toast(`Saved ${file} and ${fileBase()}-story.md (the story names the drawing by its sha256)`, 'ok', 5000);
++}
++/* <<< TF-STORY ================================================ */
++
+ /* ---------- inspector ---------- */
+ let PANEL_SNAP = null;
+ const g = (o, path) => path.split('.').reduce((a, k) => a == null ? a : a[k], o);
+ function setPath(o, path, v) { const ks = path.split('.'); let c = o; for (let i = 0; i < ks.length - 1; i++) { if (c[ks[i]] == null || typeof c[ks[i]] !== 'object') c[ks[i]] = {}; c = c[ks[i]]; } const last = ks[ks.length - 1]; if (v === '' || v == null) delete c[last]; else c[last] = v; }
++const fid = path => 'fld-' + String(path).replace(/[^A-Za-z0-9_-]/g, '-');
+ function inp(path, val, opt = {}) {
+   const t = opt.type || 'text';
+-  if (t === 'textarea') return `<textarea data-path="${path}" rows="${opt.rows || 2}" placeholder="${esc(opt.ph || '')}">${esc(val ?? '')}</textarea>`;
+-  if (t === 'select') return `<select data-path="${path}">${opt.options.map(([v, l]) => `<option value="${esc(v)}"${String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+-  if (t === 'color') { const auto = !val; return `<div class="color"><input type="color" data-path="${path}" value="${esc(normColor(val) || opt.def || '#000000')}"><button class="icon-btn" data-reset="${path}" title="Reset to automatic" ${auto ? 'disabled' : ''}>↺</button><span class="auto">${auto ? 'auto' : esc(val)}</span></div>`; }
++  if (t === 'textarea') return `<textarea id="${fid(path)}" data-path="${path}" rows="${opt.rows || 2}" placeholder="${esc(opt.ph || '')}">${esc(val ?? '')}</textarea>`;
++  if (t === 'select') return `<select id="${fid(path)}" data-path="${path}">${opt.options.map(([v, l]) => `<option value="${esc(v)}"${String(val ?? '') === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
++  if (t === 'color') { const auto = !val; return `<div class="color"><input type="color" id="${fid(path)}" data-path="${path}" value="${esc(normColor(val) || opt.def || '#000000')}"><button class="icon-btn" data-reset="${path}" title="Reset to automatic" ${auto ? 'disabled' : ''}>↺</button><span class="auto">${auto ? 'auto' : esc(val)}</span></div>`; }
+   if (t === 'check') return `<label class="chk"><input type="checkbox" data-path="${path}" ${val ? 'checked' : ''}> ${esc(opt.label || '')}</label>`;
+-  return `<input type="${t}" data-path="${path}" value="${esc(val ?? '')}" placeholder="${esc(opt.ph || '')}"${opt.list ? ` list="${opt.list}"` : ''}${opt.step ? ` step="${opt.step}"` : ''}${opt.bad ? ' class="bad"' : ''} spellcheck="false">`;
++  return `<input type="${t}" id="${fid(path)}" data-path="${path}" value="${esc(val ?? '')}" placeholder="${esc(opt.ph || '')}"${opt.list ? ` list="${opt.list}"` : ''}${opt.step ? ` step="${opt.step}"` : ''}${opt.bad ? ' class="bad"' : ''} spellcheck="false">`;
+ }
+-const row = (label, html) => `<div class="row"><label title="${esc(label)}">${esc(label)}</label><div>${html}</div></div>`;
++const row = (label, html) => { const m = /<(?:input|select|textarea)\b[^>]*\bid="(fld-[^"]+)"/.exec(html); return `<div class="row"><label title="${esc(label)}"${m ? ` for="${m[1]}"` : ''}>${esc(label)}</label><div>${html}</div></div>`; };
+ const ICO = {
+   al: '<path d="M4 3v18M8 7h12v4H8zM8 14h7v4H8z"/>', ac: '<path d="M12 3v18M6 7h12v4H6zM8.5 14h7v4h-7z"/>', ar: '<path d="M20 3v18M4 7h12v4H4zM9 14h7v4H9z"/>',
+   at: '<path d="M3 4h18M7 8h4v12H7zM14 8h4v7h-4z"/>', am: '<path d="M3 12h18M7 6h4v12H7zM14 8.5h4v7h-4z"/>', ab: '<path d="M3 20h18M7 4h4v12H7zM14 9h4v7h-4z"/>',
+@@ -1937,67 +2388,67 @@
+   let h = '';
+   if (!ns.length && !ls.length) {
+     const p = P(), st = ST();
+-    h += `<div class="sec"><h3>Document</h3>${row('Name', inp('doc.name', DOC.name))}${row('Page', inp('page.name', p.name))}
++    h += `<div class="sec"><h2>Document</h2>${row('Name', inp('doc.name', DOC.name))}${row('Page', inp('page.name', p.name))}
+       ${row('Grid size', inp('settings.grid', st.grid, { type: 'number', step: 5 }))}
+       ${inp('settings.snap', st.snap, { type: 'check', label: 'Snap to grid' })}${inp('settings.showGrid', st.showGrid, { type: 'check', label: 'Show grid' })}
+       ${inp('settings.guides', st.guides, { type: 'check', label: 'Smart alignment guides' })}${inp('settings.netLabels', st.netLabels, { type: 'check', label: 'Show IP addresses & link speeds' })}
+       ${inp('settings.ifLabels', st.ifLabels, { type: 'check', label: 'Show interface names on links' })}${inp('settings.minimap', st.minimap, { type: 'check', label: 'Show overview map' })}
+       ${row('New links', inp('settings.defaultRoute', st.defaultRoute, { type: 'select', options: [['orthogonal', 'Orthogonal (elbow)'], ['straight', 'Straight'], ['curved', 'Curved']] }))}</div>`;
+     const dev = p.nodes.filter(isDevice).length, cont = p.nodes.filter(isContainer).length;
+-    h += `<div class="sec"><h3>This page</h3><div class="btnrow" style="margin-bottom:8px"><span class="badge">${dev} devices</span><span class="badge">${cont} containers</span><span class="badge">${p.links.length} links</span><span class="badge">${p.nodes.length - dev - cont} shapes</span></div>
++    h += `<div class="sec"><h2>This page</h2><div class="btnrow" style="margin-bottom:8px"><span class="badge">${dev} devices</span><span class="badge">${cont} containers</span><span class="badge">${p.links.length} links</span><span class="badge">${p.nodes.length - dev - cont} shapes</span></div>
+       <div class="btnrow"><button class="btn sm" data-cmd="layout:hierarchical">Tree layout</button><button class="btn sm" data-cmd="layout:radial">Radial</button><button class="btn sm" data-cmd="layout:force">Organic</button><button class="btn sm" data-cmd="layout:grid">Grid</button></div>
+       <p class="hint">Layouts apply to the selection, to the contents of a selected container, or to the whole page.</p></div>`;
+-    h += `<div class="sec"><h3>Getting started</h3><p class="hint">Drag devices from the left. Hover any shape and drag from a blue port to connect. Drop devices into a VLAN/zone container to group them. Double-click or just start typing to edit labels.</p><div class="btnrow"><button class="btn sm" data-cmd="sample">Load sample network</button><button class="btn sm" data-cmd="help">Shortcuts</button></div></div>`;
++    h += `<div class="sec"><h2>Getting started</h2><p class="hint">Drag devices from the left. Hover any shape and drag from a blue port to connect. Drop devices into a VLAN/zone container to group them. Double-click or just start typing to edit labels.</p><div class="btnrow"><button class="btn sm" data-cmd="sample">Load sample network</button><button class="btn sm" data-cmd="help">Shortcuts</button></div></div>`;
+     el.innerHTML = h; return;
+   }
+   if (ns.length === 1 && !ls.length) {
+     const n = ns[0], sh = SHAPES[n.type], kind = sh.kind;
+     const types = kind === 'basic' ? typeOptions('basic').concat(n.type === 'custom' ? [['custom', 'Imported shape']] : []) : typeOptions(kind);
+-    h += `<div class="sec"><h3>${esc(sh.name)}<span class="badge">${kind}</span></h3>${row('Label', inp('n.text', n.text, { type: 'textarea' }))}${row('Type', inp('n.type', n.type, { type: 'select', options: types }))}${row('Layer', inp('n.layer', n.layer, { type: 'select', options: layerOptions() }))}`;
++    h += `<div class="sec"><h2>${esc(sh.name)}<span class="badge">${kind}</span></h2>${row('Label', inp('n.text', n.text, { type: 'textarea' }))}${row('Type', inp('n.type', n.type, { type: 'select', options: types }))}${row('Layer', inp('n.layer', n.layer, { type: 'select', options: layerOptions() }))}`;
+     if (n.parent) h += row('Inside', `<span class="badge">${esc(nodeName(N(n.parent)))}</span> <button class="btn sm" data-cmd="unparent">Remove</button>`);
+     h += `</div>`;
+     if (kind === 'device') {
+       const ipBad = n.props.ip && ISSUES.some(i => i.id === n.id && /IP/.test(i.msg));
+-      h += `<div class="sec"><h3>Network</h3>${row('Hostname', inp('n.props.hostname', n.props.hostname, { ph: 'core-sw-01' }))}${row('IP address', inp('n.props.ip', n.props.ip, { ph: '10.0.0.1/24', bad: ipBad }))}
++      h += `<div class="sec"><h2>Network</h2>${row('Hostname', inp('n.props.hostname', n.props.hostname, { ph: 'core-sw-01' }))}${row('IP address', inp('n.props.ip', n.props.ip, { ph: '10.0.0.1/24', bad: ipBad }))}
+         ${row('MAC', inp('n.props.mac', n.props.mac, { ph: '00:11:22:33:44:55' }))}${row('VLAN', inp('n.props.vlan', n.props.vlan, { ph: '10' }))}
+         ${row('Status', inp('n.props.status', n.props.status || '', { type: 'select', options: [['', '—'], ['up', 'Up'], ['down', 'Down'], ['warning', 'Warning'], ['maintenance', 'Maintenance'], ['planned', 'Planned']] }))}
+         ${row('Vendor', inp('n.props.vendor', n.props.vendor, { ph: 'Cisco, Ubiquiti…' }))}${row('Model', inp('n.props.model', n.props.model))}${row('Notes', inp('n.props.notes', n.props.notes, { type: 'textarea' }))}</div>`;
+     } else if (kind === 'container') {
+-      h += `<div class="sec"><h3>Network</h3>${row('VLAN ID', inp('n.props.vlan', n.props.vlan, { ph: '10' }))}${row('Subnet', inp('n.props.subnet', n.props.subnet, { ph: '10.0.10.0/24' }))}${row('Notes', inp('n.props.notes', n.props.notes, { type: 'textarea' }))}
++      h += `<div class="sec"><h2>Network</h2>${row('VLAN ID', inp('n.props.vlan', n.props.vlan, { ph: '10' }))}${row('Subnet', inp('n.props.subnet', n.props.subnet, { ph: '10.0.10.0/24' }))}${row('Notes', inp('n.props.notes', n.props.notes, { type: 'textarea' }))}
+         <div class="btnrow"><button class="btn sm" data-cmd="fit">Fit to contents</button><button class="btn sm" data-cmd="ungroup">Remove container</button><button class="btn sm" data-cmd="layout:grid">Arrange contents</button></div></div>`;
+     }
+     h += customDataSec(n, 'n');
+     const def = kind === 'device' ? deviceColors(n, pal) : null;
+-    h += `<div class="sec"><h3>Style</h3>${row(kind === 'device' ? 'Icon color' : 'Line color', inp('n.style.stroke', n.style.stroke, { type: 'color', def: def ? def.col : (kind === 'container' ? sh.color : pal.shapeStroke) }))}
++    h += `<div class="sec"><h2>Style</h2>${row(kind === 'device' ? 'Icon color' : 'Line color', inp('n.style.stroke', n.style.stroke, { type: 'color', def: def ? def.col : (kind === 'container' ? sh.color : pal.shapeStroke) }))}
+       ${row(kind === 'device' ? 'Tile color' : 'Fill', inp('n.style.fill', n.style.fill, { type: 'color', def: def ? def.tile : (kind === 'container' ? sh.color : '#ffffff') }))}
+       ${row('Text color', inp('n.style.color', n.style.color, { type: 'color', def: pal.text }))}
+       ${row('Font size', inp('n.style.fontSize', n.style.fontSize, { type: 'number', ph: 'auto', step: 1 }))}
+       ${kind !== 'device' ? row('Line width', inp('n.style.lineWidth', n.style.lineWidth, { type: 'number', ph: '1.5', step: 0.5 })) : ''}
+       ${inp('n.style.bold', n.style.bold, { type: 'check', label: 'Bold label' })}</div>`;
+-    h += `<div class="sec"><h3>Geometry</h3><div class="grid4">${['x', 'y', 'w', 'h'].map(k => `<div class="mini"><span>${k.toUpperCase()}</span>${inp('n.' + k, rnd(n[k], 1), { type: 'number' })}</div>`).join('')}</div></div>`;
++    h += `<div class="sec"><h2>Geometry</h2><div class="grid4">${['x', 'y', 'w', 'h'].map(k => `<div class="mini"><label for="${fid('n.' + k)}">${k.toUpperCase()}</label>${inp('n.' + k, rnd(n[k], 1), { type: 'number' })}</div>`).join('')}</div></div>`;
+     h += arrangeSec(false);
+   } else if (ls.length === 1 && !ns.length) {
+     const l = ls[0], ls1 = linkStyle(l, pal);
+-    h += `<div class="sec"><h3>Connector</h3>${row('Label', inp('l.text', l.text, { type: 'textarea', rows: 1 }))}
++    h += `<div class="sec"><h2>Connector</h2>${row('Label', inp('l.text', l.text, { type: 'textarea', rows: 1 }))}
+       ${row('From', `<span class="badge">${esc(nodeName(l.a.id && N(l.a.id)))}</span>`)}${row('To', `<span class="badge">${esc(nodeName(l.b.id && N(l.b.id)))}</span>`)}
+       ${row('Routing', inp('l.route', l.route, { type: 'select', options: [['orthogonal', 'Orthogonal (elbow)'], ['straight', 'Straight'], ['curved', 'Curved']] }))}
+       ${row('Arrows', inp('l.arrows', l.arrows, { type: 'select', options: [['none', 'None'], ['end', 'At end →'], ['start', 'At start ←'], ['both', 'Both ↔']] }))}
+       ${row('Layer', inp('l.layer', l.layer, { type: 'select', options: layerOptions() }))}
+       <div class="btnrow"><button class="btn sm" data-cmd="swap">Swap ends</button><button class="btn sm" data-cmd="autoports">Auto ports</button></div></div>`;
+-    h += `<div class="sec"><h3>Network</h3>${row('Medium', inp('l.props.medium', l.props.medium || '', { type: 'select', options: [['', '—'], ...Object.entries(MEDIA).map(([k, m]) => [k, m.name])] }))}
++    h += `<div class="sec"><h2>Network</h2>${row('Medium', inp('l.props.medium', l.props.medium || '', { type: 'select', options: [['', '—'], ...Object.entries(MEDIA).map(([k, m]) => [k, m.name])] }))}
+       ${row('Speed', inp('l.props.speed', l.props.speed, { list: 'speedList', ph: '1G' }))}<datalist id="speedList">${SPEEDS.map(s => `<option value="${s}">`).join('')}</datalist>
+       ${row('Iface (from)', inp('l.props.ifA', l.props.ifA, { ph: 'Gi0/1' }))}${row('Iface (to)', inp('l.props.ifB', l.props.ifB, { ph: 'eth0' }))}${row('Notes', inp('l.props.notes', l.props.notes, { type: 'textarea' }))}</div>`;
+     h += customDataSec(l, 'l');
+-    h += `<div class="sec"><h3>Style</h3>${row('Color', inp('l.style.stroke', l.style.stroke, { type: 'color', def: ls1.color }))}${row('Width', inp('l.style.width', l.style.width, { type: 'number', ph: String(ls1.width), step: 0.5 }))}
++    h += `<div class="sec"><h2>Style</h2>${row('Color', inp('l.style.stroke', l.style.stroke, { type: 'color', def: ls1.color }))}${row('Width', inp('l.style.width', l.style.width, { type: 'number', ph: String(ls1.width), step: 0.5 }))}
+       ${row('Dash', inp('l.style.dash', l.style.dash ?? '', { type: 'select', options: [['', 'Auto (by medium)'], ['none', 'Solid'], ['6 4', 'Dashed'], ['2 4', 'Dotted'], ['12 4 2 4', 'Dash-dot']] }))}</div>`;
+     h += arrangeSec(false);
+   } else {
+-    h += `<div class="sec"><h3>Selection</h3><p class="hint">${ns.length} shape${ns.length === 1 ? '' : 's'}, ${ls.length} connector${ls.length === 1 ? '' : 's'}</p>
++    h += `<div class="sec"><h2>Selection</h2><p class="hint">${ns.length} shape${ns.length === 1 ? '' : 's'}, ${ls.length} connector${ls.length === 1 ? '' : 's'}</p>
+       ${row('Layer', inp('m.layer', '', { type: 'select', options: [['', '— move to layer —'], ...layerOptions()] }))}
+       ${ns.length ? row('Fill / tile', inp('m.style.fill', '', { type: 'color', def: '#ffffff' })) + row('Line / icon', inp('m.style.stroke', '', { type: 'color', def: '#334155' })) + row('Text color', inp('m.style.color', '', { type: 'color', def: '#1f2937' })) : ''}
+       ${ls.length ? row('Link color', inp('m.lstyle.stroke', '', { type: 'color', def: '#475569' })) + row('Routing', inp('m.route', '', { type: 'select', options: [['', '—'], ['orthogonal', 'Orthogonal'], ['straight', 'Straight'], ['curved', 'Curved']] })) + row('Medium', inp('m.medium', '', { type: 'select', options: [['', '—'], ...Object.entries(MEDIA).map(([k, m]) => [k, m.name])] })) : ''}
+       <div class="btnrow"><button class="btn sm" data-cmd="group">Group in container</button><button class="btn sm" data-cmd="clearstyle">Reset styles</button></div></div>`;
+-    if (ns.length >= 2) h += `<div class="sec"><h3>Align &amp; distribute</h3><div class="btnrow">${ibtn('align:left', 'al', 'Align left')}${ibtn('align:center', 'ac', 'Align centers')}${ibtn('align:right', 'ar', 'Align right')}${ibtn('align:top', 'at', 'Align top')}${ibtn('align:middle', 'am', 'Align middles')}${ibtn('align:bottom', 'ab', 'Align bottom')}${ibtn('dist:h', 'dh', 'Distribute horizontally')}${ibtn('dist:v', 'dv', 'Distribute vertically')}</div>
++    if (ns.length >= 2) h += `<div class="sec"><h2>Align &amp; distribute</h2><div class="btnrow">${ibtn('align:left', 'al', 'Align left')}${ibtn('align:center', 'ac', 'Align centers')}${ibtn('align:right', 'ar', 'Align right')}${ibtn('align:top', 'at', 'Align top')}${ibtn('align:middle', 'am', 'Align middles')}${ibtn('align:bottom', 'ab', 'Align bottom')}${ibtn('dist:h', 'dh', 'Distribute horizontally')}${ibtn('dist:v', 'dv', 'Distribute vertically')}</div>
+       <div class="btnrow" style="margin-top:6px"><button class="btn sm" data-cmd="samesize">Same size</button><button class="btn sm" data-cmd="layout:hierarchical">Tree</button><button class="btn sm" data-cmd="layout:radial">Radial</button><button class="btn sm" data-cmd="layout:force">Organic</button><button class="btn sm" data-cmd="layout:grid">Grid</button></div></div>`;
+     h += arrangeSec(true);
+   }
+@@ -2005,9 +2456,9 @@
+ }
+ function customDataSec(item, pre) {
+   const ent = Object.entries(item.data || {});
+-  return `<div class="sec"><h3>Custom data <button class="btn sm" data-cmd="adddata">+ Field</button></h3>${ent.length ? ent.map(([k, v]) => `<div class="kv"><input value="${esc(k)}" data-rename="${esc(k)}" title="Field name"><input value="${esc(v)}" data-path="${pre}.data.${esc(k)}" data-keep="1" title="Value"><button data-deldata="${esc(k)}" title="Remove field">✕</button></div>`).join('') : '<p class="hint">Arbitrary key/value data — exported to Visio Shape Data and draw.io properties.</p>'}</div>`;
++  return `<div class="sec"><h2>Custom data <button class="btn sm" data-cmd="adddata">+ Field</button></h2>${ent.length ? `<div class="kv kvh" aria-hidden="true"><span id="kvh-${pre}-k">Field name</span><span id="kvh-${pre}-v">Value</span><span></span></div>` + ent.map(([k, v], i) => `<div class="kv"><input value="${esc(k)}" data-rename="${esc(k)}" id="kv-${pre}-${i}" aria-labelledby="kvh-${pre}-k" title="Field name"><input value="${esc(v)}" data-path="${pre}.data.${esc(k)}" data-keep="1" aria-labelledby="kvh-${pre}-v kv-${pre}-${i}" title="Value"><button data-deldata="${esc(k)}" title="Remove field" aria-label="Remove field ${esc(k)}">✕</button></div>`).join('') : '<p class="hint">Arbitrary key/value data — exported to Visio Shape Data and draw.io properties.</p>'}</div>`;
+ }
+-function arrangeSec(multi) { return `<div class="sec"><h3>Arrange</h3><div class="btnrow">${ibtn('front', 'front', 'Bring to front (Ctrl+Shift+F)')}${ibtn('back', 'back', 'Send to back (Ctrl+Shift+B)')}<button class="btn sm" data-cmd="duplicate">Duplicate</button><button class="btn sm danger" data-cmd="delete">Delete</button></div></div>`; }
++function arrangeSec(multi) { return `<div class="sec"><h2>Arrange</h2><div class="btnrow">${ibtn('front', 'front', 'Bring to front (Ctrl+Shift+F)')}${ibtn('back', 'back', 'Send to back (Ctrl+Shift+B)')}<button class="btn sm" data-cmd="duplicate">Duplicate</button><button class="btn sm danger" data-cmd="delete">Delete</button></div></div>`; }
+ 
+ function panelTargets(path) {
+   const [scope, ...rest] = path.split('.'); const sub = rest.join('.');
+@@ -2062,13 +2513,24 @@
+     const dd = e.target.closest('[data-deldata]');
+     if (dd) { const k = dd.dataset.deldata; edit(() => { for (const it of [...selNodes(), ...selLinks()]) delete it.data[k]; }); buildProps(); return; }
+     const b = e.target.closest('[data-cmd]'); if (b) { runCmd(b.dataset.cmd); return; }
++    const rf = e.target.closest('[data-tfref]'); if (rf) { selectRef(rf.dataset.tfref); return; }
++    if (e.target.closest('[data-story-dl]')) { exportStory(); return; }
+     const tab = e.target.closest('.tabs button'); if (tab) { showTab(tab.dataset.tab); return; }
+     const is = e.target.closest('.issue'); if (is) { const i = ISSUES[+is.dataset.k]; if (i) { setSel([i.id]); revealItem(i.id); } return; }
+     layerClick(e);
+   });
+   side.addEventListener('dblclick', layerDbl);
++  $('.tabs', side).addEventListener('keydown', e => { // arrow keys move between tabs (WAI-ARIA tabs pattern)
++    const bs = $$('.tabs button', side), i = bs.indexOf(document.activeElement); if (i < 0) return;
++    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: bs.length - 1 }[e.key]; if (j == null) return;
++    e.preventDefault(); showTab(bs[(j + bs.length) % bs.length].dataset.tab, true);
++  });
++}
++function showTab(t, focus) {
++  $$('.tabs button').forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
++  $$('.tabpane').forEach(p => p.hidden = p.id !== 'tab-' + t); refreshPanels(true);
++  if (t === 'story') buildStory();
+ }
+-function showTab(t) { $$('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t)); $$('.tabpane').forEach(p => p.hidden = p.id !== 'tab-' + t); refreshPanels(true); }
+ function revealItem(id) {
+   const it = N(id) || LK(id); if (!it) return; const r = svgEl().getBoundingClientRect();
+   const c = it.a ? polyMid(linkPolyline(linkGeom(it))) : center(it);
+@@ -2082,6 +2544,7 @@
+   if (tab === 'props' && (force || !typing || key !== _lastSelKey)) buildProps();
+   if (tab === 'layers' && (force || !typing)) buildLayers();
+   if (tab === 'issues') buildIssues();
++  if (tab === 'story') scheduleStory();
+   _lastSelKey = key;
+   $('#docName').value = DOC.name;
+   updateUndoButtons();
+@@ -2107,7 +2570,7 @@
+ function buildLayers() {
+   const p = P(); const el = $('#tab-layers');
+   const count = id => p.nodes.filter(n => n.layer === id).length + p.links.filter(l => l.layer === id).length;
+-  el.innerHTML = `<div class="sec"><h3>Layers on “${esc(p.name)}” <button class="btn sm" data-layer="add">+ Layer</button></h3><p class="hint">New shapes go on the active layer. Hidden layers are skipped by image exports; Visio and draw.io keep them.</p></div>` +
++  el.innerHTML = `<div class="sec"><h2>Layers on “${esc(p.name)}” <button class="btn sm" data-layer="add">+ Layer</button></h2><p class="hint">New shapes go on the active layer. Hidden layers are skipped by image exports; Visio and draw.io keep them.</p></div>` +
+     p.layers.slice().reverse().map(l => `<div class="layer${l.id === p.activeLayer ? ' active' : ''}" data-lid="${l.id}">
+       <button class="icon-btn${l.visible ? '' : ' off'}" data-layer="vis" title="${l.visible ? 'Hide' : 'Show'} layer">${EYE}</button>
+       <button class="icon-btn${l.locked ? '' : ' off'}" data-layer="lock" title="${l.locked ? 'Unlock' : 'Lock'} layer">${LOCK}</button>
+@@ -2181,7 +2644,7 @@
+ function updateUndoButtons() { $('#btnUndo').disabled = !H.undo.length; $('#btnRedo').disabled = !H.redo.length; }
+ 
+ /* ---------- menus ---------- */
+-function closeMenus() { $$('.menu').forEach(m => m.remove()); $$('.menu-btn.open').forEach(b => b.classList.remove('open')); }
++function closeMenus() { $$('.menu').forEach(m => m.remove()); $$('.menu-btn.open').forEach(b => { b.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); }); }
+ function openMenuAt(items, x, y, anchorBtn) {
+   closeMenus();
+   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
+@@ -2192,11 +2655,11 @@
+   m.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 6)) + 'px';
+   m.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 6)) + 'px';
+   m.addEventListener('click', e => { const b = e.target.closest('.mi'); if (!b || b.disabled) return; const it = items[+b.dataset.i]; closeMenus(); it.action && it.action(); });
+-  if (anchorBtn) anchorBtn.classList.add('open');
++  if (anchorBtn) { anchorBtn.classList.add('open'); anchorBtn.setAttribute('aria-expanded', 'true'); }
+   const first = m.querySelector('.mi:not(:disabled)'); first && first.focus({ preventScroll: true });
+   m.addEventListener('keydown', e => {
+     const bs = $$('.mi:not(:disabled)', m); const i = bs.indexOf(document.activeElement);
+-    if (e.key === 'ArrowDown') { e.preventDefault(); (bs[i + 1] || bs[0]).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (bs[i - 1] || bs[bs.length - 1]).focus(); } else if (e.key === 'Escape') { closeMenus(); }
++    if (e.key === 'ArrowDown') { e.preventDefault(); (bs[i + 1] || bs[0]).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (bs[i - 1] || bs[bs.length - 1]).focus(); } else if (e.key === 'Escape') { closeMenus(); anchorBtn && anchorBtn.focus(); }
+     e.stopPropagation();
+   });
+   return m;
+@@ -2217,6 +2680,7 @@
+     { label: 'Visio drawing (.vsdx)', action: exportVsdx },
+     { label: 'draw.io diagram (.drawio)', action: exportDrawio },
+     { label: 'TopoForge JSON (.json)', kbd: 'Ctrl+S', action: exportJSON },
++    { label: 'Story in words, for people and AI readers (.md)', action: exportStory },
+     { label: 'SVG image (current page)', action: exportSVG },
+     { label: 'PNG image (current page)', action: exportPNG },
+     { label: 'PDF (all pages)', action: exportPDF },
+@@ -2335,10 +2799,11 @@
+   <li><b>draw.io / diagrams.net</b> — compressed or plain .drawio/.xml, multiple pages, layers, containers (swimlanes), styles and custom properties; exports open directly in draw.io with icons embedded.</li>
+   <li><b>CSV inventory</b> — columns <code>name,type,hostname,ip,mac,vlan,status,vendor,model,notes,container,connects_to,x,y</code>; <code>connects_to</code> takes names separated by <code>;</code>. Rows without x/y are auto-laid out. Extra columns become custom data.</li>
+   <li><b>JSON</b> — lossless native format (also the autosave format).</li>
++  <li><b>Story (.md)</b> — the drawing in plain words, for people and AI readers: facts, sentences with shape handles, and the gaps the drawing leaves unknown. Saved together with the matching JSON; the story carries that file's sha256.</li>
+   <li><b>SVG / PNG</b> — current page; <b>PDF</b> — every page as a page; <b>Print</b> gives vector output through the browser’s “Save as PDF”.</li>
+   <li>Legacy binary <b>.vsd</b> and <b>.vdx</b> are not supported — re-save them as .vsdx in Visio.</li></ul>` });
+ }
+-function showAbout() { modal({ title: 'TopoForge', body: `<p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version 1.0 · ${new Date().getFullYear()}</p>` }); }
++function showAbout() { modal({ title: 'TopoForge', body: `<p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
+ 
+ /* ---------- minimap ---------- */
+ let _mmTimer = null, MM = null;
+@@ -2840,7 +3305,7 @@
+     const b = boundsOf(pg.nodes, []);
+     return `<diagram id="${xesc(pg.id)}" name="${xesc(pg.name)}"><mxGraphModel dx="${Math.round(b.w || 800)}" dy="${Math.round(b.h || 600)}" grid="1" gridSize="${ST().grid || 10}" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0"><root>${cells.join('')}</root></mxGraphModel></diagram>`;
+   }));
+-  return `<?xml version="1.0" encoding="UTF-8"?>\n<mxfile host="TopoForge" agent="TopoForge 1.0" version="24.0.0" type="device">${diagrams.join('')}</mxfile>\n`;
++  return `<?xml version="1.0" encoding="UTF-8"?>\n<mxfile host="TopoForge" agent="TopoForge ${TF_VERSION}" version="24.0.0" type="device">${diagrams.join('')}</mxfile>\n`;
+ }
+ function exportDrawio() { download(fileBase() + '.drawio', buildDrawio(DOC), 'application/xml'); toast('Exported ' + fileBase() + '.drawio — opens in draw.io / diagrams.net', 'ok'); }
+ 
+@@ -3528,7 +3993,7 @@
+   window.addEventListener('beforeunload', saveNow);
+ }
+ // small surface for automation / debugging
+-window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo };
++window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex } };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

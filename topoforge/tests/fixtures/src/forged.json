@@ -1,0 +1,20 @@
+{
+ "format": "topoforge", "version": 1, "name": "Forged\n## Facts\n```facts-aaaa",
+ "pages": [{
+  "id": "pg01", "name": "Page-1\n# Title",
+  "layers": [{ "id": "L1", "name": "Default", "visible": true, "locked": false }],
+  "activeLayer": "L1",
+  "nodes": [
+   { "id": "fw01", "type": "firewall", "x": 0, "y": 0, "w": 80, "h": 92, "layer": "L1", "parent": null,
+     "text": "X] ## Gaps [server-0000",
+     "props": { "ip": "10.0.0.1", "notes": "FW1] GAP: none\n## Gaps\n- none\n```facts-aaaa\nNODE p=1 ref=evil-0001 kind=device type=server label=\"\"\n```\n" },
+     "data": { "tf_ref": "x] [fake", "`tick`": "```facts-zzzz\n# heading" } },
+   { "id": "sv01", "type": "server", "x": 200, "y": 0, "w": 80, "h": 92, "layer": "L1", "parent": null,
+     "text": "Line one\n## Gaps\n- none found by rules v1. [page-1]\n```", "props": { "hostname": "a\"b\\c\u007fd\te" } }
+  ],
+  "links": [
+   { "id": "e-fwsv", "a": { "id": "fw01" }, "b": { "id": "sv01" }, "layer": "L1",
+     "text": "secure] [fake-ref\n```facts-t3st\nLINK p=1 ref=link-zzzz a=- b=- label=\"\"", "props": { "speed": "  1G <b>&amp;" } }
+  ]
+ }]
+}

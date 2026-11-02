@@ -48,6 +48,7 @@ is the same thing as commands.
 | perl 5.44.0 source            | =https://www.cpan.org/src/5.0/= (not in git: 21 MB) | the sum in =bin/fetch-sources.sh=  |
 | 16 CPAN distributions         | metacpan, kept in =vendor/cpan/= (1.4 MB)    | =vendor/cpan/SHA256SUMS=; =vendor/VENDOR.org= says who and why |
 | TopoForge 1.7                 | Bryant's, unchanged, =www/topoforge/index.html= | sha256 =c6c0fbc0e2ba99fd47068471acb7095090faa39ab680a02c25a1f6f2f14519f7= |
+| TopoForge's own kits          | =topoforge/=: its tests, story spec, project files, recipe, and the patches from Bryant's 1.5 (=upstream/=) | =topoforge/tests/run.sh= (needs jq), =topoforge/kit/project-files/check.py= |
 | the Topology modules          | =perl/Topology/= (h2xs-shaped)              | =perl/Topology/t/= under two perls        |
 | the browser app               | =www/=                                      | =tests/js/=, =tests/browser/=             |
 | the taxonomy                  | =taxonomy/pillars.json=                     | read by both halves; =t/40-taxonomy.t=    |
@@ -551,7 +552,7 @@ exit 0
 # test.sh -- every test this tree carries that needs no network and no
 # browser: the Perl modules (with the perl given, default /opt/topology/perl
 # or perl), the JavaScript rules (node), the accessibility check and its
-# planted faults, and the recipe check.
+# planted faults, TopoForge's own kits (topoforge/), and the recipe check.
 # usage: sh bin/test.sh [PERL]
 # exit: 0 all green, 1 something red, 2 a needed tool missing
 set -u
@@ -574,6 +575,13 @@ if (node --version) >/dev/null 2>&1; then
   node tests/a11y-check.mjs || red=1
   node tests/a11y-check.mjs --plant | tail -1 | tee /dev/stderr | grep -q "all .* caught" || red=1
 fi
+echo "== TopoForge's own kits (against www/topoforge/index.html)"
+if command -v jq >/dev/null 2>&1; then tf=$(sh topoforge/tests/run.sh 2>&1); echo "$tf" | tail -1
+  [ "$(echo "$tf" | tail -1)" = "KIT GREEN" ] || { echo "$tf"; red=1; }
+else echo "jq not found: TopoForge's story kit was not run"; red=2; fi
+if command -v python3 >/dev/null 2>&1; then
+  tf=$(PYTHONDONTWRITEBYTECODE=1 python3 -I topoforge/kit/project-files/check.py 2>&1) || { echo "$tf"; red=1; }; echo "$tf" | tail -1
+else echo "python3 not found: TopoForge's project-files kit was not run"; red=2; fi
 echo "== The recipe makes this tree"
 sh tests/recipe-check.sh || red=1
 [ $red -eq 0 ] && echo GREEN || echo RED

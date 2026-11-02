@@ -5,7 +5,7 @@
 # test.sh -- every test this tree carries that needs no network and no
 # browser: the Perl modules (with the perl given, default /opt/topology/perl
 # or perl), the JavaScript rules (node), the accessibility check and its
-# planted faults, and the recipe check.
+# planted faults, TopoForge's own kits (topoforge/), and the recipe check.
 # usage: sh bin/test.sh [PERL]
 # exit: 0 all green, 1 something red, 2 a needed tool missing
 set -u
@@ -28,6 +28,13 @@ if (node --version) >/dev/null 2>&1; then
   node tests/a11y-check.mjs || red=1
   node tests/a11y-check.mjs --plant | tail -1 | tee /dev/stderr | grep -q "all .* caught" || red=1
 fi
+echo "== TopoForge's own kits (against www/topoforge/index.html)"
+if command -v jq >/dev/null 2>&1; then tf=$(sh topoforge/tests/run.sh 2>&1); echo "$tf" | tail -1
+  [ "$(echo "$tf" | tail -1)" = "KIT GREEN" ] || { echo "$tf"; red=1; }
+else echo "jq not found: TopoForge's story kit was not run"; red=2; fi
+if command -v python3 >/dev/null 2>&1; then
+  tf=$(PYTHONDONTWRITEBYTECODE=1 python3 -I topoforge/kit/project-files/check.py 2>&1) || { echo "$tf"; red=1; }; echo "$tf" | tail -1
+else echo "python3 not found: TopoForge's project-files kit was not run"; red=2; fi
 echo "== The recipe makes this tree"
 sh tests/recipe-check.sh || red=1
 [ $red -eq 0 ] && echo GREEN || echo RED

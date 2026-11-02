@@ -1,0 +1,251 @@
+{
+ "format": "topoforge",
+ "version": 1,
+ "name": "Two pages, hidden layer, odd ends",
+ "settings": {
+  "grid": 20,
+  "snap": true,
+  "showGrid": true,
+  "guides": true,
+  "netLabels": true,
+  "ifLabels": true,
+  "minimap": true,
+  "defaultRoute": "orthogonal"
+ },
+ "pages": [
+  {
+   "id": "pg01",
+   "name": "Site A",
+   "layers": [
+    {
+     "id": "L1",
+     "name": "Default",
+     "visible": true,
+     "locked": false
+    },
+    {
+     "id": "L2",
+     "name": "Planned",
+     "visible": false,
+     "locked": false
+    }
+   ],
+   "activeLayer": "L1",
+   "nodes": [
+    {
+     "id": "inet",
+     "type": "internet",
+     "x": 0,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "Internet",
+     "layer": "L1",
+     "parent": null,
+     "props": {},
+     "data": {
+      "tf_ref": "internet-inet"
+     },
+     "style": {}
+    },
+    {
+     "id": "rt01",
+     "type": "router",
+     "x": 200,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "Router 1",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "hostname": "edge-a",
+      "vendor": "Acme"
+     },
+     "data": {
+      "Asset tag": "A-4",
+      "Rack U": "17",
+      "tf_ref": "router-rt01"
+     },
+     "style": {}
+    },
+    {
+     "id": "ap01",
+     "type": "ap",
+     "x": 400,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "",
+     "layer": "L2",
+     "parent": null,
+     "props": {
+      "hostname": "ap-lobby"
+     },
+     "data": {
+      "tf_ref": "ap-ap01"
+     },
+     "style": {}
+    },
+    {
+     "id": "nt01",
+     "type": "note",
+     "x": 0,
+     "y": 200,
+     "w": 150,
+     "h": 100,
+     "text": "Café ☕ plan\nsecond line 😀",
+     "layer": "L1",
+     "parent": null,
+     "props": {},
+     "data": {
+      "tf_ref": "note-nt01"
+     },
+     "style": {}
+    },
+    {
+     "id": "vl20",
+     "type": "vlan",
+     "x": 600,
+     "y": 0,
+     "w": 320,
+     "h": 220,
+     "text": "VLAN",
+     "layer": "L1",
+     "parent": null,
+     "props": {
+      "vlan": "20"
+     },
+     "data": {
+      "tf_ref": "vlan-vl20"
+     },
+     "style": {}
+    }
+   ],
+   "links": [
+    {
+     "id": "e-free",
+     "a": {
+      "id": "rt01",
+      "port": null
+     },
+     "b": {
+      "id": null,
+      "port": null,
+      "x": 50,
+      "y": 50
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {
+      "medium": "wireless"
+     },
+     "style": {},
+     "data": {
+      "tf_ref": "link-free"
+     }
+    },
+    {
+     "id": "e-loop",
+     "a": {
+      "id": "rt01",
+      "port": null
+     },
+     "b": {
+      "id": "rt01",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L1",
+     "arrows": "none",
+     "props": {
+      "ifA": "ge0/0",
+      "ifB": "ge0/1",
+      "notes": "test loop"
+     },
+     "style": {},
+     "data": {
+      "tf_ref": "link-loop"
+     }
+    },
+    {
+     "id": "e-hide",
+     "a": {
+      "id": "rt01",
+      "port": null
+     },
+     "b": {
+      "id": "ap01",
+      "port": null
+     },
+     "route": "orthogonal",
+     "text": "",
+     "layer": "L2",
+     "arrows": "none",
+     "props": {
+      "speed": "1G",
+      "medium": "copper"
+     },
+     "style": {},
+     "data": {
+      "cable": "C-9",
+      "tf_ref": "link-hide"
+     }
+    }
+   ]
+  },
+  {
+   "id": "pg02",
+   "name": "Site A copy",
+   "layers": [
+    {
+     "id": "L9",
+     "name": "Default",
+     "visible": true,
+     "locked": false
+    }
+   ],
+   "activeLayer": "L9",
+   "nodes": [
+    {
+     "id": "rt02",
+     "type": "router",
+     "x": 0,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "Router 1",
+     "layer": "L9",
+     "parent": null,
+     "props": {},
+     "data": {
+      "tf_ref": "router-rt01"
+     },
+     "style": {}
+    },
+    {
+     "id": "rt03",
+     "type": "router",
+     "x": 200,
+     "y": 0,
+     "w": 80,
+     "h": 92,
+     "text": "Router 2",
+     "layer": "L9",
+     "parent": null,
+     "props": {},
+     "data": {
+      "tf_ref": "router-rt03"
+     },
+     "style": {}
+    }
+   ],
+   "links": []
+  }
+ ],
+ "cur": 0,
+ "exported": "2026-10-08T00:00:00.000Z"
+}

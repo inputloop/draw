@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+# SPDX-License-Identifier: CC-BY-SA-4.0
+#
+# Files git should not track here.
+# Node packages for the browser kit (npm i beside it).
+node_modules/
+# Python byte code from the kits.
+*.pyc
+__pycache__/
+# Release tarballs written by bin/ship.sh.
+dist/
+# Output folders the browser kit writes when run from the repo
+# (out-topoforge/ by default).
+out-*/

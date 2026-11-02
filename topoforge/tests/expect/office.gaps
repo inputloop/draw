@@ -1,0 +1,25 @@
+GAP p=1 kind=NO_IP ref=firewall-fw01
+GAP p=1 kind=NO_IP ref=server-web1
+GAP p=1 kind=NO_IP ref=server-mai1
+GAP p=1 kind=NO_IP ref=switch-sw01
+GAP p=1 kind=NO_IP ref=desktop-pc01
+GAP p=1 kind=NO_IP ref=desktop-pc02
+GAP p=1 kind=NO_SUBNET ref=dmz-dmz1
+GAP p=1 kind=NO_SUBNET ref=vlan-lan1
+GAP p=1 kind=NO_MEDIUM ref=link-fwwb
+GAP p=1 kind=NO_MEDIUM ref=link-fwml
+GAP p=1 kind=NO_MEDIUM ref=link-swp1
+GAP p=1 kind=NO_MEDIUM ref=link-swp2
+GAP p=1 kind=NO_SPEED ref=link-fwwb
+GAP p=1 kind=NO_SPEED ref=link-fwml
+GAP p=1 kind=NO_SPEED ref=link-swp1
+GAP p=1 kind=NO_SPEED ref=link-swp2
+GAP p=1 kind=UNLABELED_LINK ref=link-gwfw
+GAP p=1 kind=UNLABELED_LINK ref=link-fwwb
+GAP p=1 kind=UNLABELED_LINK ref=link-fwml
+GAP p=1 kind=UNLABELED_LINK ref=link-swp1
+GAP p=1 kind=UNLABELED_LINK ref=link-swp2
+GAP p=1 kind=MAYBE_DEFAULT ref=desktop-pc01 what=label
+GAP p=1 kind=MAYBE_DEFAULT ref=desktop-pc02 what=label
+GAP p=1 kind=MAYBE_DEFAULT ref=dmz-dmz1 what=label
+GAP p=1 kind=MAYBE_DEFAULT ref=vlan-lan1 what=vlan
