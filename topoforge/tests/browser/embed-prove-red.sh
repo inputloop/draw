@@ -41,6 +41,33 @@
 #   pages-switch   showing a page is told as a change    -> G1
 #   all-grows      'all' turns on the 1.9 switches       -> W1
 #   any-origin-19  postMessage to '*', the new messages  -> E8
+# 1.9 (B):
+#   map-inside     the handles sit inside the map's frame -> N1
+#   map-always     the handles never hide                -> N1
+#   map-no-near    reaching for the map shows nothing    -> N1
+#   map-hover-only a focused handle stays hidden         -> N2
+#   map-no-keys    the grip ignores the arrow keys       -> N3
+#   map-no-resize  dragging the resize handle does nothing -> N3
+#   map-menu-dead  Position, Top left does nothing       -> N4
+#   map-not-kept   the map's place is not kept           -> N5
+#   map-off-stays  turned off, the map stays in its frame -> N6
+#   map-no-store   refused storage breaks the move       -> N7
+#   map-touch      no hover, and the handles stay hidden -> N8
+#   map-contrast   the handles' text too faint           -> X3
+#   map-covered    floating Properties covers the map    -> N9
+#   prev-redraw    a redraw loses the preview            -> H1
+#   prev-no-clear  preview(null) leaves it                -> H1
+#   prev-unasked   preview() draws with no switch        -> H2
+#   prev-box       the caption falls out of the pages box -> H3
+# 1.9 (C):
+#   tabs-scroll    the strip scrolls as before            -> T1
+#   tabs-no-window every tab shown, none hidden           -> T1
+#   tabs-next-dead › moves nothing                        -> T2
+#   tabs-no-arrows the arrow keys do nothing on a tab     -> T3
+#   tabs-lost      End leaves the last tab out of the window -> T3
+#   tabs-no-filter typing does not narrow the list        -> T4
+#   tabs-fly-down  All's list opens below the strip       -> T4
+#   tabs-ctl-always the controls show when the tabs fit   -> T5
 # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
 # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
@@ -104,5 +131,32 @@ plant pages-silent  G1 's#^  if (!EMBED.pagelist) return;$#  return;#'
 plant pages-switch  G1 's#const names = DOC.pages.map(p => p.name), key = JSON.stringify(names);#const names = DOC.pages.map(p => p.name), key = JSON.stringify(names) + DOC.cur;#'
 plant all-grows     W1 "s#if (w === 'all') ALL_V1.forEach#if (w === 'all') EMBED_WORDS.forEach#"
 plant any-origin-19 E8 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+# 1.9 (B)
+plant map-inside    N1 's@#mmwrap .mm-handles{position:absolute;bottom:100%;@#mmwrap .mm-handles{position:absolute;bottom:0;@'
+plant map-always    N1 's@^#mmwrap:not(.mm-near):not(:focus-within) .mm-handles{opacity:0}$@@'
+plant map-no-near   N1 "s@MMW.wrap.classList.toggle('mm-near', b.width > 0 \&\&@MMW.wrap.classList.toggle('mm-near', false \&\&@"
+plant map-hover-only N2 's@^#mmwrap:not(.mm-near):not(:focus-within) .mm-handles{opacity:0}$@#mmwrap:not(.mm-near) .mm-handles{opacity:0}@'
+plant map-no-keys   N3 's@^    grip.addEventListener(.keydown., e => keyd(e, (dx, dy) => mmMove(dx, dy, true)));$@@'
+plant map-no-resize N3 's@^    dragOn(size, (d, dx, dy) => { MMW.w = d.w - dx; MMW.h = d.h - dy; mmApply(); });$@@'
+plant map-menu-dead N4 "s@{ label: 'Top left', action: corner(false, false) }@{ label: 'Top left', action: () => {} }@"
+plant map-not-kept  N5 's@o.minimap = { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h };@o.minimap = null;@'
+plant map-off-stays N6 "s@^  else if (mm.parentNode !== \$('#stage')) \$('#stage').insertBefore(mm, MAP ? MAP.box : null);\$@@"
+plant map-no-store  N7 '/o.minimap = {/s@try { \(localStorage.setItem(UI_KEY, JSON.stringify(o));\) } catch (e) { /\* refused: kept for this visit only \*/ }@\1@'
+plant map-touch     N8 's|^@media (hover:none){#mmwrap .mm-handles{opacity:1 !important}}$||'
+plant map-contrast  X3 's@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:var(--text);@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:#a0a8b4;@'
+plant map-covered   N9 's@^    if (name === .props. \&\& typeof MMW !== .undefined.*$@@'
+plant prev-redraw   H1 's@^  if (PREVIEW) drawPreview();   // 1.9.*$@@'
+plant prev-no-clear H1 's@if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }@if (what === null || what === undefined) { return true; }@'
+plant prev-unasked  H2 's@if (!EMBED.preview \&\& !quiet) return false;@if (false) return false;@'
+plant prev-box      H3 's@^body.tf-preview #mapbox #minimap{position:relative}$@@'
+# 1.9 (C)
+plant tabs-scroll   T1 's@^#pagetabs.pt-ovf{overflow:hidden}$@@'
+plant tabs-no-window T1 's@if (!W || total <= W + 0.5) {@if (true) {@'
+plant tabs-next-dead T2 "s@PT.start += c.classList.contains('pt-prev') ? -1 : 1; fitTabs();@fitTabs();@"
+plant tabs-no-arrows T3 's@if (j === undefined || e.altKey || e.ctrlKey || e.metaKey) return;@return;@'
+plant tabs-lost     T3 "s@if (typeof show === 'number' \&\& show >= 0 \&\& show < n) {@if (false) {@"
+plant tabs-no-filter T4 "s@^  inp.addEventListener('input', draw);\$@@"
+plant tabs-fly-down T4 "s@m.style.top = 'auto'; m.style.bottom = Math.round(innerHeight - r.top + 4) + 'px';@m.style.top = Math.round(r.bottom + 4) + 'px';@"
+plant tabs-ctl-always T5 's@if (!W || total <= W + 0.5) {@if (!W) {@'
 [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
 exit $bad

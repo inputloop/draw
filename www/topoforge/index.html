@@ -282,6 +282,40 @@ body.tf-placing #canvas{cursor:crosshair}
   body.tf-fl-shapes #palette.fl-hidden,body.tf-fl-props #side.fl-hidden{height:auto}
   body.tf-fl-shapes #palette.fl-hidden>:not(.fl-bar),body.tf-fl-props #side.fl-hidden>:not(.fl-bar),body.tf-pages #mapbox.fl-hidden>:not(.fl-bar){display:none}
 }
+/* 1.9: the overview map moved and resized by handles outside its frame (map), and a preview in it (preview);
+   each rule hangs on an element or a class only those switches add */
+#mmwrap{position:absolute;right:var(--mr,12px);bottom:var(--mb,12px);width:var(--mw,190px);height:var(--mh,130px);z-index:4}
+#mmwrap #minimap{position:relative;right:auto;bottom:auto;width:100%;height:100%}
+#mmwrap:has(#minimap.hidden){display:none}
+#mmwrap .mm-handles{position:absolute;bottom:100%;right:0;display:flex;gap:4px;padding-bottom:4px}
+#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:var(--text);border-radius:6px;padding:3px 8px;font-size:12px;line-height:1.2;box-shadow:var(--shadow);white-space:nowrap}
+#mmwrap .mm-h:hover,#mmwrap .mm-h.open{background:var(--hover)}
+#mmwrap .mm-grip{cursor:grab;touch-action:none}
+#mmwrap .mm-size{cursor:nwse-resize;touch-action:none}
+#mmwrap .mm-h:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#mmwrap:not(.mm-near):not(:focus-within) .mm-handles{opacity:0}
+@media (hover:none){#mmwrap .mm-handles{opacity:1 !important}}
+@media (max-width:860px){#mmwrap{display:none}}
+body.tf-preview #mapbox #minimap{position:relative}
+body.tf-pages #mmwrap{display:none}
+#minimap .mm-cap{position:absolute;left:4px;right:4px;bottom:4px;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text);font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#minimap .mm-cap[hidden]{display:none}
+#mmSvg.mm-dim>.mm-rest{opacity:.3}
+/* 1.9: page tabs that do not fit: our own window of tabs, < and >, and All (in the bottom bar); applies only while
+   the tabs overflow (the class pt-ovf), so a strip that fits looks as it did */
+#pagetabs.pt-ovf{overflow:hidden}
+#pagetabs .ptab[hidden]{display:none}
+#pagetabs .pt-ctl{flex:none;display:flex;align-items:center;justify-content:center;gap:4px;border:0;border-right:1px solid var(--border);border-radius:0;background:none;color:var(--text-2);padding:0 10px;font-size:12.5px;white-space:nowrap}
+#pagetabs .pt-ctl:hover:not(:disabled),#pagetabs .pt-ctl.open{background:var(--hover);color:var(--text)}
+#pagetabs .pt-ctl:disabled{opacity:.4;cursor:default}
+#pagetabs .pt-prev,#pagetabs .pt-next{font-size:16px;min-width:30px;padding:0 6px}
+#ptFly{display:flex;flex-direction:column;min-width:260px;max-width:min(420px,92vw);overflow:hidden}
+#ptFly input{margin:2px 2px 4px;width:auto}
+#ptFlyList{list-style:none;margin:0;padding:0;overflow:auto;max-height:min(55vh,420px)}
+#ptFlyList li{padding:5px 10px;border-radius:6px;cursor:pointer;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ptFlyList li.cur{font-weight:600}
+#ptFlyList li[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+#ptFlyList li.pt-none{color:var(--text-2);cursor:default}
 @media print{body *{visibility:hidden}}
 
 </style>
@@ -2676,6 +2710,7 @@ function layerChange() { }
 function buildPages() {
   const el = $('#pagetabs');
   el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}"${i === DOC.cur ? ' aria-current="page"' : ''} title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
+  fitTabs(DOC.cur);   // 1.9: when the tabs do not fit, our own window of them
   if (MAP) mapShowActive();
   tellPages();
 }
@@ -2888,6 +2923,7 @@ function drawMinimap() {
   const svg = $('#mmSvg'); svg.setAttribute('viewBox', `${rnd(MM.x)} ${rnd(MM.y)} ${rnd(MM.w)} ${rnd(MM.h)}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   svg.innerHTML = `<rect x="${MM.x}" y="${MM.y}" width="${MM.w}" height="${MM.h}" fill="${curPal().paper}"/>` + $('#content').innerHTML.replace(/<text[\s\S]*?<\/text>/g, '') + `<rect id="mmView" fill="${curPal().sel}" fill-opacity=".08" stroke="${curPal().sel}" vector-effect="non-scaling-stroke" stroke-width="1.5"/>`;
   drawMinimapViewport();
+  if (PREVIEW) drawPreview();   // 1.9: the preview, when an embedding page asked for one
 }
 function drawMinimapViewport() {
   const v = $('#mmView'); if (!v || !MM) return; const r = svgEl().getBoundingClientRect();
@@ -4193,6 +4229,7 @@ function floatPanel(name) {
     el.style.setProperty('--fx', x + 'px'); el.style.setProperty('--fy', y + 'px');
     let bottom = st.bottom - 12;   // Properties stops above the overview box when they share a column
     if (name === 'props' && FL.map && FL.map.on && !FL.map.hidden) { const m = FL.map.el.getBoundingClientRect(); if (m.left < x + def.w && m.right > x && m.top > y) bottom = Math.min(bottom, m.top - 12); }
+    if (name === 'props' && typeof MMW !== 'undefined' && MMW && EMBED.map && !(MAP && MAP.on)) { const m = MMW.wrap.getBoundingClientRect(); if (m.width && m.left < x + def.w && m.right > x && m.top > y) bottom = Math.min(bottom, m.top - MMW_ROOM - 8); }   // 1.9: nor over the map's own frame
     el.style.setProperty('--fh', Math.round(Math.max(160, bottom - y)) + 'px');
   };
   f.where = () => f.hidden ? `${def.label} is hidden to its grip row.` : `${def.label}: ${Math.round(f.x)} pixels from the left, ${Math.round(f.y)} from the top.`;
@@ -4427,6 +4464,210 @@ function wire19() {
   svg.addEventListener('pointermove', e => { if (_lp && Math.hypot(e.clientX - _lp.at.x, e.clientY - _lp.at.y) > 8) lpEnd(); });
   for (const t of ['pointerup', 'pointercancel', 'pointerleave']) svg.addEventListener(t, lpEnd);
 }
+/* ---- 1.9 (B): the overview map, moved and resized (map), and a preview in it (preview) ---- */
+const MMW_DEF = { r: 12, b: 12, w: 190, h: 130 }, MMW_MIN = { w: 120, h: 80 }, MMW_ROOM = 34;   // room above for the handles
+let MMW = null, PREVIEW = null;
+function embed19b(was) {
+  mapFloat(EMBED.map);
+  document.body.classList.toggle('tf-preview', EMBED.preview);
+  if (!EMBED.preview && was.preview) preview(null, undefined, true);
+}
+function mmSaved() { const o = uiLoad().minimap || {}; const ok = k => Number.isFinite(o[k]); return ok('r') && ok('b') && ok('w') && ok('h') ? { r: o.r, b: o.b, w: o.w, h: o.h } : { ...MMW_DEF }; }
+function mmSave() { const o = uiLoad(); o.minimap = { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h }; try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ } }
+// where the minimap lives: the pages box (1.8, pages wins), the movable wrapper (map), or the stage, as in 1.7
+function mmHome() {
+  const mm = $('#minimap');
+  if (MAP && MAP.on) return;
+  if (EMBED.map && MMW) { if (mm.parentNode !== MMW.wrap) MMW.wrap.insertBefore(mm, MMW.wrap.firstChild); }
+  else if (mm.parentNode !== $('#stage')) $('#stage').insertBefore(mm, MAP ? MAP.box : null);
+}
+function mapFloat(on) {
+  if (on && !MMW) {
+    const wrap = document.createElement('div'); wrap.id = 'mmwrap';
+    wrap.innerHTML = '<div class="mm-handles" role="group" aria-label="Overview map controls">' +
+      '<button type="button" class="mm-h mm-size" aria-label="Resize the overview map: drag, or the arrow keys (left and up make it bigger; Shift goes further)"><span aria-hidden="true">⤡</span></button>' +
+      '<button type="button" class="mm-h mm-grip" aria-label="Move the overview map: drag, or the arrow keys (Shift goes further)"><span aria-hidden="true">⠿</span> Move</button>' +
+      '<button type="button" class="mm-h mm-pos menu-btn" aria-haspopup="menu" aria-expanded="false">Position</button></div>';
+    $('#stage').appendChild(wrap);
+    MMW = { wrap, ...mmSaved() };
+    const grip = wrap.querySelector('.mm-grip'), size = wrap.querySelector('.mm-size'), pos = wrap.querySelector('.mm-pos');
+    wrap.addEventListener('keydown', e => { if (e.target.closest('.mm-h')) e.stopPropagation(); });   // not the canvas's arrows
+    const keyd = (e, fn) => { const n = e.shiftKey ? FL_BIG : FL_STEP, d = { ArrowLeft: [-n, 0], ArrowRight: [n, 0], ArrowUp: [0, -n], ArrowDown: [0, n] }[e.key]; if (d) { e.preventDefault(); fn(d[0], d[1]); } };
+    grip.addEventListener('keydown', e => keyd(e, (dx, dy) => mmMove(dx, dy, true)));
+    size.addEventListener('keydown', e => keyd(e, (dx, dy) => mmSize(-dx, -dy, true)));
+    const dragOn = (el, fn) => {
+      let d = null;
+      el.addEventListener('pointerdown', e => { if (e.button > 0) return; d = { x: e.clientX, y: e.clientY, r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h, moved: false }; try { el.setPointerCapture(e.pointerId); } catch (er) { } e.preventDefault(); });
+      el.addEventListener('pointermove', e => { if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!d.moved && Math.abs(dx) + Math.abs(dy) < 3) return; d.moved = true; fn(d, dx, dy); });
+      const end = () => { if (!d) return; const m = d.moved; d = null; if (m) { mmSave(); flSay(mmWhere()); } };
+      el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    };
+    dragOn(grip, (d, dx, dy) => { MMW.r = d.r - dx; MMW.b = d.b - dy; mmApply(); });
+    dragOn(size, (d, dx, dy) => { MMW.w = d.w - dx; MMW.h = d.h - dy; mmApply(); });
+    pos.addEventListener('click', () => {
+      if (pos.classList.contains('open')) { closeMenus(); return; }
+      const r = pos.getBoundingClientRect(), st = () => $('#stage').getBoundingClientRect();
+      const corner = (right, bottom) => () => { const s = st(); MMW.r = right ? 12 : s.width - MMW.w - 12; MMW.b = bottom ? 12 : s.height - MMW.h - 12; mmApply(); mmSave(); flSay(mmWhere()); };
+      openMenuAt([{ header: 'Overview map' }, { label: 'Bottom right', action: corner(true, true) }, { label: 'Bottom left', action: corner(false, true) }, { label: 'Top right', action: corner(true, false) }, { label: 'Top left', action: corner(false, false) },
+        '-', { label: 'Larger', action: () => mmSize(FL_BIG, Math.round(FL_BIG * 0.7), true) }, { label: 'Smaller', action: () => mmSize(-FL_BIG, -Math.round(FL_BIG * 0.7), true) },
+        '-', { label: 'Back to its starting place', action: () => { Object.assign(MMW, MMW_DEF); mmApply(); mmSave(); flSay('The overview map is back in its starting place.'); } }], r.left, r.bottom + 4, pos);
+    });
+    // the door handle: shown while the pointer is within 40 pixels of the map or its handles, or one has focus
+    document.addEventListener('pointermove', e => {
+      if (!MMW || !EMBED.map) return; const b = MMW.wrap.getBoundingClientRect(), near = 40;
+      const top = b.top - MMW_ROOM;
+      MMW.wrap.classList.toggle('mm-near', b.width > 0 && e.clientX >= b.left - near && e.clientX <= b.right + near && e.clientY >= top - near && e.clientY <= b.bottom + near);
+    });
+    document.documentElement.addEventListener('pointerleave', () => { if (MMW) MMW.wrap.classList.remove('mm-near'); });
+    window.addEventListener('resize', () => { if (MMW && EMBED.map) mmApply(); });
+  }
+  if (MMW) { MMW.wrap.hidden = !on; if (on) mmApply(); }
+  mmHome();
+  if (on || MMW) scheduleMinimap();
+}
+function mmApply() {
+  const s = $('#stage').getBoundingClientRect(); if (!s.width) return;
+  MMW.w = Math.round(clamp(MMW.w, MMW_MIN.w, Math.max(MMW_MIN.w, s.width * 0.7)));
+  MMW.h = Math.round(clamp(MMW.h, MMW_MIN.h, Math.max(MMW_MIN.h, s.height * 0.7 - MMW_ROOM)));
+  MMW.r = Math.round(clamp(MMW.r, 0, Math.max(0, s.width - MMW.w)));
+  MMW.b = Math.round(clamp(MMW.b, 0, Math.max(0, s.height - MMW.h - MMW_ROOM)));
+  const w = MMW.wrap.style; w.setProperty('--mr', MMW.r + 'px'); w.setProperty('--mb', MMW.b + 'px'); w.setProperty('--mw', MMW.w + 'px'); w.setProperty('--mh', MMW.h + 'px');
+  drawMinimapViewport();
+  if (FL.props && FL.props.on) FL.props.apply();
+}
+function mmWhere() { return `Overview map: ${MMW.w} by ${MMW.h} pixels, ${MMW.r} from the right of the drawing and ${MMW.b} from its foot.`; }
+function mmMove(dx, dy, say) { MMW.r -= dx; MMW.b -= dy; mmApply(); mmSave(); if (say) flSay(mmWhere()); }
+function mmSize(dw, dh, say) { MMW.w += dw; MMW.h += dh; mmApply(); mmSave(); if (say) flSay(mmWhere()); scheduleMinimap(); }
+// the preview: an embedding page shows in the map what the person is pointing at in its own frame
+function previewMatch(what) {
+  if (Array.isArray(what)) { const want = new Set(what.map(String)); return n => want.has(n.id) || want.has(String((n.data || {}).tf_ref || '')); }
+  if (what && typeof what === 'object' && typeof what.category === 'string') return n => (SHAPES[n.type] || {}).cat === what.category;
+  if (what && typeof what === 'object' && typeof what.kind === 'string') return n => n.type === what.kind;
+  return null;
+}
+function preview(what, caption, quiet) {
+  if (!EMBED.preview && !quiet) return false;
+  if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }
+  const m = previewMatch(what); if (!m) return false;
+  PREVIEW = { m, what, caption: typeof caption === 'string' ? caption : null };
+  return drawPreview();
+}
+function previewCaption(hits, other) {
+  if (PREVIEW.caption !== null) return PREVIEW.caption;
+  const w = PREVIEW.what, cat = w && w.category ? (CATS.find(c => c.id === w.category) || {}).name || w.category : w && w.kind ? (SHAPES[w.kind] || {}).name || w.kind : null;
+  const more = other ? ` · ${other} on other pages` : '';
+  if (!hits.length) return (cat ? cat + ': not' : 'Not') + ' on this page' + more;
+  if (hits.length === 1) return (cat ? cat + ': ' : '') + nodeName(hits[0]) + more;
+  return `${cat ? cat + ': ' : ''}${hits.length} shapes${more}`;
+}
+function drawPreview() {
+  const svg = $('#mmSvg'), mm = $('#minimap'); let cap = mm.querySelector('.mm-cap');
+  const old = svg.querySelector('#mmPrev'); if (old) old.remove();
+  svg.classList.remove('mm-dim'); $$('.mm-rest', svg).forEach(g => g.replaceWith(...g.childNodes));
+  if (!PREVIEW) { if (cap) cap.hidden = true; return true; }
+  const hits = P().nodes.filter(n => visible(n) && PREVIEW.m(n));
+  const other = DOC.pages.reduce((a, pg, i) => a + (i === DOC.cur ? 0 : pg.nodes.filter(PREVIEW.m).length), 0);
+  const text = previewCaption(hits, other);
+  if (!cap) { cap = document.createElement('div'); cap.className = 'mm-cap'; mm.appendChild(cap); }
+  cap.textContent = text; cap.hidden = false;
+  if (MM && hits.length) {
+    const kids = [...svg.childNodes].filter(n => n.id !== 'mmView' && n !== svg.firstChild), rest = document.createElementNS(SVGNS, 'g');
+    rest.setAttribute('class', 'mm-rest'); kids.forEach(k => rest.appendChild(k)); svg.insertBefore(rest, svg.querySelector('#mmView'));
+    svg.classList.add('mm-dim');
+    const pad = Math.max(6, MM.w * 0.012), c = curPal().sel, g = document.createElementNS(SVGNS, 'g'); g.id = 'mmPrev';
+    g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2)}" rx="${rnd(pad)}" fill="${c}" fill-opacity=".28" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
+    svg.insertBefore(g, svg.querySelector('#mmView'));
+  }
+  return { count: hits.length, other, caption: text, ids: hits.map(n => n.id) };
+}
+/* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
+   wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
+   tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
+   (in the 1.8 pages box its Pages button is that list). Arrows, Home and End move among the page tabs. ---- */
+const PT = { start: 0, end: 0, wired: false };
+function fitTabs(show) {
+  const el = $('#pagetabs'); if (!el) return;
+  if (!PT.wired) wireTabs(el);
+  const tabs = $$('.ptab[data-pi]:not(.add)', el), n = tabs.length, add = $('.ptab.add', el);
+  for (const t of tabs) if (t.hidden) t.hidden = false;
+  const W = el.clientWidth, wd = x => x ? x.getBoundingClientRect().width : 0;
+  const ws = tabs.map(wd), total = ws.reduce((a, b) => a + b, 0) + wd(add);
+  if (!W || total <= W + 0.5) {   // it fits: no controls, nothing hidden, as before
+    if (el.classList.contains('pt-ovf')) { const f = el.contains(document.activeElement) && document.activeElement.classList.contains('pt-ctl'); $$('.pt-ctl', el).forEach(x => x.remove()); el.classList.remove('pt-ovf'); if (f) { const a = $('.ptab.active', el); a && a.focus(); } }
+    PT.start = 0; PT.end = n; return;
+  }
+  el.classList.add('pt-ovf');
+  const mk = (cls, label, text) => { let b = $('.' + cls, el); if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'pt-ctl ' + cls; } b.setAttribute('aria-label', label); b.textContent = text; return b; };
+  const prev = mk('pt-prev', 'Earlier pages', '‹'), next = mk('pt-next', 'Later pages', '›');
+  const inBox = !!el.closest('#mapbox'); let all = $('.pt-all', el);
+  if (!inBox) { all = mk('pt-all', `All ${n} pages: a list to choose from, with a filter`, `All ${n} ▴`); all.classList.add('menu-btn'); all.setAttribute('aria-haspopup', 'dialog'); if (!all.classList.contains('open')) all.setAttribute('aria-expanded', 'false'); }
+  else if (all) { all.remove(); all = null; }
+  if (el.firstChild !== prev) el.insertBefore(prev, el.firstChild);
+  if (next.nextSibling !== (all || add)) el.insertBefore(next, add);
+  if (all && all.nextSibling !== add) el.insertBefore(all, add);
+  const room = W - wd(prev) - wd(next) - wd(all) - wd(add) - 1;
+  const endFrom = s0 => { let w = 0, e = s0; while (e < n && (w + ws[e] <= room || e === s0)) { w += ws[e]; e++; } return e; };
+  let s = clamp(PT.start, 0, Math.max(0, n - 1));
+  if (typeof show === 'number' && show >= 0 && show < n) { if (show < s) s = show; while (s < show && show >= endFrom(s)) s++; }
+  if (endFrom(s) >= n) { let w = ws.slice(s).reduce((a, b) => a + b, 0); while (s > 0 && w + ws[s - 1] <= room) { s--; w += ws[s]; } }   // no empty room at the end
+  const e = endFrom(s);
+  tabs.forEach((t, i) => { const h = i < s || i >= e; if (t.hidden !== h) t.hidden = h; });
+  PT.start = s; PT.end = e;
+  prev.disabled = s === 0; next.disabled = e >= n;
+}
+function wireTabs(el) {
+  PT.wired = true;
+  const visibleTab = last => { const v = $$('.ptab[data-pi]:not(.add):not([hidden])', el); return v[last ? v.length - 1 : 0]; };
+  el.addEventListener('click', e => {
+    const c = e.target.closest('.pt-ctl'); if (!c) return;
+    if (c.classList.contains('pt-all')) { openTabsFly(c); return; }
+    PT.start += c.classList.contains('pt-prev') ? -1 : 1; fitTabs();
+    if (c.disabled) { const t = visibleTab(c.classList.contains('pt-next')); t && t.focus(); }
+  });
+  el.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('button')) { e.stopPropagation(); return; }   // the button's own press, not the canvas's Enter (edit text) or Space (pan)
+    const t = e.target.closest('.ptab[data-pi]'); if (!t || t.dataset.pi === 'add' || e.target !== t) return;
+    const n = DOC.pages.length, i = +t.dataset.pi, j = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: n - 1 }[e.key];
+    if (j === undefined || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault(); e.stopPropagation();
+    const k = clamp(j, 0, n - 1); fitTabs(k); const b = $(`.ptab[data-pi="${k}"]`, el); b && b.focus();
+  });
+  if (window.ResizeObserver) new ResizeObserver(() => fitTabs()).observe(el);
+}
+function openTabsFly(btn) {
+  if (btn.classList.contains('open')) { closeMenus(); return; }
+  closeMenus();
+  const m = document.createElement('div'); m.className = 'menu'; m.id = 'ptFly'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', 'All pages');
+  m.innerHTML = '<input type="search" class="inp" placeholder="Filter pages…" aria-label="Filter pages" role="combobox" aria-expanded="true" aria-controls="ptFlyList" aria-autocomplete="list" spellcheck="false"><ul id="ptFlyList" role="listbox" aria-label="Pages"></ul>';
+  document.body.appendChild(m);
+  const inp = m.querySelector('input'), ul = m.querySelector('ul'); let act = DOC.cur, shown = [];
+  const draw = () => {
+    const q = inp.value.trim().toLowerCase();
+    shown = DOC.pages.map((p, i) => i).filter(i => !q || DOC.pages[i].name.toLowerCase().includes(q));
+    if (!shown.includes(act)) act = shown.length ? shown[0] : -1;
+    ul.innerHTML = shown.length ? shown.map(i => `<li role="option" id="ptopt-${i}" data-pi="${i}" aria-selected="${i === act}"${i === DOC.cur ? ' class="cur"' : ''}>${esc(DOC.pages[i].name)}${i === DOC.cur ? '<span class="sr-only"> (shown now)</span>' : ''}</li>`).join('')
+      : '<li class="pt-none" role="option" aria-disabled="true" aria-selected="false">No page matches</li>';
+    if (act >= 0) { inp.setAttribute('aria-activedescendant', 'ptopt-' + act); const li = ul.querySelector('#ptopt-' + act); if (li) li.scrollIntoView({ block: 'nearest' }); } else inp.removeAttribute('aria-activedescendant');
+  };
+  const go = i => { closeMenus(); showPage(i); fitTabs(i); const t = $(`#pagetabs .ptab[data-pi="${i}"]`); if (t) t.focus(); };
+  inp.addEventListener('input', draw);
+  inp.addEventListener('keydown', e => {
+    const k = shown.indexOf(act);
+    if (e.key === 'ArrowDown' && shown.length) { e.preventDefault(); act = shown[Math.min(shown.length - 1, k + 1)]; draw(); }
+    else if (e.key === 'ArrowUp' && shown.length) { e.preventDefault(); act = shown[Math.max(0, k - 1)]; draw(); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (act >= 0) go(act); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeMenus(); btn.focus(); }
+    else if (e.key === 'Tab') closeMenus();
+    e.stopPropagation();
+  });
+  ul.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the filter
+  ul.addEventListener('click', e => { const li = e.target.closest('li[data-pi]'); if (li) go(+li.dataset.pi); });
+  btn.classList.add('open'); btn.setAttribute('aria-expanded', 'true');
+  draw();
+  const r = btn.getBoundingClientRect(), w = m.getBoundingClientRect().width;
+  m.style.left = Math.round(clamp(r.right - w, 4, Math.max(4, innerWidth - w - 4))) + 'px'; m.style.top = 'auto'; m.style.bottom = Math.round(innerHeight - r.top + 4) + 'px';
+  inp.focus();
+}
 
 // Every command in the menus, for an embedding page that hides the app's chrome and offers them from its
 // own prompt: read from MENUS (Bryant's table) each time, so it is never a copy that drifts. An id is
@@ -4464,7 +4705,7 @@ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(
   version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
   commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; },
   // 1.9
-  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys };
+  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, caption) => preview(what, caption) };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>

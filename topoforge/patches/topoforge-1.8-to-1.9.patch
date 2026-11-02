@@ -14,7 +14,38 @@
  and on everything that grows from it.
 --- topoforge-1.8/ChangeLog
 +++ topoforge-1.9/ChangeLog
-@@ -1,3 +1,32 @@
+@@ -1,3 +1,63 @@
++2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
++	topology forge (formerly TopoForge) 1.9, second stage: the overview
++	map moved and resized by handles outside its frame, a preview in it,
++	and page tabs that do not fit (Corwin, q/2026-11-02-yes-and: "put
++	the positioning controls for it OUTSIDE the visible frame ... as if a
++	door handle appears when you reach for the car door"; "limit how many
++	we show and put the full list under a fly-up menu, then have < and >
++	controls").
++	* index.html (1.9 CSS): #mmwrap and its handles; the preview's
++	caption and dimming; the page-tab window, its controls and the All
++	list, all hung on elements or classes only this code adds.
++	(buildPages): calls fitTabs.
++	(drawMinimap): redraws a preview when there is one.
++	(floatPanel): floating Properties stops above the map's own frame,
++	as it does above the pages box.
++	(embed19b, mmSaved, mmSave, mmHome, mapFloat, mmApply, mmWhere)
++	(mmMove, mmSize, previewMatch, preview, previewCaption, drawPreview)
++	(fitTabs, wireTabs, openTabsFly): New.
++	(window.TopoForge): preview.
++	* spec/EMBED-v1.md: map, preview, and "Page tabs that do not fit".
++	* tests/browser/embed.browser.mjs: N1-N9, H1-H3, X3, S4 (sixty pages,
++	compared with 1.8: only the bottom bar differs), T1-T6; M3 allows 120
++	Tab presses, up from 80 (the ‹ of a strip that does not fit is one
++	more stop); C0: a check that throws is a failure and the checks
++	before it still count (found when the 1.8 plant not-kept also broke
++	the map's save and the kit stopped before writing its result).
++	* tests/browser/embed-prove-red.sh: twenty-five more plants.
++	* README.org: 1.9.
++	* NEWS: the map, the preview, the page tabs.
++
 +2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 +
 +	topology forge (formerly TopoForge) 1.9, first stage: the seven calls
@@ -49,7 +80,7 @@
  	topology forge (formerly TopoForge) 1.8: switches a page that embeds
 --- topoforge-1.8/NEWS
 +++ topoforge-1.9/NEWS
-@@ -4,6 +4,27 @@
+@@ -4,6 +4,40 @@
  Corwin Brust <corwin@bru.st> and Contributors
  SPDX-License-Identifier: CC-BY-SA-4.0
  
@@ -73,10 +104,39 @@
 +    shape (the app's own menu still opens);
 +  - pagelist: a message when a page is added, renamed, moved or removed.
 +  All of these reach a parent page of the app's own origin only.
++- The overview map, for a page that asks (switch map): moved and resized by
++  handles that sit outside its frame and appear as the pointer comes near
++  (always on a touch screen, and whenever one has the keyboard focus); the
++  grip and the resize handle take the arrow keys, and Position is a menu
++  for one pointer.  Its place is kept in this browser.
++- A preview in the overview map (switch preview): TopoForge.preview(ids,
++  refs, a category or a kind) rings those shapes in the map, dims the rest
++  and writes a short caption; preview(null) clears it.
++- Page tabs that do not fit, everywhere: the strip shows the tabs that fit,
++  with < and > to move along them, and All, a list of every page with a
++  filter.  No more scrollbar in the strip.  Arrows, Home and End move among
++  the page tabs (they used to nudge the selected shapes).  When the tabs
++  fit, nothing looks different.
 +
  Version 1.8 (2026-11-01; built and checked: tests/run.sh, the project-files
  check, the browser kit and the new embedding kit green; see RESULT.txt and
  RESULT-embed.txt in tests/browser/; no release packed or signed yet)
+--- topoforge-1.8/README.org
++++ topoforge-1.9/README.org
+@@ -55,6 +55,13 @@
+   =hide-props=, =hide-pages=, or =bare= for all), and =TopoForge.shapes()= and
+   =TopoForge.place(id)= let the page offer the shapes itself.  =spec/EMBED-v1.md=
+   says it all; =tests/browser/embed.browser.mjs= checks it.
++- New in 1.9: more for an embedding page, each off until asked for and none
++  turned on by =all= or =bare=: the view (=TopoForge.view=, =setView=, and a
++  message when it changes), where the selection is on screen, =place(null)=,
++  =setProps(id, patch)= (one undo step), keys and right clicks for the page,
++  a message when pages change, the overview map moved and resized by handles
++  outside its frame, and a preview in it.  Everywhere: page tabs that do not
++  fit show the ones that do, with ‹, › and a list of all of them.
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
 --- topoforge-1.8/spec/EMBED-v1.md
 +++ topoforge-1.9/spec/EMBED-v1.md
 @@ -2,7 +2,7 @@
@@ -88,7 +148,7 @@
  
  topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
  This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
-@@ -104,6 +104,82 @@
+@@ -104,6 +104,138 @@
  `TopoForge.panels()` (where the stage, the shapes, the inspector and the overview are, in the app's
  pixels, and whether each floats or is hidden).
  
@@ -168,12 +228,68 @@
 +`removed` (names), `pages` (every name, in order), `page`, `pageIndex`. Undo and redo are changes like
 +any other. Showing another page is not a change of the list (the select message says it) (G1).
 +
++### The overview map, moved and resized: `map`
++
++With `map` on, the overview map leaves its fixed corner for a frame of its own (starting where it always
++was: 190 by 130 pixels, 12 from the drawing's right and foot). Its handles sit **outside** that frame,
++in a row just above its top edge: a resize handle (⤡), a grip (⠿ Move) and **Position**. They are not
++shown until the pointer comes within 40 pixels of the map or its handles, "as a door handle appears when
++you reach for the car door": a hand that knows where they are finds them there. They stay shown while the
++pointer is on them and while one of them has the keyboard focus; they are ordinary buttons, in the Tab
++order even while unseen, so a keyboard user reaches them and sees them as they get the focus. Where the
++screen has no hover (a touch screen), they are always shown (N1, N2, N8).
++
++- the grip: drag it, or the arrow keys on it (16 pixels, 64 with Shift);
++- the resize handle: drag it (up and left make the map bigger; its right and bottom edges stay put), or
++  the arrow keys (left and up bigger, right and down smaller; Shift goes further). The map stays between
++  120 by 80 pixels and 70 % of the drawing;
++- **Position**, a menu: Bottom right, Bottom left, Top right, Top left, Larger, Smaller, Back to its
++  starting place: every move with one pointer and no drag (WCAG 2.5.7) (N3, N4).
++
++Each move is said in the polite live region. The place and size are kept in this browser under
++`topoforge.ui.v1`, key `minimap`; with storage refused they last for the visit (N5, N7). Turned off, the
++map goes back to its corner as 1.8 has it (N6). With `pages` on too, the map stays in the pages box
++(which 1.8 already lets you move), and these handles are not shown. Narrower than 861 pixels the map is
++hidden, as it always was. Nothing in the frame or its handles has a transition (X2).
++
++### A preview in the map: `preview`
++
++With `preview` on, `TopoForge.preview(what, caption)` lets an embedding page use the overview map as a
++small dashboard for what the person is pointing at in the page's own frame (a finder, a tool-bar):
++
++- `what` is a list of shape ids or `tf_ref`s, `{ category }` (a category id from `shapes()`), or
++  `{ kind }` (a shape id from `shapes()`); `null` clears the preview;
++- the matching shapes on the current page are ringed in the map and the rest dimmed, and a one-line
++  caption is written along the map's foot: `caption` if given, else the shape's name, or "Network: 3
++  shapes", or "not on this page", with "· N on other pages" when there are some there;
++- it returns `{ count, other, caption, ids }`, `true` for `null`, and `false` (drawing nothing) when the
++  switch is off or `what` is not one of the forms above (H1, H2).
++
++The preview holds through redraws and page changes until it is cleared or replaced, and works in all
++three places the map can be: its corner, its own frame (`map`) and the pages box (H3). The caption is not
++a live region: the page that asked for the preview speaks for the thing pointed at.
++
++## Page tabs that do not fit (1.9, everywhere)
++
++This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
++page tabs than the strip can show. Then the strip shows as many whole tabs as fit (the current one among
++them when a page is shown), with **‹** and **›** before and after them, which move the app's own window of
++tabs one tab at a time (no browser scrollbar, nothing scrolled by the browser), and, in the bottom bar,
++**All N**, which opens a list of every page above the strip: a filter box (typing narrows the list), ↓
++and ↑ to choose, Enter to show that page (the focus goes to its tab), Escape to close (the focus goes back
++to All). In the 1.8 pages box (`pages`) the tabs get ‹ and ›, and its Pages button stays the list of them
++all. In the page tabs, ← and → move the focus one tab and Home and End to the first and the last, the
++window following; Enter shows the page (before 1.9 these keys nudged the selected shapes) (T1-T6).
++
++When the tabs fit, the strip is exactly as before (T5), and the app draws the same pixels as 1.8 (S1);
++with sixty pages only the bottom bar differs from 1.8 (S4).
++
  ## Not changed
  
  `window.TopoForge`'s name, the TopoForge JSON format, every storage key 1.7 used, and the brand and
 --- topoforge-1.8/tests/browser/embed-prove-red.sh
 +++ topoforge-1.9/tests/browser/embed-prove-red.sh
-@@ -24,7 +24,25 @@
+@@ -24,7 +24,52 @@
  #   bare-pages     bare leaves the page tabs             -> B1
  #   no-icons       shapes() without pictures             -> Z1
  #   drop-lost      an armed place() drops nothing        -> Z2
@@ -194,12 +310,39 @@
 +#   pages-switch   showing a page is told as a change    -> G1
 +#   all-grows      'all' turns on the 1.9 switches       -> W1
 +#   any-origin-19  postMessage to '*', the new messages  -> E8
++# 1.9 (B):
++#   map-inside     the handles sit inside the map's frame -> N1
++#   map-always     the handles never hide                -> N1
++#   map-no-near    reaching for the map shows nothing    -> N1
++#   map-hover-only a focused handle stays hidden         -> N2
++#   map-no-keys    the grip ignores the arrow keys       -> N3
++#   map-no-resize  dragging the resize handle does nothing -> N3
++#   map-menu-dead  Position, Top left does nothing       -> N4
++#   map-not-kept   the map's place is not kept           -> N5
++#   map-off-stays  turned off, the map stays in its frame -> N6
++#   map-no-store   refused storage breaks the move       -> N7
++#   map-touch      no hover, and the handles stay hidden -> N8
++#   map-contrast   the handles' text too faint           -> X3
++#   map-covered    floating Properties covers the map    -> N9
++#   prev-redraw    a redraw loses the preview            -> H1
++#   prev-no-clear  preview(null) leaves it                -> H1
++#   prev-unasked   preview() draws with no switch        -> H2
++#   prev-box       the caption falls out of the pages box -> H3
++# 1.9 (C):
++#   tabs-scroll    the strip scrolls as before            -> T1
++#   tabs-no-window every tab shown, none hidden           -> T1
++#   tabs-next-dead › moves nothing                        -> T2
++#   tabs-no-arrows the arrow keys do nothing on a tab     -> T3
++#   tabs-lost      End leaves the last tab out of the window -> T3
++#   tabs-no-filter typing does not narrow the list        -> T4
++#   tabs-fly-down  All's list opens below the strip       -> T4
++#   tabs-ctl-always the controls show when the tabs fit   -> T5
  # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 +#        PLANTS='name name' runs only those plants (after the control); the full run is what counts
  # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
  set -u
  ix=${1-}; out=${2:-out-embed-prove-red}
-@@ -42,7 +60,9 @@
+@@ -42,7 +87,9 @@
  echo "control      exit 0, no check failed"
  bad=0 n=0
  plant() { # NAME WANT SED-EXPR
@@ -210,7 +353,7 @@
    sed "$expr" "$ix" > "$out/plant-$name.html" || exit 2
    cmp -s "$ix" "$out/plant-$name.html" && { echo "embed-prove-red.sh: plant $name changed nothing; fix the plant" >&2; exit 2; }
    run "$name" "$out/plant-$name.html"
-@@ -53,7 +73,7 @@
+@@ -53,7 +100,7 @@
  }
  plant on-by-default S3 "s#const q = new URLSearchParams(location.search).get('embed'), o = {};#const q = new URLSearchParams(location.search).get('embed') || 'frameless', o = {};#"
  plant any-origin    E5 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
@@ -219,7 +362,7 @@
  plant no-ready      E1 "s#if (EMBED.ready \&\& !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }##"
  plant not-kept      K5 's#try { localStorage.setItem(UI_KEY, JSON.stringify(o)); }#try { }#'
  plant no-keys       K1 's#if (d) { e.preventDefault(); f.move(d\[0\], d\[1\]); }##'
-@@ -67,5 +87,22 @@
+@@ -67,5 +114,49 @@
  plant no-icons      Z1 "s#icon: previewSVG(k) }))#icon: '' }))#"
  plant drop-lost     Z2 's#e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));#placing(null);#'
  plant old-name      A1 "s#title: 'topology forge (formerly TopoForge)'#title: 'TopoForge'#"
@@ -240,6 +383,33 @@
 +plant pages-switch  G1 's#const names = DOC.pages.map(p => p.name), key = JSON.stringify(names);#const names = DOC.pages.map(p => p.name), key = JSON.stringify(names) + DOC.cur;#'
 +plant all-grows     W1 "s#if (w === 'all') ALL_V1.forEach#if (w === 'all') EMBED_WORDS.forEach#"
 +plant any-origin-19 E8 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
++# 1.9 (B)
++plant map-inside    N1 's@#mmwrap .mm-handles{position:absolute;bottom:100%;@#mmwrap .mm-handles{position:absolute;bottom:0;@'
++plant map-always    N1 's@^#mmwrap:not(.mm-near):not(:focus-within) .mm-handles{opacity:0}$@@'
++plant map-no-near   N1 "s@MMW.wrap.classList.toggle('mm-near', b.width > 0 \&\&@MMW.wrap.classList.toggle('mm-near', false \&\&@"
++plant map-hover-only N2 's@^#mmwrap:not(.mm-near):not(:focus-within) .mm-handles{opacity:0}$@#mmwrap:not(.mm-near) .mm-handles{opacity:0}@'
++plant map-no-keys   N3 's@^    grip.addEventListener(.keydown., e => keyd(e, (dx, dy) => mmMove(dx, dy, true)));$@@'
++plant map-no-resize N3 's@^    dragOn(size, (d, dx, dy) => { MMW.w = d.w - dx; MMW.h = d.h - dy; mmApply(); });$@@'
++plant map-menu-dead N4 "s@{ label: 'Top left', action: corner(false, false) }@{ label: 'Top left', action: () => {} }@"
++plant map-not-kept  N5 's@o.minimap = { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h };@o.minimap = null;@'
++plant map-off-stays N6 "s@^  else if (mm.parentNode !== \$('#stage')) \$('#stage').insertBefore(mm, MAP ? MAP.box : null);\$@@"
++plant map-no-store  N7 '/o.minimap = {/s@try { \(localStorage.setItem(UI_KEY, JSON.stringify(o));\) } catch (e) { /\* refused: kept for this visit only \*/ }@\1@'
++plant map-touch     N8 's|^@media (hover:none){#mmwrap .mm-handles{opacity:1 !important}}$||'
++plant map-contrast  X3 's@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:var(--text);@#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:#a0a8b4;@'
++plant map-covered   N9 's@^    if (name === .props. \&\& typeof MMW !== .undefined.*$@@'
++plant prev-redraw   H1 's@^  if (PREVIEW) drawPreview();   // 1.9.*$@@'
++plant prev-no-clear H1 's@if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }@if (what === null || what === undefined) { return true; }@'
++plant prev-unasked  H2 's@if (!EMBED.preview \&\& !quiet) return false;@if (false) return false;@'
++plant prev-box      H3 's@^body.tf-preview #mapbox #minimap{position:relative}$@@'
++# 1.9 (C)
++plant tabs-scroll   T1 's@^#pagetabs.pt-ovf{overflow:hidden}$@@'
++plant tabs-no-window T1 's@if (!W || total <= W + 0.5) {@if (true) {@'
++plant tabs-next-dead T2 "s@PT.start += c.classList.contains('pt-prev') ? -1 : 1; fitTabs();@fitTabs();@"
++plant tabs-no-arrows T3 's@if (j === undefined || e.altKey || e.ctrlKey || e.metaKey) return;@return;@'
++plant tabs-lost     T3 "s@if (typeof show === 'number' \&\& show >= 0 \&\& show < n) {@if (false) {@"
++plant tabs-no-filter T4 "s@^  inp.addEventListener('input', draw);\$@@"
++plant tabs-fly-down T4 "s@m.style.top = 'auto'; m.style.bottom = Math.round(innerHeight - r.top + 4) + 'px';@m.style.top = Math.round(r.bottom + 4) + 'px';@"
++plant tabs-ctl-always T5 's@if (!W || total <= W + 0.5) {@if (!W) {@'
  [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
  exit $bad
 --- topoforge-1.8/tests/browser/embed.browser.mjs
@@ -261,8 +431,12 @@
  //   F  frameless; P props floats right; H shapes floats left; M pages fold into the overview box;
  //   K  keyboard and one-pointer moves, hide and show, kept across a reload, storage refused;
  //   E  the selection hook and the ready event reach a parent page of the same origin, and never one of
-@@ -33,7 +33,8 @@
- const results = []; let red = 0;
+@@ -30,10 +30,11 @@
+ let axeSrc; try { axeSrc = fs.readFileSync(AXE, 'utf8'); } catch (e) { console.error('KIT BROKEN: axe-core not found at ' + AXE); process.exit(2); }
+ const RESULT = process.env.RESULT || path.join(HERE, 'RESULT-embed.txt');
+ const sha = b => crypto.createHash('sha256').update(b).digest('hex');
+-const results = []; let red = 0;
++const results = []; let red = 0, at = '';   // at: the check whose steps are running, named if one of them throws
  const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
  
 -// ---- 1.7, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to 1.7 ----
@@ -298,9 +472,15 @@
    if (o.noStorage) await c.addInitScript(() => { const no = () => { throw new DOMException('refused', 'SecurityError'); }; Storage.prototype.getItem = no; Storage.prototype.setItem = no; });
    return c;
  }
-@@ -113,20 +114,20 @@
+@@ -111,22 +112,25 @@
+       edit(() => { const a = makeNode('router', 0, 0, { text: 'Edge Router' }), b = makeNode('switch', 300, 0, { text: 'Core Switch' }); a.data.what = 'Where the shop meets the internet.'; P().nodes.push(a, b); P().links.push(makeLink({ id: a.id, port: null }, { id: b.id, port: null })); });
+       return snapshot();
      });
-     routes['/fixture.json'] = { type: 'application/json', body: json }; await c.close(); }
+-    routes['/fixture.json'] = { type: 'application/json', body: json }; await c.close(); }
++    routes['/fixture.json'] = { type: 'application/json', body: json };
++    // 1.9: sixty pages, more tabs than fit, for the page-tab checks (S4, T)
++    routes['/many.json'] = { type: 'application/json', body: await p.evaluate(() => { const d = newDoc(); d.name = 'Many pages'; d.pages = Array.from({ length: 60 }, (x, i) => newPage(`Page ${i + 1} ${['of the shop', 'hosts', 'a longer name for a page', 'paths'][i % 4]}`)); d.cur = 0; return JSON.stringify(d); }) };
++    await c.close(); }
  
 -  // ---- S: standalone, no switch: the same as 1.7 ----
 +  // ---- S: standalone, no switch: the same as the version before ----
@@ -325,7 +505,16 @@
      }
      await a.c.close(); await b.c.close();
    }
-@@ -190,18 +191,20 @@
+@@ -179,7 +183,7 @@
+     const now = await p.evaluate(() => ({ cur: DOC.cur, mark: (document.querySelector('#mapbox .ptab[aria-current="page"]') || {}).textContent, focus: document.activeElement.className }));
+     check('M2 the Pages button lists every page and opens one, by keyboard alone', items.join('|') === '✓First page|Second page' && now.cur === 1 && now.mark === 'Second page', JSON.stringify({ items, now }));
+     let reached = false; await p.evaluate(() => document.body.focus());
+-    for (let i = 0; i < 80 && !reached; i++) { await p.keyboard.press('Tab'); reached = await p.evaluate(() => !!document.activeElement.closest('#mapbox .mp-pages .ptab')); }
++    for (let i = 0; i < 120 && !reached; i++) { await p.keyboard.press('Tab'); /* 1.9: up from 80; the ‹ of a strip that does not fit is one more stop */ reached = await p.evaluate(() => !!document.activeElement.closest('#mapbox .mp-pages .ptab')); }
+     check('M3 Tab reaches the page tabs in the box', reached);
+     const back = await p.evaluate(() => { TopoForge.embed({ pages: false }); return { inBar: !!document.querySelector('#bottombar #pagetabs'), st: !!document.querySelector('#bottombar #status'), mm: document.querySelector('#minimap').parentNode.id, bottom: getComputedStyle(document.querySelector('#bottombar')).display }; });
+     check('M4 TopoForge.embed({ pages: false }) puts every piece back where 1.7 has it', back.inBar && back.st && back.mm === 'stage' && back.bottom === 'flex', JSON.stringify(back));
+@@ -190,18 +194,20 @@
      await c.close(); }
  
    // ---- E: the selection hook and the ready event, same origin only ----
@@ -351,7 +540,7 @@
    };
    const clickFirst = async (p, fr) => { // a real click on the first shape, through the iframe
      const at = await fr.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y }; });
-@@ -226,7 +229,7 @@
+@@ -226,7 +232,7 @@
    check('E6 with no switch the app tells no parent anything', off.got.length === 0 && off.own.length === 0, `parent got ${off.got.length}, own ${off.own.length}`);
    { const { c, p } = await open('file://' + path.resolve(file) + '?embed=select,ready');
      const r = await p.evaluate(async () => { const d = await TopoForge.ready; return { v: d.version, ok: d.ok, sel: TopoForge.selection.count }; });
@@ -360,14 +549,14 @@
      await c.close(); }
  
    // ---- B: hiding the app's own chrome, all of it or each piece ----
-@@ -285,9 +288,101 @@
+@@ -285,12 +291,240 @@
    { const { c, p } = await open(A + '/index.html');
      await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
      const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
 -    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && /Version 1\.8/.test(t.b), JSON.stringify(t).slice(0, 300));
 +    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
-     await c.close(); }
- 
++    await c.close(); }
++
 +  // ======== 1.9 (A): more for an embedding page; each message behind its own switch ========
 +  const msgs = (got, t) => got.filter(m => m.data && m.data.type === 'topoforge:' + t).map(m => m.data.detail);
 +  const shapeAt = (fr, label) => fr.evaluate(l => { const n = P().nodes.find(x => x.text === l); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y, id: n.id }; }, label);
@@ -460,10 +649,177 @@
 +    });
 +    check('E8 view, pages, context and key messages never reach a parent of another origin, though each fired inside the app', r.got.length === 0 && ['view', 'pages', 'context', 'key'].every(t => r.ownAll.includes(t)), `parent got ${r.got.length}; inside: ${[...new Set(r.ownAll)].join(',')}`); }
 +
++  // ======== 1.9 (B): the overview map moved and resized by handles outside its frame; a preview in it ========
++  { const { c, p } = await open(A + '/index.html?embed=map&load=/fixture.json');
++    const look = () => p.evaluate(() => { const r = e => { const b = e.getBoundingClientRect(); return { x: Math.round(b.left), y: Math.round(b.top), w: Math.round(b.width), h: Math.round(b.height), r: Math.round(b.right), b: Math.round(b.bottom) }; };
++      const m = document.querySelector('#minimap'), hs = [...document.querySelectorAll('#mmwrap .mm-h')];
++      return { inWrap: m.parentNode.id === 'mmwrap', map: r(m), stage: r(document.querySelector('#stage')), handles: hs.map(r), op: getComputedStyle(document.querySelector('#mmwrap .mm-handles')).opacity, focus: document.activeElement.className }; });
++    at = 'N1'; await p.mouse.move(200, 200); await p.waitForTimeout(80); const far = await look();
++    const outside = far.handles.every(h => h.b <= far.map.y || h.y >= far.map.b || h.r <= far.map.x || h.x >= far.map.r);
++    await p.mouse.move(far.map.r + 25, far.map.y + 40); await p.waitForTimeout(80); const near = await look();
++    const g0 = far.handles[1]; await p.mouse.move(g0.x + 10, g0.y + 8); await p.waitForTimeout(80); const onIt = await look();
++    check('N1 ?embed=map: the overview map moves into its own frame; its handles sit outside that frame, hidden while the pointer is far, shown when it comes within reach and while it is on them',
++      far.inWrap && far.handles.length === 3 && outside && far.op === '0' && near.op === '1' && onIt.op === '1', JSON.stringify({ map: far.map, handles: far.handles, far: far.op, near: near.op, onIt: onIt.op }));
++    await p.mouse.move(200, 200); await p.evaluate(() => document.body.focus());
++    let n = 0, hit = null; for (; n < 140 && !hit; n++) { await p.keyboard.press('Tab'); hit = await p.evaluate(() => document.activeElement.closest('#mmwrap') ? document.activeElement.className : null); }
++    const kf = await look();
++    check('N2 the handles are reachable by Tab, and shown while one has the focus though the pointer is far (not a hover-only control)', !!hit && kf.op === '1', JSON.stringify({ tabs: n, hit, op: kf.op }));
++    // keys and dragging: move and resize
++    at = 'N3'; await p.focus('#mmwrap .mm-grip'); const a0 = await look(); await p.keyboard.press('ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); const a1 = await look();
++    await p.focus('#mmwrap .mm-size'); await p.keyboard.press('ArrowLeft'); await p.keyboard.press('ArrowUp'); const a2 = await look();
++    const gb = a2.handles[1]; await p.mouse.move(gb.x + 10, gb.y + 8); await p.mouse.down(); await p.mouse.move(gb.x - 90, gb.y - 32, { steps: 6 }); await p.mouse.up(); const a3 = await look();
++    const sb = a3.handles[0]; await p.mouse.move(sb.x + 8, sb.y + 8); await p.mouse.down(); await p.mouse.move(sb.x - 52, sb.y - 22, { steps: 6 }); await p.mouse.up(); const a4 = await look();
++    check('N3 the grip moves the map (arrow keys 16 pixels, 64 with Shift, or a drag); the resize handle makes it bigger (arrow keys, or a drag), keeping its right and bottom edges',
++      a1.map.x === a0.map.x - 16 && a1.map.y === a0.map.y - 64 && a2.map.w === a1.map.w + 16 && a2.map.h === a1.map.h + 16 && a2.map.r === a1.map.r && a2.map.b === a1.map.b &&
++      a3.map.x === a2.map.x - 100 && a3.map.y === a2.map.y - 40 && a3.map.w === a2.map.w && a4.map.w === a3.map.w + 60 && a4.map.h === a3.map.h + 30 && a4.map.r === a3.map.r && a4.map.b === a3.map.b,
++      JSON.stringify([a0.map, a1.map, a2.map, a3.map, a4.map]));
++    await p.reload(); await p.waitForFunction(() => window.TopoForge && document.querySelector('#mmwrap')); await p.waitForTimeout(500); const a5 = await look();
++    const kept = await p.evaluate(() => (JSON.parse(localStorage.getItem('topoforge.ui.v1')) || {}).minimap);
++    check('N5 the map\'s place and size are kept in this browser across a reload', a5.map.x === a4.map.x && a5.map.y === a4.map.y && a5.map.w === a4.map.w && a5.map.h === a4.map.h && kept && kept.w === a4.map.w, JSON.stringify({ a5: a5.map, kept }));
++    // the Position menu, one pointer, no drag (WCAG 2.5.7)
++    at = 'N4'; const menu = async label => { await p.click('#mmwrap .mm-pos'); await p.click(`.menu .mi:has-text("${label}")`); await p.waitForTimeout(60); return look(); };
++    const tl = await menu('Top left'), lg = await menu('Larger'), br = await menu('Back to its starting place');
++    check('N4 the Position menu places the map with one pointer and no drag: Top left, Larger, Back to its starting place (190 by 130 at the bottom right)',
++      tl.map.x === tl.stage.x + 12 && tl.map.y <= tl.stage.y + 34 + 1 && lg.map.w === tl.map.w + 64 && br.map.w === 190 && br.map.h === 130 && br.map.r === br.stage.r - 12 && br.map.b === br.stage.b - 12,
++      JSON.stringify({ tl: tl.map, lg: lg.map, br: br.map, stage: br.stage }));
++    const off = await p.evaluate(() => { TopoForge.embed({ map: false }); const m = document.querySelector('#minimap'), b = m.getBoundingClientRect(), s = document.querySelector('#stage').getBoundingClientRect();
++      return { parent: m.parentNode.id, wrap: getComputedStyle(document.querySelector('#mmwrap')).display, r: Math.round(s.right - b.right), b: Math.round(s.bottom - b.bottom), w: Math.round(b.width), h: Math.round(b.height) }; });
++    check('N6 TopoForge.embed({ map: false }) puts the map back where 1.8 has it, and its handles go', off.parent === 'stage' && off.wrap === 'none' && off.r === 12 && off.b === 12 && off.w === 190 && off.h === 130, JSON.stringify(off));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=map&load=/fixture.json', { noStorage: true });
++    await p.focus('#mmwrap .mm-grip'); const b0 = await boxOf(p, '#minimap'); await p.keyboard.press('ArrowLeft'); const b1 = await boxOf(p, '#minimap');
++    const said = await p.evaluate(() => (document.querySelector('#flLive') || {}).textContent || '');
++    check('N7 with storage refused the map still moves, and the move is said to a screen reader', b1.x === b0.x - 16 && /^Overview map: /.test(said), JSON.stringify([b0, b1, said])); await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=map&load=/fixture.json', { touch: true });   // a touch screen: (hover: none)
++    const hn = await p.evaluate(() => ({ hoverNone: matchMedia('(hover: none)').matches, op: getComputedStyle(document.querySelector('#mmwrap .mm-handles')).opacity }));
++    check('N8 where there is no hover (a touch screen), the handles are always shown', hn.hoverNone && hn.op === '1', JSON.stringify(hn)); await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=props,map&load=/fixture.json');
++    const r = await p.evaluate(() => { const s = document.querySelector('#side').getBoundingClientRect(), h = document.querySelector('#mmwrap .mm-handles').getBoundingClientRect(), m = document.querySelector('#minimap').getBoundingClientRect(); return { side: Math.round(s.bottom), handles: Math.round(h.top), share: s.left < m.right && s.right > m.left }; });
++    check('N9 floating Properties stops above the map and its handles when they share a column', r.share && r.side <= r.handles, JSON.stringify(r)); await c.close(); }
++  // H: the preview
++  { const { c, p } = await open(A + '/index.html?embed=preview&load=/fixture.json');
++    await p.waitForTimeout(300);
++    const h = await p.evaluate(() => { const ref = P().nodes.find(x => x.text === 'Edge Router').data.tf_ref || TopoForge.story.ensureRefs && '';
++      const r1 = TopoForge.preview([P().nodes.find(x => x.text === 'Edge Router').id]);
++      const s1 = { rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent, dim: document.querySelector('#mmSvg').classList.contains('mm-dim') };
++      const r2 = TopoForge.preview({ category: 'net' }, 'Routers and switches');
++      const s2 = { rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent };
++      const r3 = TopoForge.preview({ kind: 'firewall' });
++      const s3 = { rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent };
++      return { r1, s1, r2, s2, r3, s3 }; });
++    await p.evaluate(() => { TopoForge.preview({ category: 'net' }); edit(() => { P().nodes.push(makeNode('router', 600, 300, { text: 'Second Router' })); }); });
++    await p.waitForTimeout(400);
++    const after = await p.evaluate(() => ({ rects: document.querySelectorAll('#mmPrev rect').length, cap: document.querySelector('#minimap .mm-cap').textContent }));
++    const cl = await p.evaluate(() => { const r = TopoForge.preview(null); return { r, rects: document.querySelectorAll('#mmPrev rect').length, cap: (document.querySelector('#minimap .mm-cap') || {}).hidden, dim: document.querySelector('#mmSvg').classList.contains('mm-dim') }; });
++    check('H1 preview(ids or refs), preview({ category }) and preview({ kind }) ring the matching shapes in the map, dim the rest, and write a caption there; it holds across a redraw; preview(null) clears it',
++      h.r1.count === 1 && h.s1.rects === 1 && h.s1.cap === 'Edge Router' && h.s1.dim && h.r2.count === 2 && h.s2.rects === 2 && h.s2.cap === 'Routers and switches' && h.r3.count === 0 && h.s3.rects === 0 && /not on this page/.test(h.s3.cap) &&
++      after.rects === 3 && /3 shapes/.test(after.cap) && cl.r === true && cl.rects === 0 && cl.cap === true && !cl.dim, JSON.stringify({ h, after, cl }));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?load=/fixture.json');
++    const r = await p.evaluate(() => ({ r: TopoForge.preview({ category: 'net' }), rects: document.querySelectorAll('#mmPrev rect').length, cap: !!document.querySelector('.mm-cap') }));
++    check('H2 without the preview switch preview() draws nothing and says false', r.r === false && r.rects === 0 && !r.cap, JSON.stringify(r)); await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=pages,preview&load=/fixture.json');
++    const r = await p.evaluate(() => { const x = TopoForge.preview({ category: 'net' }); const cap = document.querySelector('#mapbox #minimap .mm-cap'), b = cap && cap.getBoundingClientRect(), m = document.querySelector('#mapbox #minimap').getBoundingClientRect(); return { n: x.count, inBox: !!cap, inside: !!b && b.top >= m.top && b.bottom <= m.bottom + 1 && b.width > 20 }; });
++    check('H3 with the pages box, the preview shows in the map inside it', r.n === 2 && r.inBox && r.inside, JSON.stringify(r)); await c.close(); }
++
++  // ======== 1.9 (C): page tabs that do not fit (everywhere, standalone too: a fix) ========
++  { const [w, h] = [1400, 900];
++    const a = await open(A + '/v17.html?load=/many.json', { w, h, settle: 1400 }), b = await open(A + '/index.html?load=/many.json', { w, h, settle: 1400 });
++    for (const x of [a, b]) await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++    const bar = await boxOf(b.p, '#bottombar');
++    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()];
++    const [ta, tb] = [await a.p.screenshot({ clip: { x: 0, y: 0, width: w, height: bar.y } }), await b.p.screenshot({ clip: { x: 0, y: 0, width: w, height: bar.y } })];
++    const [ba, bb] = [await a.p.screenshot({ clip: { x: 0, y: bar.y, width: w, height: h - bar.y } }), await b.p.screenshot({ clip: { x: 0, y: bar.y, width: w, height: h - bar.y } })];
++    fs.writeFileSync(path.join(outdir, `overflow-${PREV}.png`), ia); fs.writeFileSync(path.join(outdir, `overflow-${VER}.png`), ib);
++    const [dTop, dBar] = [await pixelDiff(ta, tb), await pixelDiff(ba, bb)];
++    const sb = await a.p.evaluate(() => { const t = document.querySelector('#pagetabs'); return t.scrollWidth - t.clientWidth; });
++    check(`S4 standalone, 60 pages (more tabs than fit), ${w}x${h}: above the bottom bar ${VER} draws the same pixels as ${PREV}; the bottom bar is what changed (in ${PREV} the strip was ${sb} pixels wider than its room, left to the browser to scroll)`,
++      dTop.size && dTop.over <= 8 && dTop.n <= dTop.total / 1000 && dBar.size && dBar.over > 200, `above: ${dTop.n} of ${dTop.total} differ, ${dTop.over} by more than 16; bottom bar: ${dBar.over} of ${dBar.total} differ by more than 16`);
++    const t1 = await b.p.evaluate(() => { const t = document.querySelector('#pagetabs'), tr = t.getBoundingClientRect(), vis = [...t.querySelectorAll('.ptab[data-pi]:not(.add):not([hidden])')];
++      return { ovf: getComputedStyle(t).overflowX, bar: t.offsetHeight - t.clientHeight, scrolled: t.scrollLeft, shown: vis.length, n: DOC.pages.length, inside: vis.every(v => { const r = v.getBoundingClientRect(); return r.left >= tr.left - 0.5 && r.right <= tr.right + 0.5; }),
++        cur: !!t.querySelector('.ptab.active:not([hidden])'), ctl: [...t.querySelectorAll('.pt-ctl')].map(c => c.textContent.trim()), add: !!t.querySelector('.ptab.add:not([hidden])'), hidden: t.querySelectorAll('.ptab[hidden]').length }; });
++    check('T1 with more tabs than fit, the strip shows the tabs that fit, whole, with the current one among them; ‹, › and All are there with +; no scrollbar, nothing scrolled by the browser',
++      t1.ovf === 'hidden' && t1.bar === 0 && t1.scrolled === 0 && t1.shown > 2 && t1.shown < t1.n && t1.shown + t1.hidden === t1.n && t1.inside && t1.cur && t1.add && t1.ctl.join('|') === '‹|›|All 60 ▴', JSON.stringify(t1));
++    await a.c.close();
++    const p = b.p, first = () => p.evaluate(() => +(document.querySelector('#pagetabs .ptab[data-pi]:not(.add):not([hidden])') || {}).dataset?.pi);
++    at = 'T2'; const f0 = await first(), pd0 = await p.evaluate(() => document.querySelector('.pt-prev').disabled);
++    await p.click('.pt-next'); const f1 = await first(); await p.click('.pt-next'); const f2 = await first(); await p.click('.pt-prev'); const f3 = await first();
++    for (let i = 0; i < 70; i++) { if (await p.evaluate(() => document.querySelector('.pt-next').disabled)) break; await p.click('.pt-next'); }
++    const endState = await p.evaluate(() => ({ last: !document.querySelector('#pagetabs .ptab[data-pi="59"]').hidden, next: document.querySelector('.pt-next').disabled, focus: document.activeElement.className, cur: DOC.cur }));
++    check('T2 › and ‹ move our own window of tabs one tab at a time; ‹ is off at the start, › at the end (the last page then shows); the page shown does not change',
++      f0 === 0 && pd0 && f1 === 1 && f2 === 2 && f3 === 1 && endState.last && endState.next && endState.cur === 0, JSON.stringify({ f0, pd0, f1, f2, f3, endState }));
++    // keyboard among the tabs: arrows, Home, End move the focus (and our window), not the selected shapes
++    at = 'T3'; await p.evaluate(() => { const n = makeNode('server', 0, 0, { text: 'Kept still' }); edit(() => P().nodes.push(n)); TopoForge.select([n.id]); });
++    await p.evaluate(() => { PT.start = 0; fitTabs(0); document.querySelector('#pagetabs .ptab[data-pi="0"]').focus(); });
++    await p.keyboard.press('ArrowRight'); const k1 = await p.evaluate(() => document.activeElement.dataset.pi);
++    await p.keyboard.press('End'); const k2 = await p.evaluate(() => ({ pi: document.activeElement.dataset.pi, shown: !document.activeElement.hidden }));
++    await p.keyboard.press('ArrowLeft'); const k3 = await p.evaluate(() => document.activeElement.dataset.pi);
++    await p.keyboard.press('Home'); const k4 = await p.evaluate(() => ({ pi: document.activeElement.dataset.pi, shown: !document.activeElement.hidden }));
++    await p.keyboard.press('End'); await p.keyboard.press('Enter'); await p.waitForTimeout(200); const k5 = await p.evaluate(() => DOC.cur);
++    await p.evaluate(() => TopoForge.showPage(0)); await p.waitForTimeout(150);
++    const still = await p.evaluate(() => { const n = P().nodes.find(x => x.text === 'Kept still'); return n ? [n.x, n.y] : null; });
++    check('T3 in the page tabs, ← and → move the focus one tab, Home and End to the first and the last (our window follows), Enter shows that page; the selected shape does not move',
++      k1 === '1' && k2.pi === '59' && k2.shown && k3 === '58' && k4.pi === '0' && k4.shown && k5 === 59 && still && still[0] === 0 && still[1] === 0, JSON.stringify({ k1, k2, k3, k4, k5, still }));
++    // All: the fly-up list, with a filter, by keyboard alone
++    at = 'T4'; await p.focus('.pt-all'); await p.keyboard.press('Enter'); await p.waitForTimeout(100);
++    const fly = await p.evaluate(() => { const m = document.querySelector('#ptFly'), b = document.querySelector('.pt-all').getBoundingClientRect(), r = m && m.getBoundingClientRect();
++      return m && { n: m.querySelectorAll('li[data-pi]').length, focus: document.activeElement.getAttribute('aria-label'), up: r.bottom <= b.top + 1, exp: document.querySelector('.pt-all').getAttribute('aria-expanded'), sel: m.querySelector('[aria-selected="true"]').textContent }; });
++    await p.keyboard.type('page 4'); const filt = await p.evaluate(() => [...document.querySelectorAll('#ptFly li[data-pi]')].map(l => l.textContent));
++    await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await p.waitForTimeout(250);
++    const picked = await p.evaluate(() => ({ cur: DOC.cur, name: P().name, open: !!document.querySelector('#ptFly'), focus: document.activeElement.dataset.pi, shown: !document.activeElement.hidden }));
++    await p.click('.pt-all'); await p.keyboard.type('zzz'); const none = await p.evaluate(() => document.querySelector('#ptFly li').textContent);
++    await p.keyboard.press('Escape'); const esc = await p.evaluate(() => ({ open: !!document.querySelector('#ptFly'), focus: document.activeElement.className }));
++    check('T4 All opens a list of every page above the strip, the filter focused; typing narrows it, ↓ and Enter show the page chosen and put the focus on its tab; no match is said; Escape closes it and gives the focus back to All',
++      fly && fly.n === 60 && fly.focus === 'Filter pages' && fly.up && fly.exp === 'true' && /^Page 1 /.test(fly.sel) && filt.length === 11 && filt.every(t => /page 4/i.test(t)) &&
++      picked.name === filt[1].replace(' (shown now)', '') && !picked.open && picked.focus === String(picked.cur) && picked.shown && none === 'No page matches' && !esc.open && /pt-all/.test(esc.focus),
++      JSON.stringify({ fly, filt: filt.length, picked, none, esc }));
++    await p.setViewportSize({ width: 1400, height: 900 }); await b.c.close(); }
++  { const { c, p } = await open(A + '/index.html?load=/many.json', { w: 1400, h: 900 });
++    await p.evaluate(() => { edit(() => { DOC.pages.splice(3); DOC.cur = 0; }); buildPages(); }); await p.waitForTimeout(200);
++    const t5 = await p.evaluate(() => ({ ctl: document.querySelectorAll('#pagetabs .pt-ctl').length, hidden: document.querySelectorAll('#pagetabs .ptab[hidden]').length, cls: document.querySelector('#pagetabs').className, ovf: getComputedStyle(document.querySelector('#pagetabs')).overflowX }));
++    check('T5 when the tabs fit, the strip is as it was: no ‹, › or All, nothing hidden, the browser\'s own overflow as before', t5.ctl === 0 && t5.hidden === 0 && t5.cls === '' && t5.ovf === 'auto', JSON.stringify(t5));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=pages&load=/many.json', { w: 1400, h: 900 });
++    const t6 = await p.evaluate(() => ({ ctl: [...document.querySelectorAll('#mapbox #pagetabs .pt-ctl')].map(x => x.textContent), cur: !!document.querySelector('#mapbox .ptab.active:not([hidden])'), list: !!document.querySelector('#mapbox .mp-list') }));
++    check('T6 in the 1.8 pages box the tabs that do not fit get ‹ and ›, and its Pages button stays the list of them all', t6.ctl.join('|') === '‹|›' && t6.cur && t6.list, JSON.stringify(t6));
+     await c.close(); }
+ 
    // ---- X: axe with every switch on; reduced motion ----
    for (const dark of [false, true]) {
-     const { c, p } = await open(A + '/index.html?embed=all&load=/fixture.json', { dark, reduce: true });
-@@ -311,11 +406,11 @@
+-    const { c, p } = await open(A + '/index.html?embed=all&load=/fixture.json', { dark, reduce: true });
++    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist&load=/fixture.json', { dark, reduce: true });
++    await p.evaluate(() => TopoForge.preview({ category: 'net' }));
+     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
+     await p.addScriptTag({ content: axeSrc });
+     const v = await p.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations.map(x => ({ id: x.id, impact: x.impact, n: x.nodes.length, t: x.nodes.slice(0, 4).map(y => y.target.join(' ')) })));
+@@ -298,24 +532,36 @@
+     const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
+     check(`X1 axe, every switch on, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
+     if (!dark) {
+-      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
++      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar', '#mmwrap .mm-handles', '#mmwrap .mm-h'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
+       check('X2 the floating parts do not move by themselves (no transition) with reduced motion asked', mo.every(d => d === '0s'), mo.join(','));
+       await p.screenshot({ path: path.join(outdir, 'embed-all-light.png') });
+     } else await p.screenshot({ path: path.join(outdir, 'embed-all-dark.png') });
+     await c.close();
+   }
++  for (const dark of [false, true]) {   // 1.9: the map's handles and the preview's caption, shown (the pages box is off, so the map is in its own frame)
++    const { c, p } = await open(A + '/index.html?embed=map,preview,shapes&load=/fixture.json', { dark, reduce: true });
++    await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++    await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.focus('#mmwrap .mm-grip');
++    await p.addScriptTag({ content: axeSrc });
++    const v = await p.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations.map(x => ({ id: x.id, impact: x.impact, n: x.nodes.length, t: x.nodes.slice(0, 4).map(y => y.target.join(' ')) })));
++    const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
++    check(`X3 axe, the map's handles shown and a preview caption, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
++    await p.screenshot({ path: path.join(outdir, `map-preview-${dark ? 'dark' : 'light'}.png`) });
++    await c.close();
++  }
+   check('C1 no console errors', consoleErrors.length === 0, consoleErrors.join(' | ').slice(0, 600));
+-} finally { await browser.close(); for (const s of [sA, sB]) { s.close(); if (s.closeAllConnections) s.closeAllConnections(); } }
++} catch (e) { const m = String(e && e.message || e).split('\n')[0].slice(0, 300); if (at && !results.some(r => r.startsWith('PASS ' + at + ' ') || r.startsWith('FAIL ' + at + ' '))) check(at + ' did not finish: one of its steps threw', false, m); check('C0 the kit ran to its end (a check that throws is a failure, and the checks before it still count)', false, m); }
++finally { await browser.close(); for (const s of [sA, sB]) { s.close(); if (s.closeAllConnections) s.closeAllConnections(); } }
+ 
+ console.log(results.join('\n'));
  console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
  const passed = results.filter(r => r.startsWith('PASS')).length;
  fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
@@ -490,7 +846,48 @@
  -->
  <!doctype html>
  <html lang="en">
-@@ -359,7 +363,7 @@
+@@ -278,6 +282,40 @@
+   body.tf-fl-shapes #palette.fl-hidden,body.tf-fl-props #side.fl-hidden{height:auto}
+   body.tf-fl-shapes #palette.fl-hidden>:not(.fl-bar),body.tf-fl-props #side.fl-hidden>:not(.fl-bar),body.tf-pages #mapbox.fl-hidden>:not(.fl-bar){display:none}
+ }
++/* 1.9: the overview map moved and resized by handles outside its frame (map), and a preview in it (preview);
++   each rule hangs on an element or a class only those switches add */
++#mmwrap{position:absolute;right:var(--mr,12px);bottom:var(--mb,12px);width:var(--mw,190px);height:var(--mh,130px);z-index:4}
++#mmwrap #minimap{position:relative;right:auto;bottom:auto;width:100%;height:100%}
++#mmwrap:has(#minimap.hidden){display:none}
++#mmwrap .mm-handles{position:absolute;bottom:100%;right:0;display:flex;gap:4px;padding-bottom:4px}
++#mmwrap .mm-h{border:1px solid var(--border-2);background:var(--panel);color:var(--text);border-radius:6px;padding:3px 8px;font-size:12px;line-height:1.2;box-shadow:var(--shadow);white-space:nowrap}
++#mmwrap .mm-h:hover,#mmwrap .mm-h.open{background:var(--hover)}
++#mmwrap .mm-grip{cursor:grab;touch-action:none}
++#mmwrap .mm-size{cursor:nwse-resize;touch-action:none}
++#mmwrap .mm-h:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
++#mmwrap:not(.mm-near):not(:focus-within) .mm-handles{opacity:0}
++@media (hover:none){#mmwrap .mm-handles{opacity:1 !important}}
++@media (max-width:860px){#mmwrap{display:none}}
++body.tf-preview #mapbox #minimap{position:relative}
++body.tf-pages #mmwrap{display:none}
++#minimap .mm-cap{position:absolute;left:4px;right:4px;bottom:4px;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text);font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
++#minimap .mm-cap[hidden]{display:none}
++#mmSvg.mm-dim>.mm-rest{opacity:.3}
++/* 1.9: page tabs that do not fit: our own window of tabs, < and >, and All (in the bottom bar); applies only while
++   the tabs overflow (the class pt-ovf), so a strip that fits looks as it did */
++#pagetabs.pt-ovf{overflow:hidden}
++#pagetabs .ptab[hidden]{display:none}
++#pagetabs .pt-ctl{flex:none;display:flex;align-items:center;justify-content:center;gap:4px;border:0;border-right:1px solid var(--border);border-radius:0;background:none;color:var(--text-2);padding:0 10px;font-size:12.5px;white-space:nowrap}
++#pagetabs .pt-ctl:hover:not(:disabled),#pagetabs .pt-ctl.open{background:var(--hover);color:var(--text)}
++#pagetabs .pt-ctl:disabled{opacity:.4;cursor:default}
++#pagetabs .pt-prev,#pagetabs .pt-next{font-size:16px;min-width:30px;padding:0 6px}
++#ptFly{display:flex;flex-direction:column;min-width:260px;max-width:min(420px,92vw);overflow:hidden}
++#ptFly input{margin:2px 2px 4px;width:auto}
++#ptFlyList{list-style:none;margin:0;padding:0;overflow:auto;max-height:min(55vh,420px)}
++#ptFlyList li{padding:5px 10px;border-radius:6px;cursor:pointer;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++#ptFlyList li.cur{font-weight:600}
++#ptFlyList li[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
++#ptFlyList li.pt-none{color:var(--text-2);cursor:default}
+ @media print{body *{visibility:hidden}}
+ 
+ </style>
+@@ -359,7 +397,7 @@
  
  <script>
  'use strict';
@@ -499,7 +896,7 @@
  /* ============================================================
     TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
     ============================================================ */
-@@ -1476,6 +1480,7 @@
+@@ -1476,6 +1514,7 @@
    $('#zoomLabel').textContent = Math.round(k * 100) + '%';
    if (S.editing) positionEditor();
    drawMinimapViewport();
@@ -507,7 +904,7 @@
  }
  function zoomAt(k, sx, sy) {
    const r = svgEl().getBoundingClientRect(); if (sx == null) { sx = r.width / 2; sy = r.height / 2; }
-@@ -1548,7 +1553,7 @@
+@@ -1548,7 +1587,7 @@
    if (S.marquee) { const m = S.marquee; const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1); s += `<rect x="${rnd(x)}" y="${rnd(y)}" width="${rnd(Math.abs(m.x1 - m.x0))}" height="${rnd(Math.abs(m.y1 - m.y0))}" fill="${c}" fill-opacity=".08" stroke="${c}" stroke-width="${rnd(1 / k, 3)}" stroke-dasharray="${rnd(4 / k)} ${rnd(3 / k)}"/>`; }
    for (const gl of S.guides) s += `<path d="M${rnd(gl.x1)} ${rnd(gl.y1)}L${rnd(gl.x2)} ${rnd(gl.y2)}" stroke="#ec4899" stroke-width="${rnd(1 / k, 3)}" fill="none"/>`;
    $('#overlay').innerHTML = s;
@@ -516,15 +913,25 @@
  }
  
  /* ---------- hit testing ---------- */
-@@ -2672,6 +2677,7 @@
+@@ -2671,7 +2710,9 @@
+ function buildPages() {
    const el = $('#pagetabs');
    el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}"${i === DOC.cur ? ' aria-current="page"' : ''} title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
++  fitTabs(DOC.cur);   // 1.9: when the tabs do not fit, our own window of them
    if (MAP) mapShowActive();
 +  tellPages();
  }
  function switchPage(i) { if (S.editing) commitEdit(); DOC.cur = clamp(i, 0, DOC.pages.length - 1); S.sel.clear(); S.hover = null; reindex(); buildPages(); render(); refreshPanels(true); fitView(); scheduleSave(); }
  function initPages() {
-@@ -4078,7 +4084,9 @@
+@@ -2882,6 +2923,7 @@
+   const svg = $('#mmSvg'); svg.setAttribute('viewBox', `${rnd(MM.x)} ${rnd(MM.y)} ${rnd(MM.w)} ${rnd(MM.h)}`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+   svg.innerHTML = `<rect x="${MM.x}" y="${MM.y}" width="${MM.w}" height="${MM.h}" fill="${curPal().paper}"/>` + $('#content').innerHTML.replace(/<text[\s\S]*?<\/text>/g, '') + `<rect id="mmView" fill="${curPal().sel}" fill-opacity=".08" stroke="${curPal().sel}" vector-effect="non-scaling-stroke" stroke-width="1.5"/>`;
+   drawMinimapViewport();
++  if (PREVIEW) drawPreview();   // 1.9: the preview, when an embedding page asked for one
+ }
+ function drawMinimapViewport() {
+   const v = $('#mmView'); if (!v || !MM) return; const r = svgEl().getBoundingClientRect();
+@@ -4078,7 +4120,9 @@
     it is of this page's own origin (postMessage names location.origin; the browser drops the message
     for any other, and nothing is posted from file://).
     ============================================================ */
@@ -535,7 +942,7 @@
  const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
  const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
  const UI_KEY = 'topoforge.ui.v1', FL_STEP = 16, FL_BIG = 64, FL = {};
-@@ -4087,7 +4095,7 @@
+@@ -4087,7 +4131,7 @@
  function embedWordsFromQuery() {
    const q = new URLSearchParams(location.search).get('embed'), o = {};
    // 'all' turns on every switch that keeps the chrome (frameless, floating, pages, select, ready); 'bare' hides every piece of it
@@ -544,7 +951,7 @@
    return o;
  }
  function embed(opts) {
-@@ -4103,6 +4111,7 @@
+@@ -4103,6 +4147,7 @@
    for (const n of ['shapes', 'props']) { if (EMBED[n]) floatPanel(n); if (FL[n]) FL[n].turn(EMBED[n]); }
    if (EMBED.select && !was.select) { _selKey = null; tellSelection(); }
    if (!EMBED.ready) _readyTold = false; else if (_readyDetail && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
@@ -552,7 +959,7 @@
    return { ...EMBED };
  }
  function tell(type, detail) {
-@@ -4119,7 +4128,7 @@
+@@ -4119,7 +4164,7 @@
      return { id, ref: String(d.tf_ref || ''), name, tooltip: String(d.tooltip || d.what || pr.notes || ''), kind: n ? n.type : 'link' };
    }).filter(Boolean);
    const first = items[0] || { id: '', ref: '', name: '', tooltip: '', kind: '' };
@@ -561,7 +968,15 @@
  }
  function tellSelection() {
    if (!EMBED.select) return;
-@@ -4258,6 +4267,7 @@
+@@ -4184,6 +4229,7 @@
+     el.style.setProperty('--fx', x + 'px'); el.style.setProperty('--fy', y + 'px');
+     let bottom = st.bottom - 12;   // Properties stops above the overview box when they share a column
+     if (name === 'props' && FL.map && FL.map.on && !FL.map.hidden) { const m = FL.map.el.getBoundingClientRect(); if (m.left < x + def.w && m.right > x && m.top > y) bottom = Math.min(bottom, m.top - 12); }
++    if (name === 'props' && typeof MMW !== 'undefined' && MMW && EMBED.map && !(MAP && MAP.on)) { const m = MMW.wrap.getBoundingClientRect(); if (m.width && m.left < x + def.w && m.right > x && m.top > y) bottom = Math.min(bottom, m.top - MMW_ROOM - 8); }   // 1.9: nor over the map's own frame
+     el.style.setProperty('--fh', Math.round(Math.max(160, bottom - y)) + 'px');
+   };
+   f.where = () => f.hidden ? `${def.label} is hidden to its grip row.` : `${def.label}: ${Math.round(f.x)} pixels from the left, ${Math.round(f.y)} from the top.`;
+@@ -4258,6 +4304,7 @@
  // may also drag with the type text/x-topoforge set to the shape's id, as the palette does.
  let PLACING = null, _placeWired = false;
  function place(id, at) {
@@ -569,7 +984,7 @@
    if (!SHAPES[id]) return false;
    if (at === 'center') { addShapeCenter(id); return true; }
    if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) { addShapeAt(id, toWorld({ clientX: at.x, clientY: at.y })); return true; }
-@@ -4278,6 +4288,146 @@
+@@ -4278,6 +4325,350 @@
  }
  function placing(id) { PLACING = id; document.body.classList.toggle('tf-placing', !!id); }
  
@@ -712,18 +1127,222 @@
 +  svg.addEventListener('pointermove', e => { if (_lp && Math.hypot(e.clientX - _lp.at.x, e.clientY - _lp.at.y) > 8) lpEnd(); });
 +  for (const t of ['pointerup', 'pointercancel', 'pointerleave']) svg.addEventListener(t, lpEnd);
 +}
++/* ---- 1.9 (B): the overview map, moved and resized (map), and a preview in it (preview) ---- */
++const MMW_DEF = { r: 12, b: 12, w: 190, h: 130 }, MMW_MIN = { w: 120, h: 80 }, MMW_ROOM = 34;   // room above for the handles
++let MMW = null, PREVIEW = null;
++function embed19b(was) {
++  mapFloat(EMBED.map);
++  document.body.classList.toggle('tf-preview', EMBED.preview);
++  if (!EMBED.preview && was.preview) preview(null, undefined, true);
++}
++function mmSaved() { const o = uiLoad().minimap || {}; const ok = k => Number.isFinite(o[k]); return ok('r') && ok('b') && ok('w') && ok('h') ? { r: o.r, b: o.b, w: o.w, h: o.h } : { ...MMW_DEF }; }
++function mmSave() { const o = uiLoad(); o.minimap = { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h }; try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ } }
++// where the minimap lives: the pages box (1.8, pages wins), the movable wrapper (map), or the stage, as in 1.7
++function mmHome() {
++  const mm = $('#minimap');
++  if (MAP && MAP.on) return;
++  if (EMBED.map && MMW) { if (mm.parentNode !== MMW.wrap) MMW.wrap.insertBefore(mm, MMW.wrap.firstChild); }
++  else if (mm.parentNode !== $('#stage')) $('#stage').insertBefore(mm, MAP ? MAP.box : null);
++}
++function mapFloat(on) {
++  if (on && !MMW) {
++    const wrap = document.createElement('div'); wrap.id = 'mmwrap';
++    wrap.innerHTML = '<div class="mm-handles" role="group" aria-label="Overview map controls">' +
++      '<button type="button" class="mm-h mm-size" aria-label="Resize the overview map: drag, or the arrow keys (left and up make it bigger; Shift goes further)"><span aria-hidden="true">⤡</span></button>' +
++      '<button type="button" class="mm-h mm-grip" aria-label="Move the overview map: drag, or the arrow keys (Shift goes further)"><span aria-hidden="true">⠿</span> Move</button>' +
++      '<button type="button" class="mm-h mm-pos menu-btn" aria-haspopup="menu" aria-expanded="false">Position</button></div>';
++    $('#stage').appendChild(wrap);
++    MMW = { wrap, ...mmSaved() };
++    const grip = wrap.querySelector('.mm-grip'), size = wrap.querySelector('.mm-size'), pos = wrap.querySelector('.mm-pos');
++    wrap.addEventListener('keydown', e => { if (e.target.closest('.mm-h')) e.stopPropagation(); });   // not the canvas's arrows
++    const keyd = (e, fn) => { const n = e.shiftKey ? FL_BIG : FL_STEP, d = { ArrowLeft: [-n, 0], ArrowRight: [n, 0], ArrowUp: [0, -n], ArrowDown: [0, n] }[e.key]; if (d) { e.preventDefault(); fn(d[0], d[1]); } };
++    grip.addEventListener('keydown', e => keyd(e, (dx, dy) => mmMove(dx, dy, true)));
++    size.addEventListener('keydown', e => keyd(e, (dx, dy) => mmSize(-dx, -dy, true)));
++    const dragOn = (el, fn) => {
++      let d = null;
++      el.addEventListener('pointerdown', e => { if (e.button > 0) return; d = { x: e.clientX, y: e.clientY, r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h, moved: false }; try { el.setPointerCapture(e.pointerId); } catch (er) { } e.preventDefault(); });
++      el.addEventListener('pointermove', e => { if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!d.moved && Math.abs(dx) + Math.abs(dy) < 3) return; d.moved = true; fn(d, dx, dy); });
++      const end = () => { if (!d) return; const m = d.moved; d = null; if (m) { mmSave(); flSay(mmWhere()); } };
++      el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
++    };
++    dragOn(grip, (d, dx, dy) => { MMW.r = d.r - dx; MMW.b = d.b - dy; mmApply(); });
++    dragOn(size, (d, dx, dy) => { MMW.w = d.w - dx; MMW.h = d.h - dy; mmApply(); });
++    pos.addEventListener('click', () => {
++      if (pos.classList.contains('open')) { closeMenus(); return; }
++      const r = pos.getBoundingClientRect(), st = () => $('#stage').getBoundingClientRect();
++      const corner = (right, bottom) => () => { const s = st(); MMW.r = right ? 12 : s.width - MMW.w - 12; MMW.b = bottom ? 12 : s.height - MMW.h - 12; mmApply(); mmSave(); flSay(mmWhere()); };
++      openMenuAt([{ header: 'Overview map' }, { label: 'Bottom right', action: corner(true, true) }, { label: 'Bottom left', action: corner(false, true) }, { label: 'Top right', action: corner(true, false) }, { label: 'Top left', action: corner(false, false) },
++        '-', { label: 'Larger', action: () => mmSize(FL_BIG, Math.round(FL_BIG * 0.7), true) }, { label: 'Smaller', action: () => mmSize(-FL_BIG, -Math.round(FL_BIG * 0.7), true) },
++        '-', { label: 'Back to its starting place', action: () => { Object.assign(MMW, MMW_DEF); mmApply(); mmSave(); flSay('The overview map is back in its starting place.'); } }], r.left, r.bottom + 4, pos);
++    });
++    // the door handle: shown while the pointer is within 40 pixels of the map or its handles, or one has focus
++    document.addEventListener('pointermove', e => {
++      if (!MMW || !EMBED.map) return; const b = MMW.wrap.getBoundingClientRect(), near = 40;
++      const top = b.top - MMW_ROOM;
++      MMW.wrap.classList.toggle('mm-near', b.width > 0 && e.clientX >= b.left - near && e.clientX <= b.right + near && e.clientY >= top - near && e.clientY <= b.bottom + near);
++    });
++    document.documentElement.addEventListener('pointerleave', () => { if (MMW) MMW.wrap.classList.remove('mm-near'); });
++    window.addEventListener('resize', () => { if (MMW && EMBED.map) mmApply(); });
++  }
++  if (MMW) { MMW.wrap.hidden = !on; if (on) mmApply(); }
++  mmHome();
++  if (on || MMW) scheduleMinimap();
++}
++function mmApply() {
++  const s = $('#stage').getBoundingClientRect(); if (!s.width) return;
++  MMW.w = Math.round(clamp(MMW.w, MMW_MIN.w, Math.max(MMW_MIN.w, s.width * 0.7)));
++  MMW.h = Math.round(clamp(MMW.h, MMW_MIN.h, Math.max(MMW_MIN.h, s.height * 0.7 - MMW_ROOM)));
++  MMW.r = Math.round(clamp(MMW.r, 0, Math.max(0, s.width - MMW.w)));
++  MMW.b = Math.round(clamp(MMW.b, 0, Math.max(0, s.height - MMW.h - MMW_ROOM)));
++  const w = MMW.wrap.style; w.setProperty('--mr', MMW.r + 'px'); w.setProperty('--mb', MMW.b + 'px'); w.setProperty('--mw', MMW.w + 'px'); w.setProperty('--mh', MMW.h + 'px');
++  drawMinimapViewport();
++  if (FL.props && FL.props.on) FL.props.apply();
++}
++function mmWhere() { return `Overview map: ${MMW.w} by ${MMW.h} pixels, ${MMW.r} from the right of the drawing and ${MMW.b} from its foot.`; }
++function mmMove(dx, dy, say) { MMW.r -= dx; MMW.b -= dy; mmApply(); mmSave(); if (say) flSay(mmWhere()); }
++function mmSize(dw, dh, say) { MMW.w += dw; MMW.h += dh; mmApply(); mmSave(); if (say) flSay(mmWhere()); scheduleMinimap(); }
++// the preview: an embedding page shows in the map what the person is pointing at in its own frame
++function previewMatch(what) {
++  if (Array.isArray(what)) { const want = new Set(what.map(String)); return n => want.has(n.id) || want.has(String((n.data || {}).tf_ref || '')); }
++  if (what && typeof what === 'object' && typeof what.category === 'string') return n => (SHAPES[n.type] || {}).cat === what.category;
++  if (what && typeof what === 'object' && typeof what.kind === 'string') return n => n.type === what.kind;
++  return null;
++}
++function preview(what, caption, quiet) {
++  if (!EMBED.preview && !quiet) return false;
++  if (what === null || what === undefined) { PREVIEW = null; drawPreview(); return true; }
++  const m = previewMatch(what); if (!m) return false;
++  PREVIEW = { m, what, caption: typeof caption === 'string' ? caption : null };
++  return drawPreview();
++}
++function previewCaption(hits, other) {
++  if (PREVIEW.caption !== null) return PREVIEW.caption;
++  const w = PREVIEW.what, cat = w && w.category ? (CATS.find(c => c.id === w.category) || {}).name || w.category : w && w.kind ? (SHAPES[w.kind] || {}).name || w.kind : null;
++  const more = other ? ` · ${other} on other pages` : '';
++  if (!hits.length) return (cat ? cat + ': not' : 'Not') + ' on this page' + more;
++  if (hits.length === 1) return (cat ? cat + ': ' : '') + nodeName(hits[0]) + more;
++  return `${cat ? cat + ': ' : ''}${hits.length} shapes${more}`;
++}
++function drawPreview() {
++  const svg = $('#mmSvg'), mm = $('#minimap'); let cap = mm.querySelector('.mm-cap');
++  const old = svg.querySelector('#mmPrev'); if (old) old.remove();
++  svg.classList.remove('mm-dim'); $$('.mm-rest', svg).forEach(g => g.replaceWith(...g.childNodes));
++  if (!PREVIEW) { if (cap) cap.hidden = true; return true; }
++  const hits = P().nodes.filter(n => visible(n) && PREVIEW.m(n));
++  const other = DOC.pages.reduce((a, pg, i) => a + (i === DOC.cur ? 0 : pg.nodes.filter(PREVIEW.m).length), 0);
++  const text = previewCaption(hits, other);
++  if (!cap) { cap = document.createElement('div'); cap.className = 'mm-cap'; mm.appendChild(cap); }
++  cap.textContent = text; cap.hidden = false;
++  if (MM && hits.length) {
++    const kids = [...svg.childNodes].filter(n => n.id !== 'mmView' && n !== svg.firstChild), rest = document.createElementNS(SVGNS, 'g');
++    rest.setAttribute('class', 'mm-rest'); kids.forEach(k => rest.appendChild(k)); svg.insertBefore(rest, svg.querySelector('#mmView'));
++    svg.classList.add('mm-dim');
++    const pad = Math.max(6, MM.w * 0.012), c = curPal().sel, g = document.createElementNS(SVGNS, 'g'); g.id = 'mmPrev';
++    g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2)}" rx="${rnd(pad)}" fill="${c}" fill-opacity=".28" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
++    svg.insertBefore(g, svg.querySelector('#mmView'));
++  }
++  return { count: hits.length, other, caption: text, ids: hits.map(n => n.id) };
++}
++/* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
++   wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
++   tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
++   (in the 1.8 pages box its Pages button is that list). Arrows, Home and End move among the page tabs. ---- */
++const PT = { start: 0, end: 0, wired: false };
++function fitTabs(show) {
++  const el = $('#pagetabs'); if (!el) return;
++  if (!PT.wired) wireTabs(el);
++  const tabs = $$('.ptab[data-pi]:not(.add)', el), n = tabs.length, add = $('.ptab.add', el);
++  for (const t of tabs) if (t.hidden) t.hidden = false;
++  const W = el.clientWidth, wd = x => x ? x.getBoundingClientRect().width : 0;
++  const ws = tabs.map(wd), total = ws.reduce((a, b) => a + b, 0) + wd(add);
++  if (!W || total <= W + 0.5) {   // it fits: no controls, nothing hidden, as before
++    if (el.classList.contains('pt-ovf')) { const f = el.contains(document.activeElement) && document.activeElement.classList.contains('pt-ctl'); $$('.pt-ctl', el).forEach(x => x.remove()); el.classList.remove('pt-ovf'); if (f) { const a = $('.ptab.active', el); a && a.focus(); } }
++    PT.start = 0; PT.end = n; return;
++  }
++  el.classList.add('pt-ovf');
++  const mk = (cls, label, text) => { let b = $('.' + cls, el); if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'pt-ctl ' + cls; } b.setAttribute('aria-label', label); b.textContent = text; return b; };
++  const prev = mk('pt-prev', 'Earlier pages', '‹'), next = mk('pt-next', 'Later pages', '›');
++  const inBox = !!el.closest('#mapbox'); let all = $('.pt-all', el);
++  if (!inBox) { all = mk('pt-all', `All ${n} pages: a list to choose from, with a filter`, `All ${n} ▴`); all.classList.add('menu-btn'); all.setAttribute('aria-haspopup', 'dialog'); if (!all.classList.contains('open')) all.setAttribute('aria-expanded', 'false'); }
++  else if (all) { all.remove(); all = null; }
++  if (el.firstChild !== prev) el.insertBefore(prev, el.firstChild);
++  if (next.nextSibling !== (all || add)) el.insertBefore(next, add);
++  if (all && all.nextSibling !== add) el.insertBefore(all, add);
++  const room = W - wd(prev) - wd(next) - wd(all) - wd(add) - 1;
++  const endFrom = s0 => { let w = 0, e = s0; while (e < n && (w + ws[e] <= room || e === s0)) { w += ws[e]; e++; } return e; };
++  let s = clamp(PT.start, 0, Math.max(0, n - 1));
++  if (typeof show === 'number' && show >= 0 && show < n) { if (show < s) s = show; while (s < show && show >= endFrom(s)) s++; }
++  if (endFrom(s) >= n) { let w = ws.slice(s).reduce((a, b) => a + b, 0); while (s > 0 && w + ws[s - 1] <= room) { s--; w += ws[s]; } }   // no empty room at the end
++  const e = endFrom(s);
++  tabs.forEach((t, i) => { const h = i < s || i >= e; if (t.hidden !== h) t.hidden = h; });
++  PT.start = s; PT.end = e;
++  prev.disabled = s === 0; next.disabled = e >= n;
++}
++function wireTabs(el) {
++  PT.wired = true;
++  const visibleTab = last => { const v = $$('.ptab[data-pi]:not(.add):not([hidden])', el); return v[last ? v.length - 1 : 0]; };
++  el.addEventListener('click', e => {
++    const c = e.target.closest('.pt-ctl'); if (!c) return;
++    if (c.classList.contains('pt-all')) { openTabsFly(c); return; }
++    PT.start += c.classList.contains('pt-prev') ? -1 : 1; fitTabs();
++    if (c.disabled) { const t = visibleTab(c.classList.contains('pt-next')); t && t.focus(); }
++  });
++  el.addEventListener('keydown', e => {
++    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('button')) { e.stopPropagation(); return; }   // the button's own press, not the canvas's Enter (edit text) or Space (pan)
++    const t = e.target.closest('.ptab[data-pi]'); if (!t || t.dataset.pi === 'add' || e.target !== t) return;
++    const n = DOC.pages.length, i = +t.dataset.pi, j = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: n - 1 }[e.key];
++    if (j === undefined || e.altKey || e.ctrlKey || e.metaKey) return;
++    e.preventDefault(); e.stopPropagation();
++    const k = clamp(j, 0, n - 1); fitTabs(k); const b = $(`.ptab[data-pi="${k}"]`, el); b && b.focus();
++  });
++  if (window.ResizeObserver) new ResizeObserver(() => fitTabs()).observe(el);
++}
++function openTabsFly(btn) {
++  if (btn.classList.contains('open')) { closeMenus(); return; }
++  closeMenus();
++  const m = document.createElement('div'); m.className = 'menu'; m.id = 'ptFly'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', 'All pages');
++  m.innerHTML = '<input type="search" class="inp" placeholder="Filter pages…" aria-label="Filter pages" role="combobox" aria-expanded="true" aria-controls="ptFlyList" aria-autocomplete="list" spellcheck="false"><ul id="ptFlyList" role="listbox" aria-label="Pages"></ul>';
++  document.body.appendChild(m);
++  const inp = m.querySelector('input'), ul = m.querySelector('ul'); let act = DOC.cur, shown = [];
++  const draw = () => {
++    const q = inp.value.trim().toLowerCase();
++    shown = DOC.pages.map((p, i) => i).filter(i => !q || DOC.pages[i].name.toLowerCase().includes(q));
++    if (!shown.includes(act)) act = shown.length ? shown[0] : -1;
++    ul.innerHTML = shown.length ? shown.map(i => `<li role="option" id="ptopt-${i}" data-pi="${i}" aria-selected="${i === act}"${i === DOC.cur ? ' class="cur"' : ''}>${esc(DOC.pages[i].name)}${i === DOC.cur ? '<span class="sr-only"> (shown now)</span>' : ''}</li>`).join('')
++      : '<li class="pt-none" role="option" aria-disabled="true" aria-selected="false">No page matches</li>';
++    if (act >= 0) { inp.setAttribute('aria-activedescendant', 'ptopt-' + act); const li = ul.querySelector('#ptopt-' + act); if (li) li.scrollIntoView({ block: 'nearest' }); } else inp.removeAttribute('aria-activedescendant');
++  };
++  const go = i => { closeMenus(); showPage(i); fitTabs(i); const t = $(`#pagetabs .ptab[data-pi="${i}"]`); if (t) t.focus(); };
++  inp.addEventListener('input', draw);
++  inp.addEventListener('keydown', e => {
++    const k = shown.indexOf(act);
++    if (e.key === 'ArrowDown' && shown.length) { e.preventDefault(); act = shown[Math.min(shown.length - 1, k + 1)]; draw(); }
++    else if (e.key === 'ArrowUp' && shown.length) { e.preventDefault(); act = shown[Math.max(0, k - 1)]; draw(); }
++    else if (e.key === 'Enter') { e.preventDefault(); if (act >= 0) go(act); }
++    else if (e.key === 'Escape') { e.preventDefault(); closeMenus(); btn.focus(); }
++    else if (e.key === 'Tab') closeMenus();
++    e.stopPropagation();
++  });
++  ul.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the filter
++  ul.addEventListener('click', e => { const li = e.target.closest('li[data-pi]'); if (li) go(+li.dataset.pi); });
++  btn.classList.add('open'); btn.setAttribute('aria-expanded', 'true');
++  draw();
++  const r = btn.getBoundingClientRect(), w = m.getBoundingClientRect().width;
++  m.style.left = Math.round(clamp(r.right - w, 4, Math.max(4, innerWidth - w - 4))) + 'px'; m.style.top = 'auto'; m.style.bottom = Math.round(innerHeight - r.top + 4) + 'px';
++  inp.focus();
++}
 +
  // Every command in the menus, for an embedding page that hides the app's chrome and offers them from its
  // own prompt: read from MENUS (Bryant's table) each time, so it is never a copy that drifts. An id is
  // menu:group:label in lower case, words joined by '-'; group is the menu's last heading ('' before one).
-@@ -4312,7 +4462,9 @@
+@@ -4312,7 +4703,9 @@
  window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex },
    // 1.8: for an embedding page (see the Embedding block above)
    version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
 -  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; } };
 +  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; },
 +  // 1.9
-+  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys };
++  get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, caption) => preview(what, caption) };
  document.addEventListener('DOMContentLoaded', boot);
  
  </script>

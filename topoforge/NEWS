@@ -24,6 +24,19 @@ packed or signed yet)
     shape (the app's own menu still opens);
   - pagelist: a message when a page is added, renamed, moved or removed.
   All of these reach a parent page of the app's own origin only.
+- The overview map, for a page that asks (switch map): moved and resized by
+  handles that sit outside its frame and appear as the pointer comes near
+  (always on a touch screen, and whenever one has the keyboard focus); the
+  grip and the resize handle take the arrow keys, and Position is a menu
+  for one pointer.  Its place is kept in this browser.
+- A preview in the overview map (switch preview): TopoForge.preview(ids,
+  refs, a category or a kind) rings those shapes in the map, dims the rest
+  and writes a short caption; preview(null) clears it.
+- Page tabs that do not fit, everywhere: the strip shows the tabs that fit,
+  with < and > to move along them, and All, a list of every page with a
+  filter.  No more scrollbar in the strip.  Arrows, Home and End move among
+  the page tabs (they used to nudge the selected shapes).  When the tabs
+  fit, nothing looks different.
 
 Version 1.8 (2026-11-01; built and checked: tests/run.sh, the project-files
 check, the browser kit and the new embedding kit green; see RESULT.txt and

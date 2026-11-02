@@ -1,5 +1,36 @@
 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.9, second stage: the overview
+	map moved and resized by handles outside its frame, a preview in it,
+	and page tabs that do not fit (Corwin, q/2026-11-02-yes-and: "put
+	the positioning controls for it OUTSIDE the visible frame ... as if a
+	door handle appears when you reach for the car door"; "limit how many
+	we show and put the full list under a fly-up menu, then have < and >
+	controls").
+	* index.html (1.9 CSS): #mmwrap and its handles; the preview's
+	caption and dimming; the page-tab window, its controls and the All
+	list, all hung on elements or classes only this code adds.
+	(buildPages): calls fitTabs.
+	(drawMinimap): redraws a preview when there is one.
+	(floatPanel): floating Properties stops above the map's own frame,
+	as it does above the pages box.
+	(embed19b, mmSaved, mmSave, mmHome, mapFloat, mmApply, mmWhere)
+	(mmMove, mmSize, previewMatch, preview, previewCaption, drawPreview)
+	(fitTabs, wireTabs, openTabsFly): New.
+	(window.TopoForge): preview.
+	* spec/EMBED-v1.md: map, preview, and "Page tabs that do not fit".
+	* tests/browser/embed.browser.mjs: N1-N9, H1-H3, X3, S4 (sixty pages,
+	compared with 1.8: only the bottom bar differs), T1-T6; M3 allows 120
+	Tab presses, up from 80 (the ‹ of a strip that does not fit is one
+	more stop); C0: a check that throws is a failure and the checks
+	before it still count (found when the 1.8 plant not-kept also broke
+	the map's save and the kit stopped before writing its result).
+	* tests/browser/embed-prove-red.sh: twenty-five more plants.
+	* README.org: 1.9.
+	* NEWS: the map, the preview, the page tabs.
+
+2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
 	topology forge (formerly TopoForge) 1.9, first stage: the seven calls
 	corwin.cloud's docs/NAV.md (revision 4, "Asked of the app") asked
 	for, blessed by Corwin on 2026-11-02 ("Your next list: bless").

@@ -55,6 +55,13 @@ of your work outside the browser.
   =hide-props=, =hide-pages=, or =bare= for all), and =TopoForge.shapes()= and
   =TopoForge.place(id)= let the page offer the shapes itself.  =spec/EMBED-v1.md=
   says it all; =tests/browser/embed.browser.mjs= checks it.
+- New in 1.9: more for an embedding page, each off until asked for and none
+  turned on by =all= or =bare=: the view (=TopoForge.view=, =setView=, and a
+  message when it changes), where the selection is on screen, =place(null)=,
+  =setProps(id, patch)= (one undo step), keys and right clicks for the page,
+  a message when pages change, the overview map moved and resized by handles
+  outside its frame, and a preview in it.  Everywhere: page tabs that do not
+  fit show the ones that do, with ‹, › and a list of all of them.
 
 * Accessibility
 We want TopoForge usable without a mouse, without colour, and without seeing

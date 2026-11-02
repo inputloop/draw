@@ -1,5 +1,17 @@
 2026-11-02  Corwin Brust  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.9 in www/topoforge/, second
+	stage: the overview map's handles and preview, and page tabs that do
+	not fit (Corwin, q/2026-11-02-yes-and).  topoforge/ChangeLog has the
+	detail.
+	* www/topoforge/index.html: 1.9, second stage.
+	* topoforge/: the patch, the spec, the kit and its plants, NEWS,
+	ChangeLog, README.org.
+	* RECIPE.org: the app's sha256.
+	* NEWS: the map, the preview, the page tabs.
+
+2026-11-02  Corwin Brust  <corwin@bru.st>
+
 	topology forge (formerly TopoForge) 1.9 in www/topoforge/, first
 	stage: the seven calls corwin.cloud asked for (docs/NAV.md revision
 	4), blessed 2026-11-02.  topoforge/ChangeLog has the detail.

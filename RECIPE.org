@@ -47,7 +47,7 @@ is the same thing as commands.
 |-------------------------------+---------------------------------------------+-------------------------------------------|
 | perl 5.44.0 source            | =https://www.cpan.org/src/5.0/= (not in git: 21 MB) | the sum in =bin/fetch-sources.sh=  |
 | 16 CPAN distributions         | metacpan, kept in =vendor/cpan/= (1.4 MB)    | =vendor/cpan/SHA256SUMS=; =vendor/VENDOR.org= says who and why |
-| topology forge (formerly TopoForge) 1.9 | Bryant Frankford's, with our 1.6-1.9 changes (=topoforge/patches/=), =www/topoforge/index.html= | sha256 =5ad8742cec57d55b658d4baa2f2c7202b25fdfaf83914073529215d844d6f596= |
+| topology forge (formerly TopoForge) 1.9 | Bryant Frankford's, with our 1.6-1.9 changes (=topoforge/patches/=), =www/topoforge/index.html= | sha256 =c3aaec6e42dd8e0260bdd0ea944f8c4f2f43b9029aeb9231164398d81221f68f= |
 | TopoForge's own kits          | =topoforge/=: its tests, story spec, project files, recipe, and the patches from Bryant's 1.5 (=upstream/=) | =topoforge/tests/run.sh= (needs jq), =topoforge/kit/project-files/check.py= |
 | the Topology modules          | =perl/Topology/= (h2xs-shaped)              | =perl/Topology/t/= under two perls        |
 | the browser app               | =www/=                                      | =tests/js/=, =tests/browser/=             |

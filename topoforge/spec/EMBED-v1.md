@@ -180,6 +180,62 @@ With it on, a change to the list of pages sends `topoforge:pages`: `change` (`ad
 `removed` (names), `pages` (every name, in order), `page`, `pageIndex`. Undo and redo are changes like
 any other. Showing another page is not a change of the list (the select message says it) (G1).
 
+### The overview map, moved and resized: `map`
+
+With `map` on, the overview map leaves its fixed corner for a frame of its own (starting where it always
+was: 190 by 130 pixels, 12 from the drawing's right and foot). Its handles sit **outside** that frame,
+in a row just above its top edge: a resize handle (⤡), a grip (⠿ Move) and **Position**. They are not
+shown until the pointer comes within 40 pixels of the map or its handles, "as a door handle appears when
+you reach for the car door": a hand that knows where they are finds them there. They stay shown while the
+pointer is on them and while one of them has the keyboard focus; they are ordinary buttons, in the Tab
+order even while unseen, so a keyboard user reaches them and sees them as they get the focus. Where the
+screen has no hover (a touch screen), they are always shown (N1, N2, N8).
+
+- the grip: drag it, or the arrow keys on it (16 pixels, 64 with Shift);
+- the resize handle: drag it (up and left make the map bigger; its right and bottom edges stay put), or
+  the arrow keys (left and up bigger, right and down smaller; Shift goes further). The map stays between
+  120 by 80 pixels and 70 % of the drawing;
+- **Position**, a menu: Bottom right, Bottom left, Top right, Top left, Larger, Smaller, Back to its
+  starting place: every move with one pointer and no drag (WCAG 2.5.7) (N3, N4).
+
+Each move is said in the polite live region. The place and size are kept in this browser under
+`topoforge.ui.v1`, key `minimap`; with storage refused they last for the visit (N5, N7). Turned off, the
+map goes back to its corner as 1.8 has it (N6). With `pages` on too, the map stays in the pages box
+(which 1.8 already lets you move), and these handles are not shown. Narrower than 861 pixels the map is
+hidden, as it always was. Nothing in the frame or its handles has a transition (X2).
+
+### A preview in the map: `preview`
+
+With `preview` on, `TopoForge.preview(what, caption)` lets an embedding page use the overview map as a
+small dashboard for what the person is pointing at in the page's own frame (a finder, a tool-bar):
+
+- `what` is a list of shape ids or `tf_ref`s, `{ category }` (a category id from `shapes()`), or
+  `{ kind }` (a shape id from `shapes()`); `null` clears the preview;
+- the matching shapes on the current page are ringed in the map and the rest dimmed, and a one-line
+  caption is written along the map's foot: `caption` if given, else the shape's name, or "Network: 3
+  shapes", or "not on this page", with "· N on other pages" when there are some there;
+- it returns `{ count, other, caption, ids }`, `true` for `null`, and `false` (drawing nothing) when the
+  switch is off or `what` is not one of the forms above (H1, H2).
+
+The preview holds through redraws and page changes until it is cleared or replaced, and works in all
+three places the map can be: its corner, its own frame (`map`) and the pages box (H3). The caption is not
+a live region: the page that asked for the preview speaks for the thing pointed at.
+
+## Page tabs that do not fit (1.9, everywhere)
+
+This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
+page tabs than the strip can show. Then the strip shows as many whole tabs as fit (the current one among
+them when a page is shown), with **‹** and **›** before and after them, which move the app's own window of
+tabs one tab at a time (no browser scrollbar, nothing scrolled by the browser), and, in the bottom bar,
+**All N**, which opens a list of every page above the strip: a filter box (typing narrows the list), ↓
+and ↑ to choose, Enter to show that page (the focus goes to its tab), Escape to close (the focus goes back
+to All). In the 1.8 pages box (`pages`) the tabs get ‹ and ›, and its Pages button stays the list of them
+all. In the page tabs, ← and → move the focus one tab and Home and End to the first and the last, the
+window following; Enter shows the page (before 1.9 these keys nudged the selected shapes) (T1-T6).
+
+When the tabs fit, the strip is exactly as before (T5), and the app draws the same pixels as 1.8 (S1);
+with sixty pages only the bottom bar differs from 1.8 (S4).
+
 ## Not changed
 
 `window.TopoForge`'s name, the TopoForge JSON format, every storage key 1.7 used, and the brand and

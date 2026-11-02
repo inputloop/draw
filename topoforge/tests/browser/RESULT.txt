@@ -1,8 +1,8 @@
 GREEN
 TopoForge in a real browser from file:// -- written by tests/browser/topoforge.browser.mjs (do not edit by hand)
 Licence of this note: CC-BY-SA-4.0
-Run at: 2026-11-02T15:19:31.241Z on Linux 6.18.44-fc-v185, node v22.23.4
-File tested: index.html sha256 5ad8742cec57d55b658d4baa2f2c7202b25fdfaf83914073529215d844d6f596
+Run at: 2026-11-02T16:28:38.758Z on Linux 6.18.44-fc-v185, node v22.23.4
+File tested: index.html sha256 c3aaec6e42dd8e0260bdd0ea944f8c4f2f43b9029aeb9231164398d81221f68f
 Upstream beside it: not present
 Kit: tests/browser/topoforge.browser.mjs sha256 0a4e087ea5fecb5d5332211d9c168cb224c989d62ea11b2167cadcdf84c23717
 Result: 41 checks passed, 0 failed. Exit 0 (0 green, 1 red, 2 kit broken).
@@ -13,7 +13,7 @@ NOTE browser 153.0.8010.12, playwright 1.63.0, axe-core 4.14.0
 PASS loads from file:// and exposes TopoForge :: TF_VERSION=1.9
 PASS axe main: no critical/serious violations :: no violations
 PASS palette clicks added 9 shapes :: nodes=9
-PASS every shape and link has data.tf_ref :: dmz-xcm2,vlan-x1nm,router-st5g,firewall-4749,server-9yqk,server-e8f0,switch-nbss,desktop-y080,desktop-bg2v,link-mrxn,link-5sht,link-o890,link-5ee3,link-uzhf,link-4kfa
+PASS every shape and link has data.tf_ref :: dmz-hpbu,vlan-p5uf,router-gffr,firewall-k81x,server-q4ev,server-l026,switch-c2rj,desktop-xqt0,desktop-k4yp,link-uby3,link-r42i,link-358u,link-0ugh,link-hvyx,link-xwpw
 PASS tf_refs unique
 PASS axe props-selected: no critical/serious violations :: no violations
 PASS menu bar has no menubar role; each menu button says it opens a menu :: {"role":null,"pop":true}
@@ -38,16 +38,16 @@ PASS focus visible on Download button :: ok
 PASS Enter on Download saves .json and -story.md :: Untitled topology.json,Untitled topology-story.md
 PASS Space on Download also saves :: Untitled topology.json,Untitled topology-story.md
 PASS story .md has exactly one facts block :: facts fences=1
-PASS story .md header carries sha256 lines :: > story v=1 fence=facts-8otn drawing-sha256=ae6ecc3a17b3a078728c7b9b9a153697456b37a31d6370a5d28b27656fb72a26 facts-sha256=040462d2b5e8837826565b6118b21965296be495fa85a35381a28e57cbef9f63 / > Drawing f
+PASS story .md header carries sha256 lines :: > story v=1 fence=facts-rufj drawing-sha256=cb73f8bbf75e67792ad9724e0758976e7f26e725bfcc822a7ce4196f338e0038 facts-sha256=e9821235eacb5eaba55c0c6098c124ec32ab123d51e6fc95706a9a59f9e8c947 / > Drawing f
 PASS story .md has a Gaps section
-PASS story header names the saved JSON by its sha256 :: ae6ecc3a17b3a078
+PASS story header names the saved JSON by its sha256 :: cb73f8bbf75e6779
 PASS no keyboard trap (focus keeps moving under Tab) :: distinct stops=98
 PASS headings do not skip a level (no axe heading-order in any scan) :: none
 PASS no console errors
 PASS load 1c: without ?load= a first visit still shows the sample (the sample guard acts only on ?load=) :: nodes=19
 PASS load 1: ?load=/x.csv from the page's own origin imports the rows, and only the rows, on a first visit :: nodes=4 links=3 toasts=Imported 4 devices, 3 links from CSV
 PASS load 1b: ?load=/x.json opens the TopoForge JSON drawing in place of the sample :: nodes=2 links=1 toasts=Loaded /x.json doc=Loaded by query
-PASS load 2: ?load= another origin is refused: nothing imported, the toast names the refusal, the other server is never asked :: nodes=0 links=0 toasts=load refused: http://127.0.0.1:44517 is not this page's origin otherServerHits=0
+PASS load 2: ?load= another origin is refused: nothing imported, the toast names the refusal, the other server is never asked :: nodes=0 links=0 toasts=load refused: http://127.0.0.1:33521 is not this page's origin otherServerHits=0
 PASS load 3: file://...index.html?load=x.csv imports nothing and says it is refused :: nodes=0 links=0 toasts=load refused: file:// is not this page's origin
 PASS load 4: ?load= a path that is not there says "load failed: 404" and imports nothing :: nodes=0 links=0 toasts=load failed: 404 Not Found
 PASS load 5: window.TopoForge.importCSV is a function :: function
