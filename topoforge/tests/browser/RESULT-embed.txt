@@ -1,0 +1,52 @@
+GREEN
+topology forge (formerly TopoForge) 1.8, the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)
+Licence of this note: CC-BY-SA-4.0
+Run at: 2026-11-02T03:57:14.069Z on Linux 6.18.44-fc-v185, node v22.23.4, playwright 1.63.0
+File tested: index.html sha256 1e680051cc3295d5d1d5ba6a717f58428a3bc615b1f81ce359eb746f70aea7c5
+Compared with: 1.7 rebuilt from upstream/topoforge-1.5.html and patches/, sha256 c6c0fbc0e2ba99fd47068471acb7095090faa39ab680a02c25a1f6f2f14519f7
+Kit: tests/browser/embed.browser.mjs sha256 66896cefcbfff50ae2318ab0c797509930d4f28b0a293115696b5b1ff2d86e13
+Result: 42 checks passed, 0 failed. Exit 0 (0 green, 1 red, 2 kit broken).
+
+CHECKS
+PASS S1 standalone 1400x900 light: 1.8 with no switch draws the same pixels as 1.7 :: 45 of 1260000 pixels differ, largest step 2 of 255, 0 by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)
+PASS S2 standalone: the first 30 Tab stops are the same as 1.7
+PASS S3 standalone: no switch is on, no 1.8 element is in the page, nothing new is kept :: {"cls":"","added":[],"ui":null,"sw":{"frameless":false,"props":false,"shapes":false,"pages":false,"select":false,"ready":false,"hide-menus":false,"hide-tools":false,"hide-shapes":false,"hide-props":false,"hide-pages":false}}
+PASS S1 standalone 1400x900 dark: 1.8 with no switch draws the same pixels as 1.7 :: 10 of 1260000 pixels differ, largest step 1 of 255, 0 by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)
+PASS S1 standalone 1000x800 light: 1.8 with no switch draws the same pixels as 1.7 :: 80 of 800000 pixels differ, largest step 67 of 255, 1 by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)
+PASS S1 standalone 800x700 dark: 1.8 with no switch draws the same pixels as 1.7 :: 0 of 560000 pixels differ, largest step 0 of 255, 0 by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)
+PASS F1 ?embed=frameless: the brand is hidden but still a heading, the document name and the frame rules are gone :: {"brandW":1,"h1":true,"name":"none","rule":"rgba(0, 0, 0, 0)","cls":"tf-frameless"}
+PASS F2 ?embed=frameless alone floats nothing :: {"x":1104,"y":46,"w":296,"h":824,"pos":"static","disp":"flex"}
+PASS P1 ?embed=props: Properties floats, starting at the right of the drawing :: {"side":{"x":1092,"y":58,"w":296,"h":800,"pos":"fixed","disp":"flex"},"stage":{"x":0,"y":46,"w":1400,"h":824,"pos":"relative","disp":"block"}}
+PASS H1 ?embed=shapes: Shapes floats, starting at the left; the drawing takes the whole width :: {"pal":{"x":12,"y":58,"w":236,"h":800,"pos":"fixed","disp":"flex"},"stage":{"x":0,"y":46,"w":1400,"h":824,"pos":"relative","disp":"block"}}
+PASS P2 Fit to window, with both panels floating, fits the drawing between them :: {"left":300,"right":1039,"props":1092,"shapes":248}
+PASS K1 the grip moves Properties 16 pixels with an arrow key and 64 with Shift :: [1092,1076,58,122]
+PASS K2 one pointer, no drag: Move, Left moves Properties 64 pixels (WCAG 2.5.7) :: {"mi":["Left","Right","Up","Down","Back to its starting place"],"x":[1076,1012]}
+PASS K3 dragging the grip moves Properties :: [1012,122,912,162]
+PASS K4 Hide leaves only the grip row, says so to a screen reader, and offers Show :: {"h":35.1875,"exp":"false","label":"Show Properties","live":"Properties is hidden to its grip row. Show brings it back."}
+PASS K5 the place and the hidden state are kept in this browser across a reload :: {"s5":{"x":912,"y":162,"w":296,"h":35,"pos":"fixed","disp":"flex"},"kept":{"shapes":{"dx":null,"dy":null,"hidden":false},"props":{"dx":912,"dy":116,"hidden":true}}}
+PASS K6 Show and Back to its starting place return Properties to the right :: {"x":1092,"y":58,"w":296,"h":800,"pos":"fixed","disp":"flex"}
+PASS K7 with storage refused the panels still float and move :: [{"x":1092,"y":58,"w":296,"h":595,"pos":"fixed","disp":"flex"},{"x":1092,"y":46,"w":296,"h":607,"pos":"fixed","disp":"flex"}] (ArrowUp stops at the top of the drawing)
+PASS K8 at 800 pixels nothing floats: the drawers of 1.7 stay :: {"pal":{"x":-315,"y":46,"w":300,"h":624,"pos":"fixed","disp":"flex"},"bar":{"x":0,"y":0,"w":0,"h":0,"pos":"static","disp":"none"}}
+PASS M1 ?embed=pages: the page tabs, the overview map and the status line are in one box; the bottom bar is gone :: {"inBox":true,"cur":"First page","bottom":"none","status":true,"map":true}
+PASS M2 the Pages button lists every page and opens one, by keyboard alone :: {"items":["✓First page","Second page"],"now":{"cur":1,"mark":"Second page","focus":"tf-pages"}}
+PASS M3 Tab reaches the page tabs in the box
+PASS M4 TopoForge.embed({ pages: false }) puts every piece back where 1.7 has it :: {"inBar":true,"st":true,"mm":"stage","bottom":"flex"}
+PASS F3 TopoForge.embed({ chrome: false }) turns frameless on, and { frameless: false } off again :: {"a":true,"on":true,"b":false,"off":true}
+PASS E1 ready: one topoforge:ready reaches the parent, after the drawing named by ?load= is open :: [{"version":"1.8","name":"Embed fixture","pages":["First page","Second page"],"page":"First page","pageIndex":0,"loaded":"/fixture.json","ok":true,"error":null}]
+PASS E2 a click on a shape tells the parent its name, tooltip, kind and page :: {"id":"nq869g17skjh","ref":"router-skjh","name":"Edge Router","tooltip":"Where the shop meets the internet.","kind":"router","count":1,"items":[{"id":"nq869g17skjh","ref":"router-skjh","name":"Edge Router","tooltip":"Where the shop meets the internet.","kind":"router"}],"page":"First page","pageIndex":0}
+PASS E3 a change of page is told too (nothing selected, the new page named) :: {"id":"","ref":"","name":"","tooltip":"","kind":"","count":0,"items":[],"page":"Second page","pageIndex":1}
+PASS E4 the same messages go to the app's own window as topoforge:select events :: own=2 parent=4
+PASS E5 a parent page of another origin receives nothing, though the hook fired inside the app :: parent got 0: []; own=2
+PASS E6 with no switch the app tells no parent anything :: parent got 0, own 0
+PASS E7 TopoForge.ready resolves from file:// too (nothing is posted from there) :: {"v":"1.8","ok":true,"sel":0}
+PASS B1 ?embed=bare hides every piece of the app's chrome (hiding beats pages): the drawing is the whole window :: {"menus":false,"tools":false,"top":false,"shapes":false,"props":false,"pages":false,"stage":"0,0,1400,900"}
+PASS B2 each hide word hides its own piece and leaves the others: hide-menus, hide-tools, hide-shapes, hide-props, hide-pages :: all as named
+PASS Z1 TopoForge.shapes() is the palette's catalogue: its categories and shapes in the palette's order, each with its label and picture :: {"same":true,"cats":7,"n":50,"icons":true}
+PASS Z2 TopoForge.place: "center" adds at the middle; armed, a press drops it at the pointer, Escape gives up, Enter drops it in the middle; an unknown id is false :: {"n0":2,"n1":3,"armed":"server","dropped":{"type":"server","dx":0,"dy":6,"placing":null,"count":4},"esc":{"count":4,"placing":null},"ent":{"count":5,"type":"switch"},"unknown":false}
+PASS R1 TopoForge.commands() lists every menu item, in order, enabled as the menus show it; ids unique :: 66 commands; menus that differ from the UI: none
+PASS R2 TopoForge.run(id) runs a command (Select all selects every shape); a disabled or unknown id runs nothing and says false :: {"id":"edit::select-all","ran":true,"n":3,"want":3,"undoEnabled":false,"undoRan":false,"none":false}
+PASS A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version :: {"h":"topology forge (formerly TopoForge)","b":"Made by Bryant Frankford, with Corwin Brust and contributors.Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.Version 1.8 · 2026Cop
+PASS X1 axe, every switch on, light: no critical or serious finding :: no findings
+PASS X2 the floating parts do not move by themselves (no transition) with reduced motion asked :: 0s,0s,0s,0s
+PASS X1 axe, every switch on, dark: no critical or serious finding :: no findings
+PASS C1 no console errors

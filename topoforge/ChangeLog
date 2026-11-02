@@ -1,3 +1,50 @@
+2026-11-01  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
+	topology forge (formerly TopoForge) 1.8: switches a page that embeds
+	the app may turn on, all off when it is opened on its own; the new
+	name in our own text, Bryant Frankford first.  From corwin.cloud's
+	docs/NAV.md, revision 2, "The TopoForge-side changes, proposed", built
+	once Corwin moved the work here (2026-11-01, 20:20 and 20:35; the
+	name's spelling, 20:51: "topology is the correct name").
+	* index.html (TF_VERSION): 1.8.  (header comment): the 1.8 lines.
+	(#app): the side columns' widths read --tf-cl and --tf-cr, which only
+	a floating panel sets; with neither set they are 1.7's widths.
+	(#app): the rows' heights read --tf-rt and --tf-rb the same way.
+	(1.8 CSS): rules for the switches, including the hide- words, each hung on a class or an element
+	that only the switch code adds.
+	(buildPages): the current page's tab says aria-current="page"; with
+	the tabs in the overview box, it is scrolled into view.
+	(renderOverlay): calls tellSelection, which does nothing unless the
+	select switch is on.
+	(loadFromQuery): returns what it loaded and whether it worked.
+	(boot): applies ?embed= when it names a switch; marks the app ready
+	after any ?load=.
+	(showAbout): the new name, and "Made by Bryant Frankford, with Corwin
+	Brust and contributors."
+	(Embedding): New.  embed, tell, selectionInfo, tellSelection,
+	markReady, showPage, shapes, place and placing, commands and runCommand (every menu command,
+	read from MENUS each time), floatPanel (the grip row: drag, arrow keys, the
+	Move menu, Hide and Show; places under topoforge.ui.v1), pagesInMap,
+	panels.
+	(window.TopoForge): version, embed, selection, ready, showPage,
+	panels, commands, run.
+	(fitView, fitInsets): with Shapes or Properties floating, the
+	drawing is fitted into the room they leave; with neither, as before.
+	* spec/EMBED-v1.md: New.  What an embedding page may ask for and what
+	the app promises, each promise naming its check.
+	* tests/browser/embed.browser.mjs: New.  The spec in Chromium: 1.8
+	standalone against 1.7 rebuilt from upstream/ and patches/, pixel for
+	pixel; every switch; keyboard and one-pointer moves; same-origin only;
+	the About box; axe-core with every switch on, light and dark.
+	* tests/browser/embed-prove-red.sh: New.  Sixteen planted faults, each
+	caught by the check named for it.
+	* tests/run.sh: three new steps, each with a planted fault: the
+	patches from 1.5 rebuild the app byte for byte; every postMessage names
+	location.origin; the name is not misspelled in the files 1.8 touched.
+	* patches/topoforge-1.7-to-1.8.patch: New.
+	* README.org, NEWS, AUTHORS, RECIPE.org, REUSE.toml: 1.8, and the
+	naming rule.
+
 2026-10-30  Alfred (for Bryant)  <nathanielfrankford@gmail.com>
 
 	An example drawing: how Gitcha works, in five pages (the whole

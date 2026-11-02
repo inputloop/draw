@@ -35,6 +35,9 @@ byte, except:
 - `index.html` is not copied: the app stays where it was, `www/topoforge/index.html`, unchanged and
   the same bytes (`c6c0fbc0e2ba99fd`). `topoforge/tests/run.sh` and `regen.sh` read it from there
   (`TF_HTML` overrides); those two lines are the only edits.
+  From 2026-11-01 (20:20 and 20:35) the app itself moves forward here too: 1.8 changes it in
+  place, `topoforge/patches/topoforge-1.7-to-1.8.patch` says how, and `topoforge/tests/run.sh`
+  checks that Bryant's 1.5 plus every patch is the app, byte for byte.
 - Left out: `FOR-BRYANT.md` (a letter to Bryant, his to keep), `.github/`, `SHA256SUMS` (it sums
   the app at the old place; `topoforge/kit/project-files/check.py` remakes sums in a scratch tree),
   and Bryant's example drawing `examples/how-gitcha-works.json` with its story (held for Corwin's

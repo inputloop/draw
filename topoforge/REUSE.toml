@@ -27,7 +27,7 @@ SPDX-License-Identifier = "CC-BY-SA-4.0 AND (GPL-3.0-or-later OR LGPL-3.0-or-lat
 # names its own licence) and the story documents among the fixtures.  Listed
 # after the code entry so these win over its tests/** match.
 [[annotations]]
-path = ["tests/browser/RESULT.txt", "tests/fixtures/*.md"]
+path = ["tests/browser/RESULT.txt", "tests/browser/RESULT-embed.txt", "tests/fixtures/*.md"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"

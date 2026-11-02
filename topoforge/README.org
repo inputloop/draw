@@ -1,4 +1,4 @@
-#+TITLE: TopoForge
+#+TITLE: topology forge (formerly TopoForge)
 #+SUBTITLE: A single-file, offline network-topology designer
 #+AUTHOR: Bryant Frankford and Corwin Brust
 #+LANGUAGE: en
@@ -19,6 +19,13 @@ browser as you go.
 TopoForge was created by Bryant Frankford, written with Alfred (for Bryant;
 claude-opus-5-5), for Corwin Brust, who gave inputs to the prompt.
 
+The name: from 2026-11-01 the project is *topology forge (formerly TopoForge)*, part of
+topology (branch =corwin=), where its work goes on.  Bryant Frankford made it and is named first.
+Say "topology forge (formerly TopoForge)" in our own text (READMEs, NEWS, ChangeLog, documents,
+the app's About box).  Do not rename what saved drawings and embedding pages rely on:
+=window.TopoForge=, the TopoForge JSON format, storage keys (=topoforge.*=), file names, and the
+brand and title a visitor sees in the app itself.
+
 * Open it
 Open =index.html= in a web browser: double-click it, or drag it onto a browser
 window.  It works from =file://=, offline.  Use File › Export to keep copies
@@ -38,6 +45,16 @@ of your work outside the browser.
 - New in 1.7: a page on the same origin can open a drawing with
   =?load=<path>= (a CSV or TopoForge JSON); any other origin, and =file://=, is
   refused and said; =window.TopoForge.importCSV= for the kit.
+- New in 1.8: switches a page that embeds the app may turn on, all off when it
+  is opened on its own (=?embed=frameless,props,shapes,pages,select,ready= or
+  =TopoForge.embed({...})=): no frame, Properties and Shapes as floating
+  panels, the page tabs folded into the overview map, a selection hook and a
+  ready event (to a parent page of the same origin only), and every menu
+  command by id (=TopoForge.commands()=, =TopoForge.run(id)=); each piece of
+  the chrome can be hidden (=hide-menus=, =hide-tools=, =hide-shapes=,
+  =hide-props=, =hide-pages=, or =bare= for all), and =TopoForge.shapes()= and
+  =TopoForge.place(id)= let the page offer the shapes itself.  =spec/EMBED-v1.md=
+  says it all; =tests/browser/embed.browser.mjs= checks it.
 
 * Accessibility
 We want TopoForge usable without a mouse, without colour, and without seeing

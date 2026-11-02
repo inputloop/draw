@@ -1,5 +1,21 @@
 2026-11-01  Corwin Brust  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.8 in www/topoforge/, built here
+	now that the TopoForge project is folded into this branch (Corwin,
+	2026-11-01 20:20 and 20:35; the spelling of the name, 20:51).  The
+	embedding switches corwin.cloud's docs/NAV.md proposed; the new name
+	in our text, Bryant Frankford first.  topoforge/ChangeLog has the
+	detail.
+	* www/topoforge/index.html: 1.8.
+	* topoforge/: the 1.8 patch, spec/EMBED-v1.md, the embedding browser
+	kit and its planted faults, three new steps in tests/run.sh, and the
+	documents.
+	* README.org: a section on the app and the naming rule; two rows.
+	* RECIPE.org: the ingredients row for the app, 1.8, and its sha256.
+	* NEWS: 1.8.
+
+2026-11-01  Corwin Brust  <corwin@bru.st>
+
 	TopoForge's own kits come forward into this branch, so work on
 	TopoForge can go on here (Corwin, 2026-11-01 18:31).
 

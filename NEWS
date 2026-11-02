@@ -5,6 +5,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- The drawing app is topology forge (formerly TopoForge), 1.8, made by
+  Bryant Frankford; its work now goes on here.  README.org says how it is
+  named.  New in 1.8: switches a page that embeds it may turn on (no frame,
+  floating Properties and Shapes, page tabs in the overview map, a
+  selection hook and a ready event, same origin only), all off when the app
+  is opened on its own, which looks as 1.7 did.  See topoforge/NEWS.
+
 - TopoForge's own test kits, story spec, project files and recipe now live
   in topoforge/, and sh bin/test.sh runs them against the app in
   www/topoforge/ (unchanged).

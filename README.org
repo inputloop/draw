@@ -13,6 +13,20 @@ The browser app works with no server at all ("Zero Sharing": everything
 stays in your browser).  With a server, every feature can be switched off,
 down to just the app's files on disk.
 
+* The drawing app: topology forge (formerly TopoForge)
+
+The drawing app in =www/topoforge/= is *topology forge (formerly TopoForge)*.  Bryant
+Frankford made it, for Corwin; he is named first, here and on everything that grows from it.  Its
+work goes on in this branch (Corwin, 2026-11-01): what was the TopoForge project is folded in here,
+and =topoforge/= carries its kits, specs and recipe.
+
+The naming rule: in our own text (READMEs, NEWS, ChangeLog, documents, the app's About box) say
+"topology forge (formerly TopoForge)".  Do not rename what saved drawings and pages that embed the
+app rely on: =window.TopoForge=, the TopoForge JSON format, the =topoforge.*= storage keys, file
+names, and the brand and title in the app, which a visitor opening it on its own sees.  From 1.8 a
+page may embed it with switches (no frame, floating panels, page tabs in the overview map, a
+selection hook, a ready event): =topoforge/spec/EMBED-v1.md=.
+
 * This branch
 
 This is the =corwin= branch: one of several versions being made from the
@@ -31,8 +45,8 @@ own, see [[file:context/FOR-OTHERS.md][context/FOR-OTHERS.md]].
 * Where things are
 
 | =RECIPE.org=            | the source of =bin/=, =debian/= and =etc/=; tangle it to rebuild them  |
-| =www/=                  | the front door, the app, TopoForge 1.7 (unchanged)                     |
-| =topoforge/=            | TopoForge's own kits: tests, story spec, project files, recipe, patches from 1.5 |
+| =www/=                  | the front door, the app, topology forge (formerly TopoForge) 1.8       |
+| =topoforge/=            | topology forge's own kits: tests, story and embedding specs, project files, recipe, patches from 1.5 |
 | =www/css/egad.css=      | egad's colours and type, the default palette (see below)               |
 | =examples/inputloop/=   | the shop drawn: hosts, projects, tools, paths, people (37 files)        |
 | =AGENTS.md=             | who commits, where work lands, what to run before a push               |

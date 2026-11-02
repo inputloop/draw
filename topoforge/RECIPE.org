@@ -1,4 +1,4 @@
-#+TITLE: TopoForge: the recipe
+#+TITLE: topology forge (formerly TopoForge): the recipe
 #+SUBTITLE: How this copy of TopoForge is checked, tested and shipped
 #+AUTHOR: Bryant Frankford and Corwin Brust
 #+LANGUAGE: en
@@ -33,7 +33,7 @@ on 2026-10-27.  Where a step is not built yet, it says so.
 | file                          | what it is                                   | sha256                                                             |
 |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
 | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
-| =index.html=                  | v1.7: Bryant's v1.5 plus our changes (1.6, then 1.7) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, then =patches/topoforge-1.6-to-1.7.patch=, turn v1.5 into it byte for byte |
+| =index.html=                  | v1.8: Bryant's v1.5 plus our changes (1.6, 1.7, then 1.8) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =patches/topoforge-1.6-to-1.7.patch=, then =patches/topoforge-1.7-to-1.8.patch= turn v1.5 into it byte for byte (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
 | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
 | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
 | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
@@ -41,6 +41,8 @@ on 2026-10-27.  Where a step is not built yet, it says so.
 | =COPYING.LESSER=              | same bytes as the LGPL text above            | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
 
 1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
+
+1.8 (2026-11-01): topology forge (formerly TopoForge); the embedding switches, all off when the app is opened on its own (=spec/EMBED-v1.md=).
 
 The licence texts were copied (not moved) from Bryant's Tavern-Setup-2.3.1
 =LICENSES/= (GPL, LGPL) and from his nexus drop of 2026-10-05 (CC BY-SA); the
@@ -55,7 +57,9 @@ Also in a release, so an unpacked copy can test itself:
   prove-red cases, and =tests/browser/=, the real-browser kit with the
   =RESULT.txt= it writes, and =prove-red.sh=, which plants faults in the
   =?load= code and requires the kit to catch each), and =patches/= (v1.5 to
-  v1.6 and v1.6 to v1.7, each one =diff -u=).
+  v1.6, v1.6 to v1.7 and v1.7 to v1.8, each one =diff -u=).  From 1.8 the
+  embedding kit (=tests/browser/embed.browser.mjs=, writing
+  =RESULT-embed.txt=, with =embed-prove-red.sh=).
 - No release has been cut from this tree yet.  =dist/= does not exist yet.
 
 * Tangle
@@ -289,7 +293,7 @@ Not run yet; no release has been cut from this tree.  The order, when it is
 (an unpacked release can repeat steps 2 and 3 on itself):
 
 1. =index.html= is final for the version, its About box names that version
-   (1.7 does, from =TF_VERSION=), and
+   (1.8 does, from =TF_VERSION=), and
    =NEWS= and =ChangeLog= say what changed.
 2. =sh bin/verify.sh= exits 0.
 3. =sh bin/test.sh= exits 0.  Exit 2 (a kit missing) is not good enough.

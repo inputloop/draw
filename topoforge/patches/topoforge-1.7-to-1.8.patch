@@ -1,0 +1,1204 @@
+--- topoforge-1.7/AUTHORS
++++ topoforge-1.8/AUTHORS
+@@ -1,4 +1,4 @@
+-TopoForge -- authors and makers
++topology forge (formerly TopoForge) -- authors and makers
+ 
+ Bryant Frankford <nathanielfrankford@gmail.com>   creator of TopoForge
+ Corwin Brust <corwin@bru.st>                      inputs to the prompt; project
+@@ -9,7 +9,8 @@
+   Mentat (for Corwin; claude-opus-5-5)    our changes: the project files, the
+                                           recipe and its scripts, 1.6, the
+                                           browser kit, and accessibility
+-                                          fixes (some to parts from 1.5)
++                                          fixes (some to parts from 1.5);
++                                          1.8, the embedding switches
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.7/ChangeLog
++++ topoforge-1.8/ChangeLog
+@@ -1,3 +1,50 @@
++2026-11-01  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
++	topology forge (formerly TopoForge) 1.8: switches a page that embeds
++	the app may turn on, all off when it is opened on its own; the new
++	name in our own text, Bryant Frankford first.  From corwin.cloud's
++	docs/NAV.md, revision 2, "The TopoForge-side changes, proposed", built
++	once Corwin moved the work here (2026-11-01, 20:20 and 20:35; the
++	name's spelling, 20:51: "topology is the correct name").
++	* index.html (TF_VERSION): 1.8.  (header comment): the 1.8 lines.
++	(#app): the side columns' widths read --tf-cl and --tf-cr, which only
++	a floating panel sets; with neither set they are 1.7's widths.
++	(#app): the rows' heights read --tf-rt and --tf-rb the same way.
++	(1.8 CSS): rules for the switches, including the hide- words, each hung on a class or an element
++	that only the switch code adds.
++	(buildPages): the current page's tab says aria-current="page"; with
++	the tabs in the overview box, it is scrolled into view.
++	(renderOverlay): calls tellSelection, which does nothing unless the
++	select switch is on.
++	(loadFromQuery): returns what it loaded and whether it worked.
++	(boot): applies ?embed= when it names a switch; marks the app ready
++	after any ?load=.
++	(showAbout): the new name, and "Made by Bryant Frankford, with Corwin
++	Brust and contributors."
++	(Embedding): New.  embed, tell, selectionInfo, tellSelection,
++	markReady, showPage, shapes, place and placing, commands and runCommand (every menu command,
++	read from MENUS each time), floatPanel (the grip row: drag, arrow keys, the
++	Move menu, Hide and Show; places under topoforge.ui.v1), pagesInMap,
++	panels.
++	(window.TopoForge): version, embed, selection, ready, showPage,
++	panels, commands, run.
++	(fitView, fitInsets): with Shapes or Properties floating, the
++	drawing is fitted into the room they leave; with neither, as before.
++	* spec/EMBED-v1.md: New.  What an embedding page may ask for and what
++	the app promises, each promise naming its check.
++	* tests/browser/embed.browser.mjs: New.  The spec in Chromium: 1.8
++	standalone against 1.7 rebuilt from upstream/ and patches/, pixel for
++	pixel; every switch; keyboard and one-pointer moves; same-origin only;
++	the About box; axe-core with every switch on, light and dark.
++	* tests/browser/embed-prove-red.sh: New.  Sixteen planted faults, each
++	caught by the check named for it.
++	* tests/run.sh: three new steps, each with a planted fault: the
++	patches from 1.5 rebuild the app byte for byte; every postMessage names
++	location.origin; the name is not misspelled in the files 1.8 touched.
++	* patches/topoforge-1.7-to-1.8.patch: New.
++	* README.org, NEWS, AUTHORS, RECIPE.org, REUSE.toml: 1.8, and the
++	naming rule.
++
+ 2026-10-30  Alfred (for Bryant)  <nathanielfrankford@gmail.com>
+ 
+ 	An example drawing: how Gitcha works, in five pages (the whole
+--- topoforge-1.7/NEWS
++++ topoforge-1.8/NEWS
+@@ -1,9 +1,53 @@
+-TopoForge NEWS -- user-visible changes
++topology forge (formerly TopoForge) NEWS -- user-visible changes
+ 
+ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.8 (2026-11-01; built and checked: tests/run.sh, the project-files
++check, the browser kit and the new embedding kit green; see RESULT.txt and
++RESULT-embed.txt in tests/browser/; no release packed or signed yet)
++
++- The name: topology forge (formerly TopoForge), made by Bryant Frankford,
++  with Corwin Brust and contributors.  Its work now goes on in topology,
++  branch corwin.  Our own text says the new name; what saved drawings and
++  embedding pages rely on keeps the old one (window.TopoForge, the TopoForge
++  JSON format, the topoforge.* storage keys), and so do the brand and the
++  title in the app, which a visitor opening it on its own still sees.  The
++  About box says the new name and Bryant first.
++- Opened on its own, the app looks and works exactly as 1.7 did (the
++  embedding kit compares the two, pixel for pixel, at three widths, in both
++  themes).  A page that embeds it may now ask, with ?embed=... or
++  TopoForge.embed({...}), for:
++  - frameless: no brand, no document name, no rules between the areas;
++  - props and shapes: Properties and Shapes float over the drawing,
++    starting at its right and its left.  Each has a grip row: drag it, or
++    use the arrow keys on it, or its Move menu (no dragging needed), and
++    Hide or Show.  Places are kept in this browser.  Narrower than 861
++    pixels nothing floats;
++  - pages: the page tabs, a Pages list and the status line join the
++    overview map in one floating box, and the bottom bar goes;
++  - select: the app tells the page what is selected (name, tooltip, kind,
++    page) and when the page changes;
++  - ready: the app tells the page when the drawing named by ?load= is open;
++  - hide-menus, hide-tools, hide-shapes, hide-props, hide-pages: each piece
++    of the app's own chrome hidden separately (bare hides them all), so
++    the page can draw its own;
++  The last two reach a parent page of the app's own origin only, never any
++  other.  spec/EMBED-v1.md is the whole of it.
++- New calls for an embedding page: TopoForge.version, .selection, .ready
++  (a promise), .showPage(name or index), .panels(), and .commands() with
++  .run(id): every command in the menus, by id, label, shortcut and whether
++  it is enabled, so a page that hides the app's chrome can offer them all
++  from its own prompt; .shapes(), the palette's catalogue with its
++  pictures; and .place(id), to place a shape as the palette would (in the
++  middle, at a point, or armed: the next press on the drawing drops it).
++- Found, not changed: the green "done" message that appears for a few
++  seconds after a drawing is opened is white on green at 3.3 to 1, under
++  the 4.5 to 1 that WCAG AA asks.  It is as it was in 1.7, so a visitor
++  opening the app on its own sees the same thing; changing its colour is
++  for Bryant and Corwin to choose.
++
+ Version 1.7 (2026-10-27; built and checked: tests/run.sh and the project-files
+ check green, the browser kit 41 of 41 in Chromium 153 with axe-core 4.14 and no
+ axe finding of any level; no release packed or signed yet)
+--- topoforge-1.7/README.org
++++ topoforge-1.8/README.org
+@@ -1,4 +1,4 @@
+-#+TITLE: TopoForge
++#+TITLE: topology forge (formerly TopoForge)
+ #+SUBTITLE: A single-file, offline network-topology designer
+ #+AUTHOR: Bryant Frankford and Corwin Brust
+ #+LANGUAGE: en
+@@ -19,6 +19,13 @@
+ TopoForge was created by Bryant Frankford, written with Alfred (for Bryant;
+ claude-opus-5-5), for Corwin Brust, who gave inputs to the prompt.
+ 
++The name: from 2026-11-01 the project is *topology forge (formerly TopoForge)*, part of
++topology (branch =corwin=), where its work goes on.  Bryant Frankford made it and is named first.
++Say "topology forge (formerly TopoForge)" in our own text (READMEs, NEWS, ChangeLog, documents,
++the app's About box).  Do not rename what saved drawings and embedding pages rely on:
++=window.TopoForge=, the TopoForge JSON format, storage keys (=topoforge.*=), file names, and the
++brand and title a visitor sees in the app itself.
++
+ * Open it
+ Open =index.html= in a web browser: double-click it, or drag it onto a browser
+ window.  It works from =file://=, offline.  Use File › Export to keep copies
+@@ -38,6 +45,16 @@
+ - New in 1.7: a page on the same origin can open a drawing with
+   =?load=<path>= (a CSV or TopoForge JSON); any other origin, and =file://=, is
+   refused and said; =window.TopoForge.importCSV= for the kit.
++- New in 1.8: switches a page that embeds the app may turn on, all off when it
++  is opened on its own (=?embed=frameless,props,shapes,pages,select,ready= or
++  =TopoForge.embed({...})=): no frame, Properties and Shapes as floating
++  panels, the page tabs folded into the overview map, a selection hook and a
++  ready event (to a parent page of the same origin only), and every menu
++  command by id (=TopoForge.commands()=, =TopoForge.run(id)=); each piece of
++  the chrome can be hidden (=hide-menus=, =hide-tools=, =hide-shapes=,
++  =hide-props=, =hide-pages=, or =bare= for all), and =TopoForge.shapes()= and
++  =TopoForge.place(id)= let the page offer the shapes itself.  =spec/EMBED-v1.md=
++  says it all; =tests/browser/embed.browser.mjs= checks it.
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+--- topoforge-1.7/RECIPE.org
++++ topoforge-1.8/RECIPE.org
+@@ -1,4 +1,4 @@
+-#+TITLE: TopoForge: the recipe
++#+TITLE: topology forge (formerly TopoForge): the recipe
+ #+SUBTITLE: How this copy of TopoForge is checked, tested and shipped
+ #+AUTHOR: Bryant Frankford and Corwin Brust
+ #+LANGUAGE: en
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.7: Bryant's v1.5 plus our changes (1.6, then 1.7) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, then =patches/topoforge-1.6-to-1.7.patch=, turn v1.5 into it byte for byte |
++| =index.html=                  | v1.8: Bryant's v1.5 plus our changes (1.6, 1.7, then 1.8) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =patches/topoforge-1.6-to-1.7.patch=, then =patches/topoforge-1.7-to-1.8.patch= turn v1.5 into it byte for byte (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+@@ -42,6 +42,8 @@
+ 
+ 1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
+ 
++1.8 (2026-11-01): topology forge (formerly TopoForge); the embedding switches, all off when the app is opened on its own (=spec/EMBED-v1.md=).
++
+ The licence texts were copied (not moved) from Bryant's Tavern-Setup-2.3.1
+ =LICENSES/= (GPL, LGPL) and from his nexus drop of 2026-10-05 (CC BY-SA); the
+ GPL and LGPL copies in both places are byte-equal.
+@@ -55,7 +57,9 @@
+   prove-red cases, and =tests/browser/=, the real-browser kit with the
+   =RESULT.txt= it writes, and =prove-red.sh=, which plants faults in the
+   =?load= code and requires the kit to catch each), and =patches/= (v1.5 to
+-  v1.6 and v1.6 to v1.7, each one =diff -u=).
++  v1.6, v1.6 to v1.7 and v1.7 to v1.8, each one =diff -u=).  From 1.8 the
++  embedding kit (=tests/browser/embed.browser.mjs=, writing
++  =RESULT-embed.txt=, with =embed-prove-red.sh=).
+ - No release has been cut from this tree yet.  =dist/= does not exist yet.
+ 
+ * Tangle
+@@ -289,7 +293,7 @@
+ (an unpacked release can repeat steps 2 and 3 on itself):
+ 
+ 1. =index.html= is final for the version, its About box names that version
+-   (1.7 does, from =TF_VERSION=), and
++   (1.8 does, from =TF_VERSION=), and
+    =NEWS= and =ChangeLog= say what changed.
+ 2. =sh bin/verify.sh= exits 0.
+ 3. =sh bin/test.sh= exits 0.  Exit 2 (a kit missing) is not good enough.
+--- topoforge-1.7/REUSE.toml
++++ topoforge-1.8/REUSE.toml
+@@ -27,7 +27,7 @@
+ # names its own licence) and the story documents among the fixtures.  Listed
+ # after the code entry so these win over its tests/** match.
+ [[annotations]]
+-path = ["tests/browser/RESULT.txt", "tests/fixtures/*.md"]
++path = ["tests/browser/RESULT.txt", "tests/browser/RESULT-embed.txt", "tests/fixtures/*.md"]
+ precedence = "aggregate"
+ SPDX-FileCopyrightText = "2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors"
+ SPDX-License-Identifier = "CC-BY-SA-4.0"
+--- topoforge-1.7/index.html
++++ topoforge-1.8/index.html
+@@ -6,6 +6,10 @@
+   Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5)
+   1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
+   ?load= by Mentat (for Corwin; claude-sonnet-5-5)
++  1.8: topology forge (formerly TopoForge). Switches an embedding page turns on, all off when the app is opened on its own:
++  ?embed=frameless,props,shapes,pages,select,ready (or TopoForge.embed({...})): no frame, floating Properties and Shapes,
++  the page tabs in the overview map, a selection hook and a ready event (both to this window, and to a parent page of this
++  origin only). Embedding switches by Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -48,7 +52,7 @@
+ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+ button,input,select,textarea{font:inherit;color:inherit}
+ button{cursor:pointer}
+-#app{display:grid;grid-template-columns:236px minmax(0,1fr) 296px;grid-template-rows:46px minmax(0,1fr) 30px;height:100vh;height:100dvh}
++#app{display:grid;grid-template-columns:var(--tf-cl,236px) minmax(0,1fr) var(--tf-cr,296px);grid-template-rows:var(--tf-rt,46px) minmax(0,1fr) var(--tf-rb,30px);height:100vh;height:100dvh}
+ #topbar{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--border);min-width:0}
+ .brand{display:flex;align-items:center;gap:8px;font-weight:650;letter-spacing:.2px;margin:0 6px 0 0;font-size:inherit;white-space:nowrap}
+ .brand svg{width:22px;height:22px}
+@@ -212,7 +216,7 @@
+ 
+ .mobile-only{display:none}
+ @media (max-width:1100px){
+-  #app{grid-template-columns:200px minmax(0,1fr) 270px}
++  #app{grid-template-columns:var(--tf-cl,200px) minmax(0,1fr) var(--tf-cr,270px)}
+   .brand span{display:none}
+ }
+ @media (max-width:860px){
+@@ -227,6 +231,53 @@
+   .toolgroup.zoom,#status .opt{display:none}
+   #minimap{display:none}
+ }
++/* 1.8: the embedding switches. Nothing here applies until a page asks (?embed=..., or
++   TopoForge.embed({...})): each rule hangs on a class or an element that only the switch code adds. */
++body.tf-frameless .brand{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
++body.tf-frameless #docName{display:none}
++body.tf-frameless #topbar{border-bottom-color:transparent}
++body.tf-frameless #palette{border-right-color:transparent}
++body.tf-frameless #side{border-left-color:transparent}
++body.tf-frameless #bottombar{border-top-color:transparent}
++.fl-bar{display:none;align-items:center;gap:2px;padding:3px 4px;border-bottom:1px solid var(--border);background:var(--panel-2)}
++.fl-grip{display:flex;align-items:center;gap:6px;flex:1;min-width:0;text-align:left;border:0;background:none;padding:4px 6px;border-radius:5px;color:var(--text-2);font-weight:600;cursor:grab;touch-action:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++.fl-grip:active{cursor:grabbing}
++.fl-bar .fl-btn,.fl-bar .menu-btn{border:0;background:none;padding:4px 8px;border-radius:5px;color:var(--text-2);font-size:12px}
++.fl-grip:hover,.fl-bar .fl-btn:hover,.fl-bar .menu-btn.open{background:var(--hover);color:var(--text)}
++.fl-grip:focus-visible,.fl-bar .fl-btn:focus-visible,#mapbox .mp-list:focus-visible,#mapbox .ptab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
++body.tf-pages #bottombar{display:none}
++body.tf-pages{--tf-rb:0px}
++#mapbox{display:none}
++body.tf-pages #mapbox{display:flex;flex-direction:column;position:absolute;left:8px;right:8px;bottom:8px;z-index:6;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;min-width:0}
++#mapbox #minimap{position:static;width:auto;height:130px;border:0;border-radius:0;box-shadow:none;border-bottom:1px solid var(--border)}
++#mapbox .mp-pages{display:flex;align-items:stretch;min-height:32px;min-width:0}
++#mapbox #pagetabs{flex:1}
++#mapbox .mp-list{border:0;border-right:1px solid var(--border);border-radius:0;background:none;color:var(--text-2);padding:0 10px;font-size:12.5px;white-space:nowrap}
++#mapbox .mp-list:hover,#mapbox .mp-list.open{background:var(--hover);color:var(--text)}
++#mapbox #status{padding:4px 10px;border-top:1px solid var(--border);flex-wrap:wrap;gap:4px 10px}
++/* the hide switches: each piece of the app's own chrome, separately; hiding beats floating */
++body.tf-hide-menus #menubar,body.tf-hide-tools #topbar .toolgroup,body.tf-hide-tools #btnTheme,body.tf-hide-tools #topbar .tb-sep{display:none}
++body.tf-hide-top{--tf-rt:0px} body.tf-hide-top #topbar{display:none}
++body.tf-hide-pages{--tf-rb:0px} body.tf-hide-pages #bottombar,body.tf-hide-pages #mapbox{display:none}
++body.tf-hide-shapes{--tf-cl:0px} body.tf-hide-shapes #palette,body.tf-hide-shapes #btnPal{display:none}
++body.tf-hide-props{--tf-cr:0px} body.tf-hide-props #side,body.tf-hide-props #btnSide{display:none}
++body.tf-hide-shapes #stage,body.tf-hide-props #stage{grid-row:2;grid-column:2}
++body.tf-hide-shapes #side{grid-row:2;grid-column:3}
++body.tf-hide-props #palette{grid-row:2;grid-column:1}
++@media (max-width:860px){body.tf-hide-shapes #stage,body.tf-hide-props #stage,body.tf-hide-shapes #side,body.tf-hide-props #palette{grid-column:1}}
++body.tf-placing #canvas{cursor:crosshair}
++@media (min-width:861px){
++  body.tf-fl-shapes{--tf-cl:0px}
++  body.tf-fl-props{--tf-cr:0px}
++  body.tf-fl-shapes #stage,body.tf-fl-props #stage{grid-row:2;grid-column:2}
++  body.tf-fl-shapes #side{grid-row:2;grid-column:3}
++  body.tf-fl-props #palette{grid-row:2;grid-column:1}
++  body.tf-fl-shapes #palette,body.tf-fl-props #side,body.tf-pages #mapbox{position:fixed;left:var(--fx,12px);top:var(--fy,58px);right:auto;bottom:auto;width:var(--fw,240px);z-index:20;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
++  body.tf-fl-shapes #palette,body.tf-fl-props #side{height:var(--fh,60vh)}
++  body.tf-fl-shapes #palette>.fl-bar,body.tf-fl-props #side>.fl-bar,body.tf-pages #mapbox>.fl-bar{display:flex}
++  body.tf-fl-shapes #palette.fl-hidden,body.tf-fl-props #side.fl-hidden{height:auto}
++  body.tf-fl-shapes #palette.fl-hidden>:not(.fl-bar),body.tf-fl-props #side.fl-hidden>:not(.fl-bar),body.tf-pages #mapbox.fl-hidden>:not(.fl-bar){display:none}
++}
+ @media print{body *{visibility:hidden}}
+ 
+ </style>
+@@ -308,7 +359,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.7';
++const TF_VERSION = '1.8';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -1434,8 +1485,19 @@
+ function fitView(pad = 50) {
+   const r = svgEl().getBoundingClientRect(); const b = boundsOf(P().nodes.filter(visible), P().links.filter(visible));
+   if (b.empty || r.width < 10) { S.view = { x: 60, y: 60, k: 1 }; applyView(); return; }
+-  const k = clamp(Math.min((r.width - pad * 2) / (b.w || 1), (r.height - pad * 2) / (b.h || 1)), 0.08, 1.25);
+-  S.view = { k, x: (r.width - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k }; applyView();
++  const fi = fitInsets(r), W = r.width - fi.l - fi.r;   // 1.8: room the floating panels leave (none unless a switch floats one)
++  const k = clamp(Math.min((W - pad * 2) / (b.w || 1), (r.height - pad * 2) / (b.h || 1)), 0.08, 1.25);
++  S.view = { k, x: fi.l + (W - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k }; applyView();
++}
++// 1.8: what the floating Shapes and Properties panels cover of the canvas's left and right; zero unless one floats
++function fitInsets(r) {
++  const o = { l: 0, r: 0 };
++  for (const f of Object.values(FL)) {
++    if (f.name === 'map' || !f.on || f.hidden || !flWide()) continue;
++    const b = f.el.getBoundingClientRect(); if (b.right <= r.left || b.left >= r.right) continue;
++    if (b.left + b.width / 2 < r.left + r.width / 2) o.l = Math.max(o.l, b.right - r.left); else o.r = Math.max(o.r, r.right - b.left);
++  }
++  return o.l + o.r > r.width * 0.6 ? { l: 0, r: 0 } : o;
+ }
+ 
+ /* ---------- render pipeline ---------- */
+@@ -1486,6 +1548,7 @@
+   if (S.marquee) { const m = S.marquee; const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1); s += `<rect x="${rnd(x)}" y="${rnd(y)}" width="${rnd(Math.abs(m.x1 - m.x0))}" height="${rnd(Math.abs(m.y1 - m.y0))}" fill="${c}" fill-opacity=".08" stroke="${c}" stroke-width="${rnd(1 / k, 3)}" stroke-dasharray="${rnd(4 / k)} ${rnd(3 / k)}"/>`; }
+   for (const gl of S.guides) s += `<path d="M${rnd(gl.x1)} ${rnd(gl.y1)}L${rnd(gl.x2)} ${rnd(gl.y2)}" stroke="#ec4899" stroke-width="${rnd(1 / k, 3)}" fill="none"/>`;
+   $('#overlay').innerHTML = s;
++  tellSelection();
+ }
+ 
+ /* ---------- hit testing ---------- */
+@@ -2607,7 +2670,8 @@
+ /* ---------- pages ---------- */
+ function buildPages() {
+   const el = $('#pagetabs');
+-  el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}" title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
++  el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}"${i === DOC.cur ? ' aria-current="page"' : ''} title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
++  if (MAP) mapShowActive();
+ }
+ function switchPage(i) { if (S.editing) commitEdit(); DOC.cur = clamp(i, 0, DOC.pages.length - 1); S.sel.clear(); S.hover = null; reindex(); buildPages(); render(); refreshPanels(true); fitView(); scheduleSave(); }
+ function initPages() {
+@@ -2805,7 +2869,7 @@
+   <li><b>SVG / PNG</b> — current page; <b>PDF</b> — every page as a page; <b>Print</b> gives vector output through the browser’s “Save as PDF”.</li>
+   <li>Legacy binary <b>.vsd</b> and <b>.vdx</b> are not supported — re-save them as .vsdx in Visio.</li></ul>` });
+ }
+-function showAbout() { modal({ title: 'TopoForge', body: `<p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
++function showAbout() { modal({ title: 'topology forge (formerly TopoForge)', body: `<p>Made by Bryant Frankford, with Corwin Brust and contributors.</p><p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
+ 
+ /* ---------- minimap ---------- */
+ let _mmTimer = null, MM = null;
+@@ -3993,19 +4057,262 @@
+   if (saved && P().nodes.length) setTimeout(fitView, 0);
+   else if (!saved && !new URLSearchParams(location.search).get('load')) setTimeout(() => { loadSample(); H.undo.length = 0; updateUndoButtons(); }, 0);
+   window.addEventListener('beforeunload', saveNow);
+-  loadFromQuery();
++  const ew = embedWordsFromQuery(); if (Object.keys(ew).length) embed(ew);   // 1.8: nothing changes unless ?embed= names a switch
++  loadFromQuery().then(r => setTimeout(() => markReady(r), 0));
+ }
+ // ?load=<path>: open a CSV or TopoForge JSON the serving page points at. Same origin only; anything else is refused and said.
+ async function loadFromQuery() {
+-  const q = new URLSearchParams(location.search).get('load'); if (!q) return;
+-  let u; try { u = new URL(q, location.href); } catch (e) { toast('load: not a URL', 'error'); return; }
+-  if (location.protocol === 'file:' || u.origin !== location.origin) { toast(`load refused: ${u.origin} is not this page's origin`, 'error'); return; }
++  const q = new URLSearchParams(location.search).get('load'); if (!q) return { loaded: null, ok: true, error: null };
++  let u; try { u = new URL(q, location.href); } catch (e) { toast('load: not a URL', 'error'); return { loaded: q, ok: false, error: 'not a URL' }; }
++  if (location.protocol === 'file:' || u.origin !== location.origin) { toast(`load refused: ${u.origin} is not this page's origin`, 'error'); return { loaded: q, ok: false, error: 'refused' }; }
+   try { const r = await fetch(u, { credentials: 'same-origin' }); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+     const text = await r.text();
+-    if (/^\s*(name|hostname)\s*,/i.test(text)) importCSV(text); else { DOC = normalizeDoc(JSON.parse(text)); reindex(); buildPages(); render(); refreshPanels(true); toast(`Loaded ${u.pathname}`, 'ok'); } } catch (e) { toast(`load failed: ${e.message}`, 'error'); }
++    if (/^\s*(name|hostname)\s*,/i.test(text)) importCSV(text); else { DOC = normalizeDoc(JSON.parse(text)); reindex(); buildPages(); render(); refreshPanels(true); toast(`Loaded ${u.pathname}`, 'ok'); } } catch (e) { toast(`load failed: ${e.message}`, 'error'); return { loaded: q, ok: false, error: e.message }; }
++  return { loaded: q, ok: true, error: null };
++}
++/* ============================================================
++   Embedding (1.8): switches a page that embeds topology forge (formerly TopoForge) turns on.
++   Opened on its own, nothing here changes the page: every switch is off until ?embed= names it
++   (?embed=frameless,props,shapes,pages,select,ready, or ?embed=all) or TopoForge.embed({...}) is
++   called. The selection hook and the ready event go to this window, and to a parent page only when
++   it is of this page's own origin (postMessage names location.origin; the browser drops the message
++   for any other, and nothing is posted from file://).
++   ============================================================ */
++const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
++const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
++const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
++const UI_KEY = 'topoforge.ui.v1', FL_STEP = 16, FL_BIG = 64, FL = {};
++let MAP = null, _selKey = null, _readyDetail = null, _readyTold = false, _readyResolve;
++const READY = new Promise(res => { _readyResolve = res; });
++function embedWordsFromQuery() {
++  const q = new URLSearchParams(location.search).get('embed'), o = {};
++  // 'all' turns on every switch that keeps the chrome (frameless, floating, pages, select, ready); 'bare' hides every piece of it
++  if (q) for (const w of q.toLowerCase().split(/[\s,+]+/)) { if (w === 'all') EMBED_WORDS.filter(k => !k.startsWith('hide-')).forEach(k => { o[k] = true; }); else if (w === 'bare') HIDE_ALL.forEach(k => { o[k] = true; }); else if (EMBED_WORDS.includes(w)) o[w] = true; }
++  return o;
++}
++function embed(opts) {
++  const was = { ...EMBED };
++  if (opts && typeof opts === 'object') {
++    if ('chrome' in opts && !('frameless' in opts)) opts = { ...opts, frameless: !opts.chrome };
++    for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
++  }
++  document.body.classList.toggle('tf-frameless', EMBED.frameless);
++  for (const k of EMBED_WORDS) if (k.startsWith('hide-')) document.body.classList.toggle('tf-' + k, EMBED[k]);
++  document.body.classList.toggle('tf-hide-top', EMBED['hide-menus'] && EMBED['hide-tools']);
++  pagesInMap(EMBED.pages);
++  for (const n of ['shapes', 'props']) { if (EMBED[n]) floatPanel(n); if (FL[n]) FL[n].turn(EMBED[n]); }
++  if (EMBED.select && !was.select) { _selKey = null; tellSelection(); }
++  if (!EMBED.ready) _readyTold = false; else if (_readyDetail && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
++  return { ...EMBED };
++}
++function tell(type, detail) {
++  try { window.dispatchEvent(new CustomEvent(type, { detail })); } catch (e) { }
++  if (window.parent !== window && location.origin && location.origin !== 'null') {
++    try { window.parent.postMessage({ type, detail }, location.origin); } catch (e) { }
++  }
++}
++function selectionInfo() {
++  const items = [...S.sel].map(id => {
++    const n = N(id), x = n || LK(id); if (!x) return null;
++    const d = x.data || {}, pr = x.props || {};
++    const name = String(x.text || '').split('\n')[0].trim() || (n ? (SHAPES[n.type] || {}).name || n.type : 'link');
++    return { id, ref: String(d.tf_ref || ''), name, tooltip: String(d.tooltip || d.what || pr.notes || ''), kind: n ? n.type : 'link' };
++  }).filter(Boolean);
++  const first = items[0] || { id: '', ref: '', name: '', tooltip: '', kind: '' };
++  return { ...first, count: items.length, items, page: P().name, pageIndex: DOC.cur };
++}
++function tellSelection() {
++  if (!EMBED.select) return;
++  const key = [...S.sel].join(',') + '|' + DOC.cur + '|' + P().name;
++  if (key === _selKey) return;
++  _selKey = key; tell('topoforge:select', selectionInfo());
++}
++function markReady(r) {
++  _readyDetail = { version: TF_VERSION, name: DOC.name, pages: DOC.pages.map(p => p.name), page: P().name, pageIndex: DOC.cur, loaded: r.loaded, ok: r.ok, error: r.error };
++  _readyResolve(_readyDetail);
++  if (EMBED.ready && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
++}
++function showPage(which) {
++  const i = typeof which === 'number' ? which : DOC.pages.findIndex(p => p.name === which);
++  if (!(i >= 0 && i < DOC.pages.length)) return false;
++  if (i !== DOC.cur) switchPage(i);
++  return true;
++}
++function uiLoad() { try { return JSON.parse(localStorage.getItem(UI_KEY) || '{}') || {}; } catch (e) { return {}; } }
++function uiSave() {
++  const o = uiLoad();
++  for (const f of Object.values(FL)) o[f.name] = { dx: f.dx, dy: f.dy, hidden: f.hidden };
++  try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ }
++}
++const flWide = () => matchMedia('(min-width:861px)').matches;
++function flSay(t) {
++  let l = $('#flLive');
++  if (!l) { l = document.createElement('div'); l.id = 'flLive'; l.className = 'sr-only'; l.setAttribute('role', 'status'); l.setAttribute('aria-live', 'polite'); document.body.appendChild(l); }
++  l.textContent = t;
++}
++// A floating panel: its grip row (drag, arrow keys, a Move menu for one pointer, hide/show), its place
++// kept in this browser. shapes starts at the left, props at the right, map at the bottom right.
++const FL_DEF = {
++  shapes: { el: () => $('#palette'), cls: 'tf-fl-shapes', label: 'Shapes', w: 236, start: st => ({ x: st.left + 12, y: st.top + 12 }) },
++  props: { el: () => $('#side'), cls: 'tf-fl-props', label: 'Properties', w: 296, start: st => ({ x: st.right - 296 - 12, y: st.top + 12 }) },
++  map: { el: () => MAP && MAP.box, cls: null, label: 'Overview', w: 240, start: (st, el) => ({ x: st.right - 240 - 12, y: st.bottom - (el.offsetHeight || 200) - 12 }) },
++};
++function floatPanel(name) {
++  if (FL[name]) return FL[name];
++  const def = FL_DEF[name], el = def.el(); if (!el) return null;
++  const bar = document.createElement('div'); bar.className = 'fl-bar';
++  bar.innerHTML = `<button type="button" class="fl-grip" aria-label="${def.label}: move by dragging, or with the arrow keys (Shift moves further)"><span aria-hidden="true">⠿</span>${def.label}</button>` +
++    `<button type="button" class="menu-btn" data-act="move" aria-haspopup="menu" aria-expanded="false" aria-label="Move ${def.label}">Move</button>` +
++    `<button type="button" class="fl-btn" data-act="hide" aria-expanded="true">Hide</button>`;
++  el.insertBefore(bar, el.firstChild);
++  const grip = bar.querySelector('.fl-grip'), moveB = bar.querySelector('[data-act=move]'), hideB = bar.querySelector('[data-act=hide]');
++  const saved = uiLoad()[name] || {};
++  const f = { name, el, on: false, hidden: !!saved.hidden, dx: Number.isFinite(saved.dx) ? saved.dx : null, dy: Number.isFinite(saved.dy) ? saved.dy : null, x: 0, y: 0 };
++  f.apply = () => {
++    if (def.cls) document.body.classList.toggle(def.cls, f.on);
++    el.classList.toggle('fl-hidden', f.on && f.hidden);
++    hideB.textContent = f.hidden ? 'Show' : 'Hide';
++    hideB.setAttribute('aria-expanded', String(!f.hidden)); hideB.setAttribute('aria-label', (f.hidden ? 'Show ' : 'Hide ') + def.label);
++    if (!f.on || !flWide()) return;
++    const st = $('#stage').getBoundingClientRect();
++    el.style.setProperty('--fw', def.w + 'px');
++    const s0 = def.start(st, el);
++    let x = f.dx === null ? s0.x : st.left + f.dx, y = f.dy === null ? s0.y : st.top + f.dy;
++    x = Math.round(clamp(x, st.left, Math.max(st.left, st.right - Math.min(def.w, st.width))));
++    y = Math.round(clamp(y, st.top, Math.max(st.top, st.bottom - 36)));
++    f.x = x; f.y = y;
++    el.style.setProperty('--fx', x + 'px'); el.style.setProperty('--fy', y + 'px');
++    let bottom = st.bottom - 12;   // Properties stops above the overview box when they share a column
++    if (name === 'props' && FL.map && FL.map.on && !FL.map.hidden) { const m = FL.map.el.getBoundingClientRect(); if (m.left < x + def.w && m.right > x && m.top > y) bottom = Math.min(bottom, m.top - 12); }
++    el.style.setProperty('--fh', Math.round(Math.max(160, bottom - y)) + 'px');
++  };
++  f.where = () => f.hidden ? `${def.label} is hidden to its grip row.` : `${def.label}: ${Math.round(f.x)} pixels from the left, ${Math.round(f.y)} from the top.`;
++  f.place = (x, y) => { const st = $('#stage').getBoundingClientRect(); f.dx = Math.round(x - st.left); f.dy = Math.round(y - st.top); f.apply(); };
++  f.move = (ddx, ddy) => { if (!flWide()) { flSay(`${def.label} does not float on a screen this narrow.`); return; } f.place(f.x + ddx, f.y + ddy); uiSave(); flSay(f.where()); };
++  f.reset = () => { f.dx = f.dy = null; f.apply(); uiSave(); flSay(`${def.label} is back in its starting place.`); };
++  f.toggle = () => { f.hidden = !f.hidden; f.apply(); relayoutFloats(); uiSave(); flSay(f.hidden ? `${def.label} is hidden to its grip row. Show brings it back.` : `${def.label} is shown.`); };
++  f.turn = on => { f.on = !!on; f.apply(); relayoutFloats(); };
++  bar.addEventListener('keydown', e => { e.stopPropagation(); });   // the canvas shortcuts (Delete, arrows, Space) are not for this row
++  grip.addEventListener('keydown', e => {
++    const n = e.shiftKey ? FL_BIG : FL_STEP, d = { ArrowLeft: [-n, 0], ArrowRight: [n, 0], ArrowUp: [0, -n], ArrowDown: [0, n] }[e.key];
++    if (d) { e.preventDefault(); f.move(d[0], d[1]); }
++  });
++  let drag = null;
++  grip.addEventListener('pointerdown', e => { if (e.button > 0 || !f.on || !flWide()) return; drag = { x: e.clientX, y: e.clientY, fx: f.x, fy: f.y, moved: false }; try { grip.setPointerCapture(e.pointerId); } catch (er) { } });
++  grip.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return; drag.moved = true; f.place(drag.fx + dx, drag.fy + dy); });
++  const end = () => { if (!drag) return; const m = drag.moved; drag = null; if (m) { uiSave(); flSay(f.where()); } };
++  grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
++  moveB.addEventListener('click', () => {
++    if (moveB.classList.contains('open')) { closeMenus(); return; }
++    const r = moveB.getBoundingClientRect();
++    openMenuAt([{ header: 'Move ' + def.label }, { label: 'Left', action: () => f.move(-FL_BIG, 0) }, { label: 'Right', action: () => f.move(FL_BIG, 0) },
++      { label: 'Up', action: () => f.move(0, -FL_BIG) }, { label: 'Down', action: () => f.move(0, FL_BIG) }, '-', { label: 'Back to its starting place', action: f.reset }], r.left, r.bottom + 4, moveB);
++  });
++  hideB.addEventListener('click', f.toggle);
++  FL[name] = f;
++  if (Object.keys(FL).length === 1) window.addEventListener('resize', relayoutFloats);
++  return f;
++}
++function relayoutFloats() { for (const n of ['shapes', 'map', 'props']) if (FL[n] && FL[n].on) FL[n].apply(); }
++// The page tabs folded into the overview map: one box with the thumbnail, a strip of page tabs with a
++// Pages button that lists them all, and the status line. Turned off, each goes back where it was.
++function pagesInMap(on) {
++  if (!on && !MAP) return;
++  if (!MAP) {
++    const box = document.createElement('section'); box.id = 'mapbox'; box.setAttribute('aria-label', 'Overview and pages');
++    box.innerHTML = '<div class="mp-pages" role="group" aria-label="Pages"><button type="button" class="mp-list menu-btn" aria-haspopup="menu" aria-expanded="false">Pages</button></div>';
++    $('#stage').appendChild(box);
++    MAP = { box, row: box.querySelector('.mp-pages'), list: box.querySelector('.mp-list'), on: false };
++    MAP.list.addEventListener('click', () => {
++      if (MAP.list.classList.contains('open')) { closeMenus(); return; }
++      const r = MAP.list.getBoundingClientRect();
++      openMenuAt([{ header: 'Pages (' + DOC.pages.length + ')' }, ...DOC.pages.map((p, i) => ({ label: p.name, checked: i === DOC.cur, action: () => showPage(i) }))], r.left, r.bottom, MAP.list);
++    });
++    MAP.box.addEventListener('keydown', e => { if (e.target.closest('.ptab, .mp-list, .fl-bar')) e.stopPropagation(); });
++    floatPanel('map');
++  }
++  if (on === MAP.on) return;
++  MAP.on = on;
++  const mm = $('#minimap'), tabs = $('#pagetabs'), status = $('#status'), bar = MAP.box.querySelector('.fl-bar');
++  if (on) { MAP.box.insertBefore(mm, bar.nextSibling); MAP.row.appendChild(tabs); MAP.box.appendChild(status); }
++  else { $('#stage').insertBefore(mm, MAP.box); $('#bottombar').appendChild(tabs); $('#bottombar').appendChild(status); }
++  document.body.classList.toggle('tf-pages', on);
++  FL.map.turn(on);
++  if (on) { mapShowActive(); scheduleMinimap(); }
++}
++function mapShowActive() {
++  if (!MAP || !MAP.on) return;
++  const t = $('#pagetabs'), a = t.querySelector('.ptab.active'); if (!a) return;
++  if (a.offsetLeft < t.scrollLeft) t.scrollLeft = a.offsetLeft;
++  else if (a.offsetLeft + a.offsetWidth > t.scrollLeft + t.clientWidth) t.scrollLeft = a.offsetLeft + a.offsetWidth - t.clientWidth;
++}
++// The palette's catalogue, for an embedding page that draws its own: every shape the palette offers, by
++// category, in the palette's order, with the same small picture the palette shows (an SVG string).
++function shapes() {
++  return CATS.map(c => ({ id: c.id, label: c.name, shapes: SHAPE_ORDER.filter(k => SHAPES[k].cat === c.id && !SHAPES[k].hidden)
++    .map(k => ({ id: k, label: SHAPES[k].name, category: c.id, kind: SHAPES[k].kind, w: SHAPES[k].w, h: SHAPES[k].h, icon: previewSVG(k) })) })).filter(c => c.shapes.length);
++}
++// Place a shape as the palette would. place(id, 'center') drops it at the middle of the view (a palette
++// click); place(id, { x, y }) at a point in this page's pixels (a drop); place(id) arms it: the next
++// press on the drawing drops it there, Enter drops it in the middle, Escape gives up. An embedding page
++// may also drag with the type text/x-topoforge set to the shape's id, as the palette does.
++let PLACING = null, _placeWired = false;
++function place(id, at) {
++  if (!SHAPES[id]) return false;
++  if (at === 'center') { addShapeCenter(id); return true; }
++  if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) { addShapeAt(id, toWorld({ clientX: at.x, clientY: at.y })); return true; }
++  if (!_placeWired) {
++    _placeWired = true;
++    svgEl().addEventListener('pointerdown', e => {
++      if (!PLACING || e.button > 0) return;
++      e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));
++    }, true);
++    document.addEventListener('keydown', e => {
++      if (!PLACING) return;
++      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); placing(null); flSay('Placing given up.'); }
++      else if (e.key === 'Enter' && !isTyping(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeCenter(k); }
++    }, true);
++  }
++  placing(id); flSay(`Placing ${SHAPES[id].name}: press on the drawing where it goes, Enter for the middle of the view, Escape to give up.`);
++  return true;
++}
++function placing(id) { PLACING = id; document.body.classList.toggle('tf-placing', !!id); }
++
++// Every command in the menus, for an embedding page that hides the app's chrome and offers them from its
++// own prompt: read from MENUS (Bryant's table) each time, so it is never a copy that drifts. An id is
++// menu:group:label in lower case, words joined by '-'; group is the menu's last heading ('' before one).
++function commands() {
++  const slug = t => String(t || '').toLowerCase().replace(/[…]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
++  const out = [];
++  for (const m of Object.keys(MENUS)) {
++    let group = '';
++    for (const it of MENUS[m]()) {
++      if (it === '-' || !it) continue;
++      if (it.header) { group = it.header; continue; }
++      if (!it.action) continue;
++      const dis = typeof it.disabled === 'function' ? it.disabled() : !!it.disabled;
++      const ck = typeof it.checked === 'function' ? it.checked() : it.checked;
++      out.push({ id: [m, slug(group), slug(it.label)].join(':'), menu: m, group, label: it.label, shortcut: it.kbd || '', enabled: !dis, checked: ck === undefined ? null : !!ck, run: it.action });
++    }
++  }
++  return out;
++}
++function runCommand(id) {
++  const c = commands().find(x => x.id === id);
++  if (!c || !c.enabled) return false;
++  c.run(); return true;
++}
++// Where the panels are, in this page's pixels: for an embedding page that places its own palettes beside them.
++function panels() {
++  const box = el => { if (!el) return null; const b = el.getBoundingClientRect(); return { x: Math.round(b.left), y: Math.round(b.top), w: Math.round(b.width), h: Math.round(b.height), shown: b.width > 0 && b.right > 0 && b.left < innerWidth && getComputedStyle(el).display !== 'none' }; };
++  const st = n => ({ floating: !!(FL[n] && FL[n].on && flWide()), hidden: !!(FL[n] && FL[n].on && FL[n].hidden) });
++  return { stage: box($('#stage')), shapes: { ...box($('#palette')), ...st('shapes') }, props: { ...box($('#side')), ...st('props') }, map: MAP && MAP.on ? { ...box(MAP.box), ...st('map') } : box($('#minimap')) };
+ }
+ // small surface for automation / debugging
+-window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex } };
++window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex },
++  // 1.8: for an embedding page (see the Embedding block above)
++  version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
++  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; } };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>
+--- topoforge-1.7/spec/EMBED-v1.md
++++ topoforge-1.8/spec/EMBED-v1.md
+@@ -0,0 +1,110 @@
++<!--
++SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
++SPDX-License-Identifier: CC-BY-SA-4.0
++-->
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8
++
++topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
++This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
++`tests/browser/embed.browser.mjs` holds the app to it; each promise below names its check.
++
++## Rule zero: opened on its own, nothing changes
++
++With no `?embed=` and no call to `TopoForge.embed()`, 1.8 is 1.7 to look at and to use: the same
++pixels at every width, light and dark (S1), the same tab order (S2), no new element, class or stored
++key (S3), and nothing posted to any parent (E6).
++
++## Turning switches on
++
++- In the address: `?embed=` with any of the words in the table, separated by commas. Two short
++  words: `all` turns on every switch that keeps the chrome (`frameless`, `props`, `shapes`, `pages`,
++  `select`, `ready`); `bare` turns on `frameless` and every `hide-` word. Unknown words are ignored.
++  It combines with `?load=` (`?load=/x.json&embed=bare,select,ready`).
++- From script, once the app has booted: `window.TopoForge.embed({ frameless: true, 'hide-props':
++  true, ... })`, each word as a key, `true` or `false`; `chrome: false` means `frameless: true`. It
++  returns every switch as it now stands; `TopoForge.embed()` with no argument only reads them.
++
++| word | what it does | checks |
++|---|---|---|
++| `frameless` | the brand is hidden from sight (it stays the page's level-one heading for screen readers), the document name is hidden, and the rules between the app's areas are gone; the menus and tools stay | F1, F2, F3 |
++| `props` | the inspector (Properties, Layers, Issues, Story) floats over the drawing, starting at its right | P1 |
++| `shapes` | the shape palette floats, starting at the drawing's left; the drawing takes the whole width | H1 |
++| `pages` | the bottom bar folds into one floating box at the drawing's bottom right: the overview map, a row with a Pages button (it lists every page) and the page tabs (the current one marked `aria-current="page"`), and the status line | M1-M4 |
++| `select` | the selection hook (below) | E2-E5 |
++| `ready` | the ready event (below) | E1 |
++| `hide-menus` | the menu buttons (File ... Help) are not shown | B2 |
++| `hide-tools` | the tool buttons (pointer, connector, text, pan, undo, redo, zoom, fit, theme) are not shown; with `hide-menus` too, the whole top bar goes and the drawing takes its row | B1, B2 |
++| `hide-shapes` | the shape palette is not shown; the drawing takes its column | B2, Z1 |
++| `hide-props` | the inspector (Properties, Layers, Issues, Story) is not shown; the drawing takes its column | B2 |
++| `hide-pages` | the page tabs and the status line are not shown, in the bottom bar or in the overview box; the drawing takes the row | B1, B2 |
++
++Hiding beats floating: `hide-props` with `props` hides the inspector. With `bare` the drawing is the
++whole window (B1); the embedding page then offers what the chrome offered, through the calls below.
++
++A floating panel has a grip row: its name (drag it, or focus it and use the arrow keys: 16 pixels, 64
++with Shift), **Move** (a menu: Left, Right, Up, Down, Back to its starting place, so no drag is ever
++needed: WCAG 2.5.7), and **Hide** / **Show** (hidden, only the grip row stays). Each move and hide is
++said in a polite live region. Places and hidden states are kept in this browser under
++`topoforge.ui.v1`; with storage refused they last for the visit (K1-K7). Panels float only when the
++app's own window is wider than 860 pixels; narrower, the drawers of 1.7 stay (K8). Nothing that
++floats has a transition (X2).
++
++## The selection hook
++
++With `select` on, after any change of the selection or of the page, the app sends `topoforge:select`:
++
++- as a `CustomEvent` on its own `window` (`event.detail`), and
++- to `window.parent` with `postMessage({ type: 'topoforge:select', detail }, location.origin)`: only a
++  parent of the app's own origin receives it (E5); nothing is posted from `file://`.
++
++`detail`: `name` (the first line of the shape's text, else its shape name), `tooltip` (its custom
++field `tooltip`, else `what`, else its notes), `kind` (the shape's type, or `link`), `ref` (its
++`tf_ref`), `id`, `page` (the page's name), `pageIndex`, `count` (how many are selected; the fields
++above describe the first) and `items` (one entry per selected thing). Nothing selected: `count` 0 and
++empty strings. `TopoForge.selection` returns the same object at any time.
++
++## The ready event
++
++`TopoForge.ready` is a promise, always there, resolved once the app has booted and any `?load=` has
++finished or failed. With `ready` on, the same detail is sent as `topoforge:ready`, by the same two
++routes and the same origin rule, once. `detail`: `version`, `name` (the drawing's), `pages` (names),
++`page`, `pageIndex`, `loaded` (the `?load=` value, or null), `ok`, `error` (E1, E7).
++
++## Every menu command, for a page that hides the chrome
++
++`TopoForge.commands()` lists every command in the app's menus (File, Edit, Arrange, Layout, View,
++Help), in menu order, read from the menus' own table each time it is called: `{ id, menu, group,
++label, shortcut, enabled, checked }`. `id` is `menu:group:label` in lower case with words joined by
++`-` (`group` is the menu's last heading, empty before one), so the same label under Import and Export
++gets two ids. `TopoForge.run(id)` runs one, as choosing it in the menu would, and returns `true`; a
++disabled or unknown id runs nothing and returns `false` (R1, R2). With these an embedding page can
++offer every command from its own prompt or menu, which is what makes hiding the app's own chrome safe.
++
++## The palette's catalogue, and placing a shape
++
++`TopoForge.shapes()` returns the palette's catalogue, in the palette's order: a list of categories
++`{ id, label, shapes }`, each shape `{ id, label, category, kind, w, h, icon }`, where `icon` is the
++same small SVG the palette shows (a string beginning `<svg`) and `w`, `h` its default size (Z1).
++
++`TopoForge.place(id, where)` places a shape as the palette would, and returns `true` (`false` for an
++unknown id):
++
++- `place(id, 'center')`: in the middle of the view, as a click on the palette does;
++- `place(id, { x, y })`: at that point, in the app's own pixels (as a drop there would);
++- `place(id)`: arms it. The drawing's pointer becomes a cross-hair and a polite message says what
++  to do; the next press on the drawing drops it at the pointer, Enter drops it in the middle of the
++  view, Escape gives up. `TopoForge.placing` is the armed shape's id, or `null` (Z2).
++
++An embedding page may also let people drag from its own palette with HTML drag and drop, the data type
++`text/x-topoforge` set to the shape's id, as the app's own palette does; the drawing takes the drop.
++
++## Also for an embedding page (read-only)
++
++`TopoForge.version`; `TopoForge.showPage(name or index)` (true if that page exists);
++`TopoForge.panels()` (where the stage, the shapes, the inspector and the overview are, in the app's
++pixels, and whether each floats or is hidden).
++
++## Not changed
++
++`window.TopoForge`'s name, the TopoForge JSON format, every storage key 1.7 used, and the brand and
++title a standalone visitor sees. Changing them would break saved drawings and pages that embed it.
+--- topoforge-1.7/tests/browser/embed-prove-red.sh
++++ topoforge-1.8/tests/browser/embed-prove-red.sh
+@@ -0,0 +1,71 @@
++#!/bin/sh
++# SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
++# Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
++# Corwin Brust <corwin@bru.st> and Contributors
++# Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
++#
++# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the 1.8 switches.
++# A control run on the file as given must be green first. Then each plant changes a COPY of index.html
++# in one place, the kit runs on the copy, and the check named for that plant must be among those that
++# fail (a plant may trip others too: the standalone ones watch the whole page).
++#   on-by-default  a switch on with no ?embed=          -> S3 (standalone is no longer 1.7)
++#   any-origin     postMessage to '*'                   -> E5 (a parent of another origin hears it)
++#   silent-select  the hook's call in renderOverlay gone -> E2
++#   no-ready       the ready event never told           -> E1
++#   not-kept       places not written to storage        -> K5
++#   no-keys        the grip ignores the arrow keys       -> K1
++#   tabs-stay      the page tabs stay in the bottom bar  -> M1
++#   brand-shows    frameless leaves the brand            -> F1
++#   old-name       About says only "TopoForge"           -> A1
++#   no-room        Fit ignores the floating panels       -> P2
++#   runs-disabled  run() runs a disabled command         -> R2
++#   drops-items    commands() leaves out some items      -> R1
++#   shapes-shows   hide-shapes leaves the palette        -> B2
++#   bare-pages     bare leaves the page tabs             -> B1
++#   no-icons       shapes() without pictures             -> Z1
++#   drop-lost      an armed place() drops nothing        -> Z2
++# usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
++# exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
++set -u
++ix=${1-}; out=${2:-out-embed-prove-red}
++here=$(cd "$(dirname "$0")" && pwd) || exit 2
++kit=$here/embed.browser.mjs
++[ -f "$ix" ] || { echo "embed-prove-red.sh: usage: sh embed-prove-red.sh /path/to/index.html [outdir]" >&2; exit 2; }
++command -v node >/dev/null 2>&1 || { echo "embed-prove-red.sh: node not found" >&2; exit 2; }
++mkdir -p "$out" && out=$(cd "$out" && pwd) || exit 2
++run() { # NAME FILE: sets rc and fails (the failing check ids)
++  RESULT=$out/RESULT-$1.txt node "$kit" "$2" "$out/out-$1" > "$out/log-$1.txt" 2>&1; rc=$?
++  fails=$(sed -n 's/^FAIL \([A-Z][0-9]*\) .*/\1/p' "$out/RESULT-$1.txt" 2>/dev/null | sort -u | tr '\n' ' ' | sed 's/ $//')
++}
++run control "$ix"
++[ "$rc" -eq 0 ] || { echo "embed-prove-red.sh: the control run is not green (exit $rc, failing: ${fails:-none}); nothing proved" >&2; exit 2; }
++echo "control      exit 0, no check failed"
++bad=0 n=0
++plant() { # NAME WANT SED-EXPR
++  name=$1 want=$2 expr=$3; n=$((n + 1))
++  sed "$expr" "$ix" > "$out/plant-$name.html" || exit 2
++  cmp -s "$ix" "$out/plant-$name.html" && { echo "embed-prove-red.sh: plant $name changed nothing; fix the plant" >&2; exit 2; }
++  run "$name" "$out/plant-$name.html"
++  case " $fails " in
++    *" $want "*) [ "$rc" -eq 1 ] && { echo "caught       $name: $want fails (all failing: $fails)"; return; } ;;
++  esac
++  echo "NOT CAUGHT   $name: exit $rc, failing: ${fails:-none}; wanted $want (see $out/log-$name.txt)" >&2; bad=1
++}
++plant on-by-default S3 "s#const q = new URLSearchParams(location.search).get('embed'), o = {};#const q = new URLSearchParams(location.search).get('embed') || 'frameless', o = {};#"
++plant any-origin    E5 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
++plant silent-select E2 's#^  tellSelection();$##'
++plant no-ready      E1 "s#if (EMBED.ready \&\& !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }##"
++plant not-kept      K5 's#try { localStorage.setItem(UI_KEY, JSON.stringify(o)); }#try { }#'
++plant no-keys       K1 's#if (d) { e.preventDefault(); f.move(d\[0\], d\[1\]); }##'
++plant tabs-stay     M1 's#MAP.row.appendChild(tabs); ##'
++plant brand-shows   F1 's#body.tf-frameless .brand{#body.tf-frameless .no-brand{#'
++plant no-room       P2 's#const fi = fitInsets(r), W#const fi = { l: 0, r: 0 }, W#'
++plant runs-disabled R2 's#if (!c || !c.enabled) return false;#if (!c) return false;#'
++plant drops-items   R1 's#if (!it.action) continue;#if (!it.action || it.kbd) continue;#'
++plant shapes-shows  B2 's#body.tf-hide-shapes \#palette,body.tf-hide-shapes \#btnPal{display:none}#body.tf-hide-shapes \#btnPal{display:none}#'
++plant bare-pages    B1 "s#const HIDE_ALL = \['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'\];#const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props'];#"
++plant no-icons      Z1 "s#icon: previewSVG(k) }))#icon: '' }))#"
++plant drop-lost     Z2 's#e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));#placing(null);#'
++plant old-name      A1 "s#title: 'topology forge (formerly TopoForge)'#title: 'TopoForge'#"
++[ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
++exit $bad
+--- topoforge-1.7/tests/browser/embed.browser.mjs
++++ topoforge-1.8/tests/browser/embed.browser.mjs
+@@ -0,0 +1,323 @@
++// SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
++// Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8.
++//
++// embed.browser.mjs -- the 1.8 embedding switches in real Chromium, held to spec/EMBED-v1.md.
++//   S  standalone is unchanged: 1.8 opened with no switch draws the same pixels as 1.7 (rebuilt here from
++//      Bryant's 1.5 and patches/, so the kit needs no copy of 1.7), at three widths, light and dark, with the
++//      same tab order, and writes nothing new to storage.
++//   F  frameless; P props floats right; H shapes floats left; M pages fold into the overview box;
++//   K  keyboard and one-pointer moves, hide and show, kept across a reload, storage refused;
++//   E  the selection hook and the ready event reach a parent page of the same origin, and never one of
++//      another origin; A  the About box; X  axe-core, light and dark, every switch on; C  console errors.
++//
++//   node embed.browser.mjs /path/to/index.html [outdir]      exit 0 green, 1 red, 2 kit broken
++// Writes RESULT-embed.txt (first line GREEN or RED, computed) to $RESULT, default beside this kit.
++// Needs what topoforge.browser.mjs needs (playwright, axe-core, Chromium; looked for the same way) and patch(1).
++import { createRequire } from 'module';
++import fs from 'fs'; import path from 'path'; import crypto from 'crypto'; import os from 'os'; import http from 'http';
++import { execFileSync } from 'child_process';
++import { fileURLToPath } from 'url';
++const require = createRequire(import.meta.url);
++const HERE = path.dirname(fileURLToPath(import.meta.url)), KIT = path.resolve(HERE, '..', '..');
++const PW = process.env.PW_MODULE || [path.resolve('node_modules/playwright'), '/opt/npm-tools/node_modules/playwright'].find(p => fs.existsSync(p)) || 'playwright';
++const AXE = process.env.AXE || path.resolve('node_modules/axe-core/axe.min.js');
++const CHROMIUM = process.env.CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
++const [file, outdirArg] = process.argv.slice(2); const outdir = path.resolve(outdirArg || 'out-embed');
++if (!file || !fs.existsSync(file)) { console.error('usage: node embed.browser.mjs index.html [outdir]'); process.exit(2); }
++fs.mkdirSync(outdir, { recursive: true });
++let chromium; try { ({ chromium } = require(PW)); } catch (e) { console.error('KIT BROKEN: playwright not found at ' + PW); process.exit(2); }
++let axeSrc; try { axeSrc = fs.readFileSync(AXE, 'utf8'); } catch (e) { console.error('KIT BROKEN: axe-core not found at ' + AXE); process.exit(2); }
++const RESULT = process.env.RESULT || path.join(HERE, 'RESULT-embed.txt');
++const sha = b => crypto.createHash('sha256').update(b).digest('hex');
++const results = []; let red = 0;
++const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
++
++// ---- 1.7, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to 1.7 ----
++function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
++  const out = []; let on = false;
++  for (const l of patchText.split('\n')) {
++    if (l.startsWith('--- topoforge-')) on = /\/index\.html$/.test(l);
++    if (on) out.push(l);
++  }
++  return out.join('\n') + '\n';
++}
++function rebuild(upto) {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8'].slice(0, upto)) {
++    const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
++    fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
++    execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
++  }
++  return cur;
++}
++let v17;
++try { v17 = rebuild(2); } catch (e) { console.error('KIT BROKEN: could not rebuild 1.7 from upstream/ and patches/: ' + e.message); process.exit(2); }
++
++// ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
++const html = fs.readFileSync(file);
++const routes = { '/index.html': { type: 'text/html', body: html } };
++const parentPage = (src) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>parent</title></head><body style="margin:0">
++<iframe id="f" title="the app" src="${src}" style="border:0;width:1200px;height:800px"></iframe>
++<script>window.got = []; addEventListener('message', e => window.got.push({ origin: e.origin, data: e.data }));</script></body></html>`;
++const serve = () => new Promise(ok => {
++  const s = http.createServer((q, r) => {
++    const u = new URL(q.url, 'http://x'); const f = routes[u.pathname];
++    if (u.pathname === '/parent.html') { r.setHeader('content-type', 'text/html'); r.end(parentPage(u.searchParams.get('src'))); return; }
++    if (!f) { r.statusCode = 404; r.end('not found'); return; }
++    r.setHeader('content-type', f.type); r.end(f.body);
++  });
++  s.listen(0, '127.0.0.1', () => ok(s));
++});
++const sA = await serve(), sB = await serve();
++const A = 'http://127.0.0.1:' + sA.address().port, B = 'http://127.0.0.1:' + sB.address().port;
++
++const browser = await chromium.launch({ executablePath: CHROMIUM, headless: true });
++const consoleErrors = [];
++async function ctx(o = {}) {
++  const c = await browser.newContext({ viewport: { width: o.w || 1400, height: o.h || 900 }, colorScheme: o.dark ? 'dark' : 'light', reducedMotion: o.reduce ? 'reduce' : 'no-preference' });
++  if (o.noStorage) await c.addInitScript(() => { const no = () => { throw new DOMException('refused', 'SecurityError'); }; Storage.prototype.getItem = no; Storage.prototype.setItem = no; });
++  return c;
++}
++async function open(url, o = {}) {
++  const c = o.c || await ctx(o); const p = await c.newPage();
++  p.on('pageerror', e => consoleErrors.push(url + ': pageerror ' + e.message));
++  p.on('console', m => { if (m.type() === 'error' && !/404|load failed/.test(m.text())) consoleErrors.push(url + ': ' + m.text()); });
++  await p.goto(url); await p.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
++  await p.waitForTimeout(o.settle || 900);
++  return { c, p };
++}
++// pixels compared in the browser itself (no PNG library needed): how many differ, and by how much
++let diffPage = null;
++async function pixelDiff(a, b) {
++  if (!diffPage) diffPage = await (await browser.newContext()).newPage();
++  return diffPage.evaluate(async ([x, y]) => {
++    const load = s => new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.src = 'data:image/png;base64,' + s; });
++    const [i, j] = [await load(x), await load(y)]; if (i.width !== j.width || i.height !== j.height) return { size: false, n: -1, total: 0, max: 255, over: 1 };
++    const px = im => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.drawImage(im, 0, 0); return g.getImageData(0, 0, im.width, im.height).data; };
++    const [p, q] = [px(i), px(j)]; let n = 0, max = 0, over = 0;
++    for (let k = 0; k < p.length; k += 4) { const m = Math.max(Math.abs(p[k] - q[k]), Math.abs(p[k + 1] - q[k + 1]), Math.abs(p[k + 2] - q[k + 2])); if (m) { n++; if (m > max) max = m; if (m > 16) over++; } }
++    return { size: true, n, total: p.length / 4, max, over };
++  }, [a.toString('base64'), b.toString('base64')]);
++}
++const boxOf = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { x: Math.round(b.left), y: Math.round(b.top), w: Math.round(b.width), h: Math.round(b.height), pos: cs.position, disp: cs.display }; }, sel);
++
++try {
++  // a drawing for the hook: two pages, shapes with what they do in data.what (as corwin.cloud's drawings carry it)
++  { const { c, p } = await open(A + '/index.html');
++    const json = await p.evaluate(() => {
++      DOC = newDoc(); DOC.name = 'Embed fixture'; DOC.pages[0].name = 'First page'; DOC.pages.push(newPage('Second page'));
++      S.sel.clear(); reindex(); buildPages();
++      edit(() => { const a = makeNode('router', 0, 0, { text: 'Edge Router' }), b = makeNode('switch', 300, 0, { text: 'Core Switch' }); a.data.what = 'Where the shop meets the internet.'; P().nodes.push(a, b); P().links.push(makeLink({ id: a.id, port: null }, { id: b.id, port: null })); });
++      return snapshot();
++    });
++    routes['/fixture.json'] = { type: 'application/json', body: json }; await c.close(); }
++
++  // ---- S: standalone, no switch: the same as 1.7 ----
++  routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };
++  for (const [w, h, dark] of [[1400, 900, false], [1400, 900, true], [1000, 800, false], [800, 700, true]]) {
++    const tag = `${w}x${h} ${dark ? 'dark' : 'light'}`;
++    const a = await open(A + '/v17.html', { w, h, dark, settle: 1200 }), b = await open(A + '/index.html', { w, h, dark, settle: 1200 });
++    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
++    fs.writeFileSync(path.join(outdir, `standalone-1.7-${w}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `standalone-1.8-${w}-${dark ? 'dark' : 'light'}.png`), ib);
++    check(`S1 standalone ${tag}: 1.8 with no switch draws the same pixels as 1.7`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16 (allowed: anti-aliasing noise, at most 8 pixels by more than 16 of 255 (a speck), at most 1 in 1000 in all; a moved line or a changed colour is hundreds of pixels by far more)`);
++    const tabs = async p => { const r = []; await p.evaluate(() => document.body.focus()); for (let i = 0; i < 30; i++) { await p.keyboard.press('Tab'); r.push(await p.evaluate(() => { const e = document.activeElement; return (e.id || e.className || e.tagName) + ':' + (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 16); })); } return r.join('|'); };
++    if (w === 1400 && !dark) {
++      const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
++      check('S2 standalone: the first 30 Tab stops are the same as 1.7', ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
++      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
++      check('S3 standalone: no switch is on, no 1.8 element is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
++    }
++    await a.c.close(); await b.c.close();
++  }
++
++  // ---- F, P, H, M: each switch ----
++  { const { c, p } = await open(A + '/index.html?embed=frameless');
++    const f = await p.evaluate(() => { const br = document.querySelector('.brand').getBoundingClientRect(); return { brandW: br.width, h1: !!document.querySelector('h1.brand'), name: getComputedStyle(document.querySelector('#docName')).display, rule: getComputedStyle(document.querySelector('#topbar')).borderBottomColor, cls: document.body.className }; });
++    check('F1 ?embed=frameless: the brand is hidden but still a heading, the document name and the frame rules are gone', f.brandW <= 1 && f.h1 && f.name === 'none' && /rgba\(0, 0, 0, 0\)|transparent/.test(f.rule), JSON.stringify(f));
++    const pp = await boxOf(p, '#side'); check('F2 ?embed=frameless alone floats nothing', pp.pos === 'static', JSON.stringify(pp));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=props,shapes&load=/fixture.json');
++    const [pal, side, stage] = [await boxOf(p, '#palette'), await boxOf(p, '#side'), await boxOf(p, '#stage')];
++    check('P1 ?embed=props: Properties floats, starting at the right of the drawing', side.pos === 'fixed' && Math.abs(side.x + side.w - (stage.x + stage.w - 12)) <= 1 && side.y === stage.y + 12, JSON.stringify({ side, stage }));
++    check('H1 ?embed=shapes: Shapes floats, starting at the left; the drawing takes the whole width', pal.pos === 'fixed' && pal.x === stage.x + 12 && stage.x === 0 && stage.w === 1400, JSON.stringify({ pal, stage }));
++    const fit = await p.evaluate(() => { edit(() => { P().nodes.push(makeNode('server', 2400, 300, { text: 'Far Server' })); }); TopoForge.fitView(); const c = document.querySelector('#content').getBoundingClientRect(), pr = document.querySelector('#side').getBoundingClientRect(), pl = document.querySelector('#palette').getBoundingClientRect(); return { left: Math.round(c.left), right: Math.round(c.right), props: Math.round(pr.left), shapes: Math.round(pl.right) }; });
++    check('P2 Fit to window, with both panels floating, fits the drawing between them', fit.right <= fit.props && fit.left >= fit.shapes, JSON.stringify(fit));
++    // K: keyboard, one pointer, drag, hide, kept
++    const at = () => boxOf(p, '#side');
++    const s0 = await at(); await p.focus('#side .fl-grip'); await p.keyboard.press('ArrowLeft'); const s1 = await at();
++    await p.keyboard.press('Shift+ArrowDown'); const s2 = await at();
++    check('K1 the grip moves Properties 16 pixels with an arrow key and 64 with Shift', s1.x === s0.x - 16 && s2.y === s1.y + 64, JSON.stringify([s0.x, s1.x, s1.y, s2.y]));
++    await p.click('#side .fl-bar [data-act=move]'); const mi = await p.evaluate(() => [...document.querySelectorAll('.menu .mi')].map(b => b.textContent.trim()));
++    await p.click('.menu .mi:has-text("Left")'); const s3 = await at();
++    check('K2 one pointer, no drag: Move, Left moves Properties 64 pixels (WCAG 2.5.7)', s3.x === s2.x - 64 && mi.includes('Back to its starting place'), JSON.stringify({ mi, x: [s2.x, s3.x] }));
++    const g = await boxOf(p, '#side .fl-grip'); await p.mouse.move(g.x + 30, g.y + 8); await p.mouse.down(); await p.mouse.move(g.x - 70, g.y + 48, { steps: 6 }); await p.mouse.up(); const s4 = await at();
++    check('K3 dragging the grip moves Properties', s4.x === s3.x - 100 && s4.y === s3.y + 40, JSON.stringify([s3.x, s3.y, s4.x, s4.y]));
++    await p.click('#side .fl-bar [data-act=hide]'); const hid = await p.evaluate(() => ({ h: document.querySelector('#side').getBoundingClientRect().height, exp: document.querySelector('#side [data-act=hide]').getAttribute('aria-expanded'), label: document.querySelector('#side [data-act=hide]').getAttribute('aria-label'), live: (document.querySelector('#flLive') || {}).textContent }));
++    check('K4 Hide leaves only the grip row, says so to a screen reader, and offers Show', hid.h < 50 && hid.exp === 'false' && hid.label === 'Show Properties' && /hidden/.test(hid.live), JSON.stringify(hid));
++    await p.reload(); await p.waitForFunction(() => window.TopoForge && document.querySelector('.fl-bar')); await p.waitForTimeout(600);
++    const s5 = await at(), kept = await p.evaluate(() => JSON.parse(localStorage.getItem('topoforge.ui.v1')));
++    check('K5 the place and the hidden state are kept in this browser across a reload', s5.x === s4.x && s5.y === s4.y && s5.h < 50 && kept.props && kept.props.hidden === true, JSON.stringify({ s5, kept }));
++    await p.click('#side .fl-bar [data-act=hide]'); await p.click('#side .fl-bar [data-act=move]'); await p.click('.menu .mi:has-text("Back to its starting place")');
++    const s6 = await at(); check('K6 Show and Back to its starting place return Properties to the right', s6.h > 300 && s6.x === s0.x && s6.y === s0.y, JSON.stringify(s6));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=props,shapes,pages', { noStorage: true });
++    const side = await boxOf(p, '#side'); await p.focus('#side .fl-grip'); await p.keyboard.press('ArrowUp'); const s1 = await boxOf(p, '#side');
++    const st = await boxOf(p, '#stage');
++    check('K7 with storage refused the panels still float and move', side.pos === 'fixed' && s1.y === Math.max(st.y, side.y - 16), JSON.stringify([side, s1]) + ' (ArrowUp stops at the top of the drawing)');
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=all', { w: 800, h: 700 });
++    const [pal, bar] = [await boxOf(p, '#palette'), await boxOf(p, '#palette .fl-bar')];
++    check('K8 at 800 pixels nothing floats: the drawers of 1.7 stay', pal.pos === 'fixed' && pal.x + pal.w <= 0 && bar.disp === 'none', JSON.stringify({ pal, bar }));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=pages&load=/fixture.json');
++    const m = await p.evaluate(() => ({ inBox: !!document.querySelector('#mapbox #pagetabs .ptab.active'), cur: (document.querySelector('#mapbox .ptab[aria-current="page"]') || {}).textContent, bottom: getComputedStyle(document.querySelector('#bottombar')).display, status: !!document.querySelector('#mapbox #status'), map: !!document.querySelector('#mapbox #minimap') }));
++    check('M1 ?embed=pages: the page tabs, the overview map and the status line are in one box; the bottom bar is gone', m.inBox && m.cur === 'First page' && m.bottom === 'none' && m.status && m.map, JSON.stringify(m));
++    await p.focus('#mapbox .mp-list'); await p.keyboard.press('Enter'); await p.waitForTimeout(150);
++    const items = await p.evaluate(() => [...document.querySelectorAll('.menu .mi')].map(b => b.textContent.trim()));
++    await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
++    const now = await p.evaluate(() => ({ cur: DOC.cur, mark: (document.querySelector('#mapbox .ptab[aria-current="page"]') || {}).textContent, focus: document.activeElement.className }));
++    check('M2 the Pages button lists every page and opens one, by keyboard alone', items.join('|') === '✓First page|Second page' && now.cur === 1 && now.mark === 'Second page', JSON.stringify({ items, now }));
++    let reached = false; await p.evaluate(() => document.body.focus());
++    for (let i = 0; i < 80 && !reached; i++) { await p.keyboard.press('Tab'); reached = await p.evaluate(() => !!document.activeElement.closest('#mapbox .mp-pages .ptab')); }
++    check('M3 Tab reaches the page tabs in the box', reached);
++    const back = await p.evaluate(() => { TopoForge.embed({ pages: false }); return { inBar: !!document.querySelector('#bottombar #pagetabs'), st: !!document.querySelector('#bottombar #status'), mm: document.querySelector('#minimap').parentNode.id, bottom: getComputedStyle(document.querySelector('#bottombar')).display }; });
++    check('M4 TopoForge.embed({ pages: false }) puts every piece back where 1.7 has it', back.inBar && back.st && back.mm === 'stage' && back.bottom === 'flex', JSON.stringify(back));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html');
++    const r = await p.evaluate(() => { const a = TopoForge.embed({ chrome: false }); const on = document.body.classList.contains('tf-frameless'); const b = TopoForge.embed({ frameless: false }); return { a: a.frameless, on, b: b.frameless, off: !document.body.classList.contains('tf-frameless') }; });
++    check('F3 TopoForge.embed({ chrome: false }) turns frameless on, and { frameless: false } off again', r.a && r.on && !r.b && r.off, JSON.stringify(r));
++    await c.close(); }
++
++  // ---- E: the selection hook and the ready event, same origin only ----
++  const parentRun = async (origin, src, act) => {
++    const c = await ctx({ w: 1240, h: 840 }); const p = await c.newPage();
++    p.on('pageerror', e => consoleErrors.push('parent: ' + e.message));
++    await p.goto(origin + '/parent.html?src=' + encodeURIComponent(src));
++    const fr = p.frame({ url: u => u.pathname === '/index.html' });
++    await fr.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
++    await fr.evaluate(() => { window.own = []; addEventListener('topoforge:select', e => window.own.push(e.detail)); });
++    await p.waitForTimeout(900);
++    if (act) await act(p, fr);
++    await p.waitForTimeout(500);
++    const got = await p.evaluate(() => window.got), own = await fr.evaluate(() => window.own);
++    await c.close(); return { got, own };
++  };
++  const clickFirst = async (p, fr) => { // a real click on the first shape, through the iframe
++    const at = await fr.evaluate(() => { const n = P().nodes.find(x => x.text === 'Edge Router'); const r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y }; });
++    const fb = await (await p.$('#f')).boundingBox(); await p.mouse.click(fb.x + at.x, fb.y + at.y); await p.waitForTimeout(300);
++    await fr.evaluate(() => TopoForge.showPage('Second page'));
++  };
++  const same = await parentRun(A, A + '/index.html?embed=select,ready&load=/fixture.json', clickFirst);
++  const types = same.got.map(m => m.data && m.data.type);
++  const ready = same.got.filter(m => m.data.type === 'topoforge:ready');
++  check('E1 ready: one topoforge:ready reaches the parent, after the drawing named by ?load= is open', ready.length === 1 && ready[0].origin === A && ready[0].data.detail.name === 'Embed fixture' && ready[0].data.detail.loaded === '/fixture.json' && ready[0].data.detail.ok === true && ready[0].data.detail.pages.join('|') === 'First page|Second page', JSON.stringify(ready.map(m => m.data.detail)));
++  const sel = same.got.filter(m => m.data.type === 'topoforge:select').map(m => m.data.detail);
++  const hit = sel.find(d => d.name === 'Edge Router');
++  check('E2 a click on a shape tells the parent its name, tooltip, kind and page', !!hit && hit.tooltip === 'Where the shop meets the internet.' && hit.kind === 'router' && hit.page === 'First page' && hit.pageIndex === 0 && hit.count === 1 && /^router-/.test(hit.ref), JSON.stringify(hit || sel));
++  const pg = sel[sel.length - 1];
++  check('E3 a change of page is told too (nothing selected, the new page named)', pg && pg.page === 'Second page' && pg.count === 0, JSON.stringify(pg));
++  // the app's own listener is added after load, so it hears the last of the parent's messages, in the same order
++  const tail = sel.slice(sel.length - same.own.length);
++  check('E4 the same messages go to the app\'s own window as topoforge:select events', same.own.length >= 2 && JSON.stringify(same.own) === JSON.stringify(tail), `own=${same.own.length} parent=${sel.length}`);
++  const other = await parentRun(B, A + '/index.html?embed=select,ready&load=/fixture.json', clickFirst);
++  check('E5 a parent page of another origin receives nothing, though the hook fired inside the app', other.got.length === 0 && other.own.some(d => d.name === 'Edge Router'), `parent got ${other.got.length}: ${JSON.stringify(other.got).slice(0, 200)}; own=${other.own.length}`);
++  const off = await parentRun(A, A + '/index.html?load=/fixture.json', clickFirst);
++  check('E6 with no switch the app tells no parent anything', off.got.length === 0 && off.own.length === 0, `parent got ${off.got.length}, own ${off.own.length}`);
++  { const { c, p } = await open('file://' + path.resolve(file) + '?embed=select,ready');
++    const r = await p.evaluate(async () => { const d = await TopoForge.ready; return { v: d.version, ok: d.ok, sel: TopoForge.selection.count }; });
++    check('E7 TopoForge.ready resolves from file:// too (nothing is posted from there)', r.v === '1.8' && r.ok === true && r.sel === 0, JSON.stringify(r));
++    await c.close(); }
++
++  // ---- B: hiding the app's own chrome, all of it or each piece ----
++  { const shown = sel => `(() => { const e = document.querySelector('${sel}'); if (!e) return false; const b = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && b.width > 0 && b.height > 0 && b.right > 0; })()`;
++    const look = p => p.evaluate(`({ menus: ${shown('#menubar')}, tools: ${shown('#topbar .toolgroup')}, top: ${shown('#topbar')}, shapes: ${shown('#palette')}, props: ${shown('#side')}, pages: ${shown('#bottombar')} || ${shown('#mapbox')}, stage: (() => { const b = document.querySelector('#stage').getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)].join(','); })() })`);
++    { const { c, p } = await open(A + '/index.html?embed=bare,pages&load=/fixture.json'); const v = await look(p);
++      check('B1 ?embed=bare hides every piece of the app\'s chrome (hiding beats pages): the drawing is the whole window', !v.menus && !v.tools && !v.top && !v.shapes && !v.props && !v.pages && v.stage === '0,0,1400,900', JSON.stringify(v)); await c.close(); }
++    const each = { 'hide-menus': v => !v.menus && v.tools, 'hide-tools': v => v.menus && !v.tools, 'hide-shapes': v => !v.shapes && v.props && v.stage.startsWith('0,'), 'hide-props': v => v.shapes && !v.props && v.stage.split(',')[2] === '1400', 'hide-pages': v => !v.pages && v.stage.endsWith(',900') };
++    const bad = [];
++    for (const [w, ok] of Object.entries(each)) { const { c, p } = await open(A + '/index.html?embed=' + w); const v = await look(p); if (!ok(v)) bad.push(w + ' ' + JSON.stringify(v)); await c.close(); }
++    check('B2 each hide word hides its own piece and leaves the others: ' + Object.keys(each).join(', '), !bad.length, bad.join(' ; ') || 'all as named');
++  }
++
++  // ---- Z: the palette's catalogue, and placing a shape without it ----
++  { const { c, p } = await open(A + '/index.html?embed=hide-shapes&load=/fixture.json');
++    const z = await p.evaluate(() => { const cat = TopoForge.shapes(); const ui = [...document.querySelectorAll('#palList .pal-cat')].map(e => ({ id: e.dataset.cat, keys: [...e.querySelectorAll('.pal-item')].map(i => i.dataset.key) }));
++      return { same: JSON.stringify(cat.map(c => ({ id: c.id, keys: c.shapes.map(s => s.id) }))) === JSON.stringify(ui), cats: cat.length, n: cat.reduce((a, c) => a + c.shapes.length, 0), icons: cat.every(c => c.shapes.every(s => /^<svg[\s\S]*<\/svg>$/.test(s.icon.trim()) && s.label && s.category === c.id)) }; });
++    check('Z1 TopoForge.shapes() is the palette\'s catalogue: its categories and shapes in the palette\'s order, each with its label and picture', z.same && z.icons && z.cats >= 5 && z.n > 30, JSON.stringify(z));
++    const n0 = await p.evaluate(() => P().nodes.length);
++    const a1 = await p.evaluate(() => TopoForge.place('firewall', 'center'));
++    const n1 = await p.evaluate(() => P().nodes.length);
++    const armed = await p.evaluate(() => TopoForge.place('server') && TopoForge.placing);
++    const cv = await boxOf(p, '#canvas'); const at = { x: cv.x + 300, y: cv.y + 200 };
++    await p.mouse.click(at.x, at.y); await p.waitForTimeout(150);
++    const dropped = await p.evaluate(([x, y]) => { const n = P().nodes[P().nodes.length - 1]; const w = toWorld({ clientX: x, clientY: y }); return { type: n.type, dx: Math.abs(n.x + n.w / 2 - w.x), dy: Math.abs(n.y + n.h / 2 - w.y), placing: TopoForge.placing, count: P().nodes.length }; }, [at.x, at.y]);
++    await p.evaluate(() => TopoForge.place('switch')); await p.keyboard.press('Escape'); const esc = await p.evaluate(() => ({ count: P().nodes.length, placing: TopoForge.placing }));
++    await p.evaluate(() => TopoForge.place('switch')); await p.keyboard.press('Enter'); const ent = await p.evaluate(() => ({ count: P().nodes.length, type: P().nodes[P().nodes.length - 1].type }));
++    const unknown = await p.evaluate(() => TopoForge.place('no-such-shape'));
++    check('Z2 TopoForge.place: "center" adds at the middle; armed, a press drops it at the pointer, Escape gives up, Enter drops it in the middle; an unknown id is false',
++      a1 && n1 === n0 + 1 && armed === 'server' && dropped.type === 'server' && dropped.dx <= 20 && dropped.dy <= 20 && dropped.placing === null && dropped.count === n1 + 1 && esc.count === n1 + 1 && esc.placing === null && ent.count === n1 + 2 && ent.type === 'switch' && unknown === false,
++      JSON.stringify({ n0, n1, armed, dropped, esc, ent, unknown }));
++    await c.close(); }
++
++  // ---- R: every menu command, for a page that hides the chrome ----
++  { const { c, p } = await open(A + '/index.html?embed=frameless&load=/fixture.json');
++    const cmds = await p.evaluate(() => TopoForge.commands());
++    const ui = {};
++    for (const m of ['file', 'edit', 'arrange', 'layout', 'view', 'help']) {
++      await p.evaluate(() => closeMenus()); await p.click(`.menu-btn[data-menu="${m}"]`); await p.waitForTimeout(80);
++      ui[m] = await p.evaluate(() => [...document.querySelectorAll('.menu .mi')].map(b => ({ label: b.querySelector('.lb').textContent, on: !b.disabled })));
++      await p.keyboard.press('Escape');
++    }
++    const bad = Object.keys(ui).filter(m => JSON.stringify(ui[m]) !== JSON.stringify(cmds.filter(x => x.menu === m).map(x => ({ label: x.label, on: x.enabled }))));
++    check('R1 TopoForge.commands() lists every menu item, in order, enabled as the menus show it; ids unique', cmds.length > 40 && !bad.length && new Set(cmds.map(x => x.id)).size === cmds.length && cmds.every(x => /^[a-z]+:[a-z0-9-]*:[a-z0-9-]+$/.test(x.id) && 'shortcut' in x),
++      `${cmds.length} commands; menus that differ from the UI: ${bad.map(m => m + ' ' + JSON.stringify(ui[m])).join(' ; ') || 'none'}`);
++    const r = await p.evaluate(() => { try {
++      const all = TopoForge.commands(), sel = all.find(x => x.label === 'Select all'), undo = all.find(x => x.menu === 'edit' && x.label === 'Undo');
++      TopoForge.select([]); const ran = TopoForge.run(sel.id), n = TopoForge.selection.count;
++      const u = undo.enabled ? null : TopoForge.run(undo.id);
++      return { id: sel.id, ran, n, want: P().nodes.length + P().links.length, undoEnabled: undo.enabled, undoRan: u, none: TopoForge.run('no:such:command') };
++    } catch (e) { return { error: String(e) }; } });
++    check('R2 TopoForge.run(id) runs a command (Select all selects every shape); a disabled or unknown id runs nothing and says false', r.ran === true && r.n === r.want && r.undoEnabled === false && r.undoRan === false && r.none === false, JSON.stringify(r));
++    await c.close(); }
++
++  // ---- A: the About box ----
++  { const { c, p } = await open(A + '/index.html');
++    await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
++    const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
++    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && /Version 1\.8/.test(t.b), JSON.stringify(t).slice(0, 300));
++    await c.close(); }
++
++  // ---- X: axe with every switch on; reduced motion ----
++  for (const dark of [false, true]) {
++    const { c, p } = await open(A + '/index.html?embed=all&load=/fixture.json', { dark, reduce: true });
++    await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
++    await p.addScriptTag({ content: axeSrc });
++    const v = await p.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations.map(x => ({ id: x.id, impact: x.impact, n: x.nodes.length, t: x.nodes.slice(0, 4).map(y => y.target.join(' ')) })));
++    fs.writeFileSync(path.join(outdir, `axe-embed-all-${dark ? 'dark' : 'light'}.json`), JSON.stringify(v, null, 1));
++    const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
++    check(`X1 axe, every switch on, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
++    if (!dark) {
++      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
++      check('X2 the floating parts do not move by themselves (no transition) with reduced motion asked', mo.every(d => d === '0s'), mo.join(','));
++      await p.screenshot({ path: path.join(outdir, 'embed-all-light.png') });
++    } else await p.screenshot({ path: path.join(outdir, 'embed-all-dark.png') });
++    await c.close();
++  }
++  check('C1 no console errors', consoleErrors.length === 0, consoleErrors.join(' | ').slice(0, 600));
++} finally { await browser.close(); for (const s of [sA, sB]) { s.close(); if (s.closeAllConnections) s.closeAllConnections(); } }
++
++console.log(results.join('\n'));
++console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
++const passed = results.filter(r => r.startsWith('PASS')).length;
++fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
++  'topology forge (formerly TopoForge) 1.8, the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
++  'Licence of this note: CC-BY-SA-4.0',
++  'Run at: ' + new Date().toISOString() + ' on ' + os.type() + ' ' + os.release() + ', node ' + process.version + ', ' + 'playwright ' + require(PW + '/package.json').version,
++  'File tested: index.html sha256 ' + sha(html),
++  'Compared with: 1.7 rebuilt from upstream/topoforge-1.5.html and patches/, sha256 ' + sha(fs.readFileSync(v17)),
++  'Kit: tests/browser/embed.browser.mjs sha256 ' + sha(fs.readFileSync(fileURLToPath(import.meta.url))),
++  `Result: ${passed} checks passed, ${red} failed. Exit ${red ? 1 : 0} (0 green, 1 red, 2 kit broken).`,
++  '', 'CHECKS', ...results, ''].join('\n'));
++console.log('wrote ' + RESULT);
++process.exit(red ? 1 : 0);
+--- topoforge-1.7/tests/run.sh
++++ topoforge-1.8/tests/run.sh
+@@ -35,6 +35,52 @@
+   sh "$here/check.sh" --tables "$tmp/index.html"; [ $? = 1 ] && return 0; echo "tables check stayed green on a planted fault"; return 2
+ }
+ step "prove-red: a changed shape table is caught" tables_red
++# 1.8: the patches from Bryant's 1.5 rebuild the app byte for byte (the index.html part of each patch)
++chain() { # $1 = the app to compare
++  cp "$here/../upstream/topoforge-1.5.html" "$tmp/c0.html" || return 2; n=0
++  for p in "$here"/../patches/topoforge-*.patch; do
++    awk '/^--- topoforge-/ { on = ($2 ~ /\/index\.html$/) } on' "$p" > "$tmp/c.patch"
++    patch -s -o "$tmp/c$((n + 1)).html" "$tmp/c$n.html" "$tmp/c.patch" >/dev/null 2>&1 || { echo "$(basename "$p") does not apply"; return 1; }
++    n=$((n + 1))
++  done
++  cmp -s "$tmp/c$n.html" "$1" || { echo "1.5 plus $n patches is not $1"; return 1; }
++  echo "1.5 plus $n patches is index.html, byte for byte"
++}
++if command -v patch >/dev/null 2>&1; then
++  step "patches: Bryant's 1.5 plus every patch is the app, byte for byte" chain "$html"
++  chain_red() { sed 's/^const TF_VERSION = /const  TF_VERSION = /' "$html" > "$tmp/x.html"; cmp -s "$tmp/x.html" "$html" && { echo "could not plant"; return 2; }
++    chain "$tmp/x.html" >/dev/null && { echo "the chain stayed green on a changed app"; return 2; }; return 0; }
++  step "prove-red: one changed line in the app breaks the chain" chain_red
++else echo "BROKEN patch(1) not found: the patch chain was not checked"; broken=1; fi
++# 1.8: the selection hook and the ready event post to this page's own origin only, never to '*'
++origin_only() { # $1 = the app
++  all=$(grep -c 'postMessage(' "$1"); good=$(grep -c 'postMessage({ type, detail }, location\.origin)' "$1")
++  [ "$all" -ge 1 ] && [ "$all" = "$good" ] || { echo "$all postMessage call(s), $good of them to location.origin"; return 1; }
++}
++step "every postMessage in the app names location.origin" origin_only "$html"
++origin_red() { sed "s/postMessage({ type, detail }, location\.origin)/postMessage({ type, detail }, '*')/" "$html" > "$tmp/o.html"
++  cmp -s "$tmp/o.html" "$html" && { echo "could not plant"; return 2; }; origin_only "$tmp/o.html" >/dev/null && { echo "stayed green with '*'"; return 2; }; return 0; }
++step "prove-red: a postMessage to '*' is caught" origin_red
++# 1.8: the name is "topology forge (formerly TopoForge)" (Corwin, 2026-11-01 20:51: "topology is the correct
++# name"); the misspelling "topography" is in none of the files 1.8 touched
++spelled() { bad=$(grep -l -i 'topography' "$@" 2>/dev/null); [ -z "$bad" ] || { echo "\"topography\" in: $bad"; return 1; }; }
++named="$html $here/../README.org $here/../NEWS $here/../ChangeLog $here/../AUTHORS $here/../RECIPE.org $here/../spec/EMBED-v1.md $here/browser/embed.browser.mjs $here/browser/embed-prove-red.sh $here/../../README.org $here/../../NEWS $here/../../ChangeLog"
++step "the name is spelled topology in the app and its documents" spelled $named
++# 1.8: topology's RECIPE.org names the app it serves by sha256 (its ingredients table)
++recipe_sum() { # $1 = the app
++  r=$here/../../RECIPE.org; [ -f "$r" ] || { echo "no topology RECIPE.org beside topoforge/"; return 2; }
++  want=$(sed -n 's/^| topology forge .*=www\/topoforge\/index.html=.*sha256 =\([0-9a-f]\{64\}\)= |$/\1/p' "$r")
++  got=$(sha256sum "$1" | cut -d' ' -f1)
++  [ -n "$want" ] && [ "$want" = "$got" ] || { echo "RECIPE.org says ${want:-nothing}, the app is $got"; return 1; }
++}
++if [ -f "$here/../../RECIPE.org" ]; then
++  step "topology's RECIPE.org names the app's sha256" recipe_sum "$html"
++  recipe_red() { printf ' ' >> "$tmp/r.html"; cat "$html" >> "$tmp/r.html"; recipe_sum "$tmp/r.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
++  step "prove-red: a changed app no longer matches RECIPE.org" recipe_red
++fi
++spelled_red() { sed 's/topology forge (formerly/topography forge (formerly/' "$html" > "$tmp/s.html"; cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
++  spelled "$tmp/s.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
++step "prove-red: \"topography\" planted in the app is caught" spelled_red
+ if [ $broken = 1 ]; then echo "KIT BROKEN"; exit 2; fi
+ if [ $red = 1 ]; then echo "KIT RED"; exit 1; fi
+ echo "KIT GREEN"; exit 0

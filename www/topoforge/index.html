@@ -6,6 +6,10 @@
   Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5)
   1.7: a page on the same origin can open a drawing with ?load=<path> (a CSV or TopoForge JSON); any other origin, and file://, is refused and said; window.TopoForge.importCSV for the kit.
   ?load= by Mentat (for Corwin; claude-sonnet-5-5)
+  1.8: topology forge (formerly TopoForge). Switches an embedding page turns on, all off when the app is opened on its own:
+  ?embed=frameless,props,shapes,pages,select,ready (or TopoForge.embed({...})): no frame, floating Properties and Shapes,
+  the page tabs in the overview map, a selection hook and a ready event (both to this window, and to a parent page of this
+  origin only). Embedding switches by Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -48,7 +52,7 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-#app{display:grid;grid-template-columns:236px minmax(0,1fr) 296px;grid-template-rows:46px minmax(0,1fr) 30px;height:100vh;height:100dvh}
+#app{display:grid;grid-template-columns:var(--tf-cl,236px) minmax(0,1fr) var(--tf-cr,296px);grid-template-rows:var(--tf-rt,46px) minmax(0,1fr) var(--tf-rb,30px);height:100vh;height:100dvh}
 #topbar{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--border);min-width:0}
 .brand{display:flex;align-items:center;gap:8px;font-weight:650;letter-spacing:.2px;margin:0 6px 0 0;font-size:inherit;white-space:nowrap}
 .brand svg{width:22px;height:22px}
@@ -212,7 +216,7 @@ button{cursor:pointer}
 
 .mobile-only{display:none}
 @media (max-width:1100px){
-  #app{grid-template-columns:200px minmax(0,1fr) 270px}
+  #app{grid-template-columns:var(--tf-cl,200px) minmax(0,1fr) var(--tf-cr,270px)}
   .brand span{display:none}
 }
 @media (max-width:860px){
@@ -226,6 +230,53 @@ button{cursor:pointer}
   #docName,.brand{display:none}
   .toolgroup.zoom,#status .opt{display:none}
   #minimap{display:none}
+}
+/* 1.8: the embedding switches. Nothing here applies until a page asks (?embed=..., or
+   TopoForge.embed({...})): each rule hangs on a class or an element that only the switch code adds. */
+body.tf-frameless .brand{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.tf-frameless #docName{display:none}
+body.tf-frameless #topbar{border-bottom-color:transparent}
+body.tf-frameless #palette{border-right-color:transparent}
+body.tf-frameless #side{border-left-color:transparent}
+body.tf-frameless #bottombar{border-top-color:transparent}
+.fl-bar{display:none;align-items:center;gap:2px;padding:3px 4px;border-bottom:1px solid var(--border);background:var(--panel-2)}
+.fl-grip{display:flex;align-items:center;gap:6px;flex:1;min-width:0;text-align:left;border:0;background:none;padding:4px 6px;border-radius:5px;color:var(--text-2);font-weight:600;cursor:grab;touch-action:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-grip:active{cursor:grabbing}
+.fl-bar .fl-btn,.fl-bar .menu-btn{border:0;background:none;padding:4px 8px;border-radius:5px;color:var(--text-2);font-size:12px}
+.fl-grip:hover,.fl-bar .fl-btn:hover,.fl-bar .menu-btn.open{background:var(--hover);color:var(--text)}
+.fl-grip:focus-visible,.fl-bar .fl-btn:focus-visible,#mapbox .mp-list:focus-visible,#mapbox .ptab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+body.tf-pages #bottombar{display:none}
+body.tf-pages{--tf-rb:0px}
+#mapbox{display:none}
+body.tf-pages #mapbox{display:flex;flex-direction:column;position:absolute;left:8px;right:8px;bottom:8px;z-index:6;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;min-width:0}
+#mapbox #minimap{position:static;width:auto;height:130px;border:0;border-radius:0;box-shadow:none;border-bottom:1px solid var(--border)}
+#mapbox .mp-pages{display:flex;align-items:stretch;min-height:32px;min-width:0}
+#mapbox #pagetabs{flex:1}
+#mapbox .mp-list{border:0;border-right:1px solid var(--border);border-radius:0;background:none;color:var(--text-2);padding:0 10px;font-size:12.5px;white-space:nowrap}
+#mapbox .mp-list:hover,#mapbox .mp-list.open{background:var(--hover);color:var(--text)}
+#mapbox #status{padding:4px 10px;border-top:1px solid var(--border);flex-wrap:wrap;gap:4px 10px}
+/* the hide switches: each piece of the app's own chrome, separately; hiding beats floating */
+body.tf-hide-menus #menubar,body.tf-hide-tools #topbar .toolgroup,body.tf-hide-tools #btnTheme,body.tf-hide-tools #topbar .tb-sep{display:none}
+body.tf-hide-top{--tf-rt:0px} body.tf-hide-top #topbar{display:none}
+body.tf-hide-pages{--tf-rb:0px} body.tf-hide-pages #bottombar,body.tf-hide-pages #mapbox{display:none}
+body.tf-hide-shapes{--tf-cl:0px} body.tf-hide-shapes #palette,body.tf-hide-shapes #btnPal{display:none}
+body.tf-hide-props{--tf-cr:0px} body.tf-hide-props #side,body.tf-hide-props #btnSide{display:none}
+body.tf-hide-shapes #stage,body.tf-hide-props #stage{grid-row:2;grid-column:2}
+body.tf-hide-shapes #side{grid-row:2;grid-column:3}
+body.tf-hide-props #palette{grid-row:2;grid-column:1}
+@media (max-width:860px){body.tf-hide-shapes #stage,body.tf-hide-props #stage,body.tf-hide-shapes #side,body.tf-hide-props #palette{grid-column:1}}
+body.tf-placing #canvas{cursor:crosshair}
+@media (min-width:861px){
+  body.tf-fl-shapes{--tf-cl:0px}
+  body.tf-fl-props{--tf-cr:0px}
+  body.tf-fl-shapes #stage,body.tf-fl-props #stage{grid-row:2;grid-column:2}
+  body.tf-fl-shapes #side{grid-row:2;grid-column:3}
+  body.tf-fl-props #palette{grid-row:2;grid-column:1}
+  body.tf-fl-shapes #palette,body.tf-fl-props #side,body.tf-pages #mapbox{position:fixed;left:var(--fx,12px);top:var(--fy,58px);right:auto;bottom:auto;width:var(--fw,240px);z-index:20;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+  body.tf-fl-shapes #palette,body.tf-fl-props #side{height:var(--fh,60vh)}
+  body.tf-fl-shapes #palette>.fl-bar,body.tf-fl-props #side>.fl-bar,body.tf-pages #mapbox>.fl-bar{display:flex}
+  body.tf-fl-shapes #palette.fl-hidden,body.tf-fl-props #side.fl-hidden{height:auto}
+  body.tf-fl-shapes #palette.fl-hidden>:not(.fl-bar),body.tf-fl-props #side.fl-hidden>:not(.fl-bar),body.tf-pages #mapbox.fl-hidden>:not(.fl-bar){display:none}
 }
 @media print{body *{visibility:hidden}}
 
@@ -308,7 +359,7 @@ button{cursor:pointer}
 
 <script>
 'use strict';
-const TF_VERSION = '1.7';
+const TF_VERSION = '1.8';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -1434,8 +1485,19 @@ function zoomAt(k, sx, sy) {
 function fitView(pad = 50) {
   const r = svgEl().getBoundingClientRect(); const b = boundsOf(P().nodes.filter(visible), P().links.filter(visible));
   if (b.empty || r.width < 10) { S.view = { x: 60, y: 60, k: 1 }; applyView(); return; }
-  const k = clamp(Math.min((r.width - pad * 2) / (b.w || 1), (r.height - pad * 2) / (b.h || 1)), 0.08, 1.25);
-  S.view = { k, x: (r.width - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k }; applyView();
+  const fi = fitInsets(r), W = r.width - fi.l - fi.r;   // 1.8: room the floating panels leave (none unless a switch floats one)
+  const k = clamp(Math.min((W - pad * 2) / (b.w || 1), (r.height - pad * 2) / (b.h || 1)), 0.08, 1.25);
+  S.view = { k, x: fi.l + (W - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k }; applyView();
+}
+// 1.8: what the floating Shapes and Properties panels cover of the canvas's left and right; zero unless one floats
+function fitInsets(r) {
+  const o = { l: 0, r: 0 };
+  for (const f of Object.values(FL)) {
+    if (f.name === 'map' || !f.on || f.hidden || !flWide()) continue;
+    const b = f.el.getBoundingClientRect(); if (b.right <= r.left || b.left >= r.right) continue;
+    if (b.left + b.width / 2 < r.left + r.width / 2) o.l = Math.max(o.l, b.right - r.left); else o.r = Math.max(o.r, r.right - b.left);
+  }
+  return o.l + o.r > r.width * 0.6 ? { l: 0, r: 0 } : o;
 }
 
 /* ---------- render pipeline ---------- */
@@ -1486,6 +1548,7 @@ function renderOverlay() {
   if (S.marquee) { const m = S.marquee; const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1); s += `<rect x="${rnd(x)}" y="${rnd(y)}" width="${rnd(Math.abs(m.x1 - m.x0))}" height="${rnd(Math.abs(m.y1 - m.y0))}" fill="${c}" fill-opacity=".08" stroke="${c}" stroke-width="${rnd(1 / k, 3)}" stroke-dasharray="${rnd(4 / k)} ${rnd(3 / k)}"/>`; }
   for (const gl of S.guides) s += `<path d="M${rnd(gl.x1)} ${rnd(gl.y1)}L${rnd(gl.x2)} ${rnd(gl.y2)}" stroke="#ec4899" stroke-width="${rnd(1 / k, 3)}" fill="none"/>`;
   $('#overlay').innerHTML = s;
+  tellSelection();
 }
 
 /* ---------- hit testing ---------- */
@@ -2607,7 +2670,8 @@ function layerChange() { }
 /* ---------- pages ---------- */
 function buildPages() {
   const el = $('#pagetabs');
-  el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}" title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
+  el.innerHTML = DOC.pages.map((p, i) => `<button class="ptab${i === DOC.cur ? ' active' : ''}" data-pi="${i}"${i === DOC.cur ? ' aria-current="page"' : ''} title="Double-click to rename · right-click for options">${esc(p.name)}</button>`).join('') + `<button class="ptab add" data-pi="add" title="Add page">+</button>`;
+  if (MAP) mapShowActive();
 }
 function switchPage(i) { if (S.editing) commitEdit(); DOC.cur = clamp(i, 0, DOC.pages.length - 1); S.sel.clear(); S.hover = null; reindex(); buildPages(); render(); refreshPanels(true); fitView(); scheduleSave(); }
 function initPages() {
@@ -2805,7 +2869,7 @@ function showFormats() {
   <li><b>SVG / PNG</b> — current page; <b>PDF</b> — every page as a page; <b>Print</b> gives vector output through the browser’s “Save as PDF”.</li>
   <li>Legacy binary <b>.vsd</b> and <b>.vdx</b> are not supported — re-save them as .vsdx in Visio.</li></ul>` });
 }
-function showAbout() { modal({ title: 'TopoForge', body: `<p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
+function showAbout() { modal({ title: 'topology forge (formerly TopoForge)', body: `<p>Made by Bryant Frankford, with Corwin Brust and contributors.</p><p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
 
 /* ---------- minimap ---------- */
 let _mmTimer = null, MM = null;
@@ -3993,19 +4057,262 @@ function boot() {
   if (saved && P().nodes.length) setTimeout(fitView, 0);
   else if (!saved && !new URLSearchParams(location.search).get('load')) setTimeout(() => { loadSample(); H.undo.length = 0; updateUndoButtons(); }, 0);
   window.addEventListener('beforeunload', saveNow);
-  loadFromQuery();
+  const ew = embedWordsFromQuery(); if (Object.keys(ew).length) embed(ew);   // 1.8: nothing changes unless ?embed= names a switch
+  loadFromQuery().then(r => setTimeout(() => markReady(r), 0));
 }
 // ?load=<path>: open a CSV or TopoForge JSON the serving page points at. Same origin only; anything else is refused and said.
 async function loadFromQuery() {
-  const q = new URLSearchParams(location.search).get('load'); if (!q) return;
-  let u; try { u = new URL(q, location.href); } catch (e) { toast('load: not a URL', 'error'); return; }
-  if (location.protocol === 'file:' || u.origin !== location.origin) { toast(`load refused: ${u.origin} is not this page's origin`, 'error'); return; }
+  const q = new URLSearchParams(location.search).get('load'); if (!q) return { loaded: null, ok: true, error: null };
+  let u; try { u = new URL(q, location.href); } catch (e) { toast('load: not a URL', 'error'); return { loaded: q, ok: false, error: 'not a URL' }; }
+  if (location.protocol === 'file:' || u.origin !== location.origin) { toast(`load refused: ${u.origin} is not this page's origin`, 'error'); return { loaded: q, ok: false, error: 'refused' }; }
   try { const r = await fetch(u, { credentials: 'same-origin' }); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
     const text = await r.text();
-    if (/^\s*(name|hostname)\s*,/i.test(text)) importCSV(text); else { DOC = normalizeDoc(JSON.parse(text)); reindex(); buildPages(); render(); refreshPanels(true); toast(`Loaded ${u.pathname}`, 'ok'); } } catch (e) { toast(`load failed: ${e.message}`, 'error'); }
+    if (/^\s*(name|hostname)\s*,/i.test(text)) importCSV(text); else { DOC = normalizeDoc(JSON.parse(text)); reindex(); buildPages(); render(); refreshPanels(true); toast(`Loaded ${u.pathname}`, 'ok'); } } catch (e) { toast(`load failed: ${e.message}`, 'error'); return { loaded: q, ok: false, error: e.message }; }
+  return { loaded: q, ok: true, error: null };
+}
+/* ============================================================
+   Embedding (1.8): switches a page that embeds topology forge (formerly TopoForge) turns on.
+   Opened on its own, nothing here changes the page: every switch is off until ?embed= names it
+   (?embed=frameless,props,shapes,pages,select,ready, or ?embed=all) or TopoForge.embed({...}) is
+   called. The selection hook and the ready event go to this window, and to a parent page only when
+   it is of this page's own origin (postMessage names location.origin; the browser drops the message
+   for any other, and nothing is posted from file://).
+   ============================================================ */
+const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
+const UI_KEY = 'topoforge.ui.v1', FL_STEP = 16, FL_BIG = 64, FL = {};
+let MAP = null, _selKey = null, _readyDetail = null, _readyTold = false, _readyResolve;
+const READY = new Promise(res => { _readyResolve = res; });
+function embedWordsFromQuery() {
+  const q = new URLSearchParams(location.search).get('embed'), o = {};
+  // 'all' turns on every switch that keeps the chrome (frameless, floating, pages, select, ready); 'bare' hides every piece of it
+  if (q) for (const w of q.toLowerCase().split(/[\s,+]+/)) { if (w === 'all') EMBED_WORDS.filter(k => !k.startsWith('hide-')).forEach(k => { o[k] = true; }); else if (w === 'bare') HIDE_ALL.forEach(k => { o[k] = true; }); else if (EMBED_WORDS.includes(w)) o[w] = true; }
+  return o;
+}
+function embed(opts) {
+  const was = { ...EMBED };
+  if (opts && typeof opts === 'object') {
+    if ('chrome' in opts && !('frameless' in opts)) opts = { ...opts, frameless: !opts.chrome };
+    for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
+  }
+  document.body.classList.toggle('tf-frameless', EMBED.frameless);
+  for (const k of EMBED_WORDS) if (k.startsWith('hide-')) document.body.classList.toggle('tf-' + k, EMBED[k]);
+  document.body.classList.toggle('tf-hide-top', EMBED['hide-menus'] && EMBED['hide-tools']);
+  pagesInMap(EMBED.pages);
+  for (const n of ['shapes', 'props']) { if (EMBED[n]) floatPanel(n); if (FL[n]) FL[n].turn(EMBED[n]); }
+  if (EMBED.select && !was.select) { _selKey = null; tellSelection(); }
+  if (!EMBED.ready) _readyTold = false; else if (_readyDetail && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
+  return { ...EMBED };
+}
+function tell(type, detail) {
+  try { window.dispatchEvent(new CustomEvent(type, { detail })); } catch (e) { }
+  if (window.parent !== window && location.origin && location.origin !== 'null') {
+    try { window.parent.postMessage({ type, detail }, location.origin); } catch (e) { }
+  }
+}
+function selectionInfo() {
+  const items = [...S.sel].map(id => {
+    const n = N(id), x = n || LK(id); if (!x) return null;
+    const d = x.data || {}, pr = x.props || {};
+    const name = String(x.text || '').split('\n')[0].trim() || (n ? (SHAPES[n.type] || {}).name || n.type : 'link');
+    return { id, ref: String(d.tf_ref || ''), name, tooltip: String(d.tooltip || d.what || pr.notes || ''), kind: n ? n.type : 'link' };
+  }).filter(Boolean);
+  const first = items[0] || { id: '', ref: '', name: '', tooltip: '', kind: '' };
+  return { ...first, count: items.length, items, page: P().name, pageIndex: DOC.cur };
+}
+function tellSelection() {
+  if (!EMBED.select) return;
+  const key = [...S.sel].join(',') + '|' + DOC.cur + '|' + P().name;
+  if (key === _selKey) return;
+  _selKey = key; tell('topoforge:select', selectionInfo());
+}
+function markReady(r) {
+  _readyDetail = { version: TF_VERSION, name: DOC.name, pages: DOC.pages.map(p => p.name), page: P().name, pageIndex: DOC.cur, loaded: r.loaded, ok: r.ok, error: r.error };
+  _readyResolve(_readyDetail);
+  if (EMBED.ready && !_readyTold) { _readyTold = true; tell('topoforge:ready', _readyDetail); }
+}
+function showPage(which) {
+  const i = typeof which === 'number' ? which : DOC.pages.findIndex(p => p.name === which);
+  if (!(i >= 0 && i < DOC.pages.length)) return false;
+  if (i !== DOC.cur) switchPage(i);
+  return true;
+}
+function uiLoad() { try { return JSON.parse(localStorage.getItem(UI_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function uiSave() {
+  const o = uiLoad();
+  for (const f of Object.values(FL)) o[f.name] = { dx: f.dx, dy: f.dy, hidden: f.hidden };
+  try { localStorage.setItem(UI_KEY, JSON.stringify(o)); } catch (e) { /* refused: kept for this visit only */ }
+}
+const flWide = () => matchMedia('(min-width:861px)').matches;
+function flSay(t) {
+  let l = $('#flLive');
+  if (!l) { l = document.createElement('div'); l.id = 'flLive'; l.className = 'sr-only'; l.setAttribute('role', 'status'); l.setAttribute('aria-live', 'polite'); document.body.appendChild(l); }
+  l.textContent = t;
+}
+// A floating panel: its grip row (drag, arrow keys, a Move menu for one pointer, hide/show), its place
+// kept in this browser. shapes starts at the left, props at the right, map at the bottom right.
+const FL_DEF = {
+  shapes: { el: () => $('#palette'), cls: 'tf-fl-shapes', label: 'Shapes', w: 236, start: st => ({ x: st.left + 12, y: st.top + 12 }) },
+  props: { el: () => $('#side'), cls: 'tf-fl-props', label: 'Properties', w: 296, start: st => ({ x: st.right - 296 - 12, y: st.top + 12 }) },
+  map: { el: () => MAP && MAP.box, cls: null, label: 'Overview', w: 240, start: (st, el) => ({ x: st.right - 240 - 12, y: st.bottom - (el.offsetHeight || 200) - 12 }) },
+};
+function floatPanel(name) {
+  if (FL[name]) return FL[name];
+  const def = FL_DEF[name], el = def.el(); if (!el) return null;
+  const bar = document.createElement('div'); bar.className = 'fl-bar';
+  bar.innerHTML = `<button type="button" class="fl-grip" aria-label="${def.label}: move by dragging, or with the arrow keys (Shift moves further)"><span aria-hidden="true">⠿</span>${def.label}</button>` +
+    `<button type="button" class="menu-btn" data-act="move" aria-haspopup="menu" aria-expanded="false" aria-label="Move ${def.label}">Move</button>` +
+    `<button type="button" class="fl-btn" data-act="hide" aria-expanded="true">Hide</button>`;
+  el.insertBefore(bar, el.firstChild);
+  const grip = bar.querySelector('.fl-grip'), moveB = bar.querySelector('[data-act=move]'), hideB = bar.querySelector('[data-act=hide]');
+  const saved = uiLoad()[name] || {};
+  const f = { name, el, on: false, hidden: !!saved.hidden, dx: Number.isFinite(saved.dx) ? saved.dx : null, dy: Number.isFinite(saved.dy) ? saved.dy : null, x: 0, y: 0 };
+  f.apply = () => {
+    if (def.cls) document.body.classList.toggle(def.cls, f.on);
+    el.classList.toggle('fl-hidden', f.on && f.hidden);
+    hideB.textContent = f.hidden ? 'Show' : 'Hide';
+    hideB.setAttribute('aria-expanded', String(!f.hidden)); hideB.setAttribute('aria-label', (f.hidden ? 'Show ' : 'Hide ') + def.label);
+    if (!f.on || !flWide()) return;
+    const st = $('#stage').getBoundingClientRect();
+    el.style.setProperty('--fw', def.w + 'px');
+    const s0 = def.start(st, el);
+    let x = f.dx === null ? s0.x : st.left + f.dx, y = f.dy === null ? s0.y : st.top + f.dy;
+    x = Math.round(clamp(x, st.left, Math.max(st.left, st.right - Math.min(def.w, st.width))));
+    y = Math.round(clamp(y, st.top, Math.max(st.top, st.bottom - 36)));
+    f.x = x; f.y = y;
+    el.style.setProperty('--fx', x + 'px'); el.style.setProperty('--fy', y + 'px');
+    let bottom = st.bottom - 12;   // Properties stops above the overview box when they share a column
+    if (name === 'props' && FL.map && FL.map.on && !FL.map.hidden) { const m = FL.map.el.getBoundingClientRect(); if (m.left < x + def.w && m.right > x && m.top > y) bottom = Math.min(bottom, m.top - 12); }
+    el.style.setProperty('--fh', Math.round(Math.max(160, bottom - y)) + 'px');
+  };
+  f.where = () => f.hidden ? `${def.label} is hidden to its grip row.` : `${def.label}: ${Math.round(f.x)} pixels from the left, ${Math.round(f.y)} from the top.`;
+  f.place = (x, y) => { const st = $('#stage').getBoundingClientRect(); f.dx = Math.round(x - st.left); f.dy = Math.round(y - st.top); f.apply(); };
+  f.move = (ddx, ddy) => { if (!flWide()) { flSay(`${def.label} does not float on a screen this narrow.`); return; } f.place(f.x + ddx, f.y + ddy); uiSave(); flSay(f.where()); };
+  f.reset = () => { f.dx = f.dy = null; f.apply(); uiSave(); flSay(`${def.label} is back in its starting place.`); };
+  f.toggle = () => { f.hidden = !f.hidden; f.apply(); relayoutFloats(); uiSave(); flSay(f.hidden ? `${def.label} is hidden to its grip row. Show brings it back.` : `${def.label} is shown.`); };
+  f.turn = on => { f.on = !!on; f.apply(); relayoutFloats(); };
+  bar.addEventListener('keydown', e => { e.stopPropagation(); });   // the canvas shortcuts (Delete, arrows, Space) are not for this row
+  grip.addEventListener('keydown', e => {
+    const n = e.shiftKey ? FL_BIG : FL_STEP, d = { ArrowLeft: [-n, 0], ArrowRight: [n, 0], ArrowUp: [0, -n], ArrowDown: [0, n] }[e.key];
+    if (d) { e.preventDefault(); f.move(d[0], d[1]); }
+  });
+  let drag = null;
+  grip.addEventListener('pointerdown', e => { if (e.button > 0 || !f.on || !flWide()) return; drag = { x: e.clientX, y: e.clientY, fx: f.x, fy: f.y, moved: false }; try { grip.setPointerCapture(e.pointerId); } catch (er) { } });
+  grip.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return; drag.moved = true; f.place(drag.fx + dx, drag.fy + dy); });
+  const end = () => { if (!drag) return; const m = drag.moved; drag = null; if (m) { uiSave(); flSay(f.where()); } };
+  grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
+  moveB.addEventListener('click', () => {
+    if (moveB.classList.contains('open')) { closeMenus(); return; }
+    const r = moveB.getBoundingClientRect();
+    openMenuAt([{ header: 'Move ' + def.label }, { label: 'Left', action: () => f.move(-FL_BIG, 0) }, { label: 'Right', action: () => f.move(FL_BIG, 0) },
+      { label: 'Up', action: () => f.move(0, -FL_BIG) }, { label: 'Down', action: () => f.move(0, FL_BIG) }, '-', { label: 'Back to its starting place', action: f.reset }], r.left, r.bottom + 4, moveB);
+  });
+  hideB.addEventListener('click', f.toggle);
+  FL[name] = f;
+  if (Object.keys(FL).length === 1) window.addEventListener('resize', relayoutFloats);
+  return f;
+}
+function relayoutFloats() { for (const n of ['shapes', 'map', 'props']) if (FL[n] && FL[n].on) FL[n].apply(); }
+// The page tabs folded into the overview map: one box with the thumbnail, a strip of page tabs with a
+// Pages button that lists them all, and the status line. Turned off, each goes back where it was.
+function pagesInMap(on) {
+  if (!on && !MAP) return;
+  if (!MAP) {
+    const box = document.createElement('section'); box.id = 'mapbox'; box.setAttribute('aria-label', 'Overview and pages');
+    box.innerHTML = '<div class="mp-pages" role="group" aria-label="Pages"><button type="button" class="mp-list menu-btn" aria-haspopup="menu" aria-expanded="false">Pages</button></div>';
+    $('#stage').appendChild(box);
+    MAP = { box, row: box.querySelector('.mp-pages'), list: box.querySelector('.mp-list'), on: false };
+    MAP.list.addEventListener('click', () => {
+      if (MAP.list.classList.contains('open')) { closeMenus(); return; }
+      const r = MAP.list.getBoundingClientRect();
+      openMenuAt([{ header: 'Pages (' + DOC.pages.length + ')' }, ...DOC.pages.map((p, i) => ({ label: p.name, checked: i === DOC.cur, action: () => showPage(i) }))], r.left, r.bottom, MAP.list);
+    });
+    MAP.box.addEventListener('keydown', e => { if (e.target.closest('.ptab, .mp-list, .fl-bar')) e.stopPropagation(); });
+    floatPanel('map');
+  }
+  if (on === MAP.on) return;
+  MAP.on = on;
+  const mm = $('#minimap'), tabs = $('#pagetabs'), status = $('#status'), bar = MAP.box.querySelector('.fl-bar');
+  if (on) { MAP.box.insertBefore(mm, bar.nextSibling); MAP.row.appendChild(tabs); MAP.box.appendChild(status); }
+  else { $('#stage').insertBefore(mm, MAP.box); $('#bottombar').appendChild(tabs); $('#bottombar').appendChild(status); }
+  document.body.classList.toggle('tf-pages', on);
+  FL.map.turn(on);
+  if (on) { mapShowActive(); scheduleMinimap(); }
+}
+function mapShowActive() {
+  if (!MAP || !MAP.on) return;
+  const t = $('#pagetabs'), a = t.querySelector('.ptab.active'); if (!a) return;
+  if (a.offsetLeft < t.scrollLeft) t.scrollLeft = a.offsetLeft;
+  else if (a.offsetLeft + a.offsetWidth > t.scrollLeft + t.clientWidth) t.scrollLeft = a.offsetLeft + a.offsetWidth - t.clientWidth;
+}
+// The palette's catalogue, for an embedding page that draws its own: every shape the palette offers, by
+// category, in the palette's order, with the same small picture the palette shows (an SVG string).
+function shapes() {
+  return CATS.map(c => ({ id: c.id, label: c.name, shapes: SHAPE_ORDER.filter(k => SHAPES[k].cat === c.id && !SHAPES[k].hidden)
+    .map(k => ({ id: k, label: SHAPES[k].name, category: c.id, kind: SHAPES[k].kind, w: SHAPES[k].w, h: SHAPES[k].h, icon: previewSVG(k) })) })).filter(c => c.shapes.length);
+}
+// Place a shape as the palette would. place(id, 'center') drops it at the middle of the view (a palette
+// click); place(id, { x, y }) at a point in this page's pixels (a drop); place(id) arms it: the next
+// press on the drawing drops it there, Enter drops it in the middle, Escape gives up. An embedding page
+// may also drag with the type text/x-topoforge set to the shape's id, as the palette does.
+let PLACING = null, _placeWired = false;
+function place(id, at) {
+  if (!SHAPES[id]) return false;
+  if (at === 'center') { addShapeCenter(id); return true; }
+  if (at && Number.isFinite(at.x) && Number.isFinite(at.y)) { addShapeAt(id, toWorld({ clientX: at.x, clientY: at.y })); return true; }
+  if (!_placeWired) {
+    _placeWired = true;
+    svgEl().addEventListener('pointerdown', e => {
+      if (!PLACING || e.button > 0) return;
+      e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));
+    }, true);
+    document.addEventListener('keydown', e => {
+      if (!PLACING) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); placing(null); flSay('Placing given up.'); }
+      else if (e.key === 'Enter' && !isTyping(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeCenter(k); }
+    }, true);
+  }
+  placing(id); flSay(`Placing ${SHAPES[id].name}: press on the drawing where it goes, Enter for the middle of the view, Escape to give up.`);
+  return true;
+}
+function placing(id) { PLACING = id; document.body.classList.toggle('tf-placing', !!id); }
+
+// Every command in the menus, for an embedding page that hides the app's chrome and offers them from its
+// own prompt: read from MENUS (Bryant's table) each time, so it is never a copy that drifts. An id is
+// menu:group:label in lower case, words joined by '-'; group is the menu's last heading ('' before one).
+function commands() {
+  const slug = t => String(t || '').toLowerCase().replace(/[…]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const out = [];
+  for (const m of Object.keys(MENUS)) {
+    let group = '';
+    for (const it of MENUS[m]()) {
+      if (it === '-' || !it) continue;
+      if (it.header) { group = it.header; continue; }
+      if (!it.action) continue;
+      const dis = typeof it.disabled === 'function' ? it.disabled() : !!it.disabled;
+      const ck = typeof it.checked === 'function' ? it.checked() : it.checked;
+      out.push({ id: [m, slug(group), slug(it.label)].join(':'), menu: m, group, label: it.label, shortcut: it.kbd || '', enabled: !dis, checked: ck === undefined ? null : !!ck, run: it.action });
+    }
+  }
+  return out;
+}
+function runCommand(id) {
+  const c = commands().find(x => x.id === id);
+  if (!c || !c.enabled) return false;
+  c.run(); return true;
+}
+// Where the panels are, in this page's pixels: for an embedding page that places its own palettes beside them.
+function panels() {
+  const box = el => { if (!el) return null; const b = el.getBoundingClientRect(); return { x: Math.round(b.left), y: Math.round(b.top), w: Math.round(b.width), h: Math.round(b.height), shown: b.width > 0 && b.right > 0 && b.left < innerWidth && getComputedStyle(el).display !== 'none' }; };
+  const st = n => ({ floating: !!(FL[n] && FL[n].on && flWide()), hidden: !!(FL[n] && FL[n].on && FL[n].hidden) });
+  return { stage: box($('#stage')), shapes: { ...box($('#palette')), ...st('shapes') }, props: { ...box($('#side')), ...st('props') }, map: MAP && MAP.on ? { ...box(MAP.box), ...st('map') } : box($('#minimap')) };
 }
 // small surface for automation / debugging
-window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex } };
+window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(d); reindex(); buildPages(); render(); refreshPanels(true); }, buildVsdx, parseVsdx, buildDrawio, parseDrawio, buildPDF, importCSV, exportCSV, runLayout, render, fitView, pageSVG, normalizeDoc, adoptPages, select: setSel, undo, redo, story: { factsOf, storyOf, storyMarkdown, ensureRefs, sha256hex },
+  // 1.8: for an embedding page (see the Embedding block above)
+  version: TF_VERSION, embed, get selection() { return selectionInfo(); }, ready: READY, showPage, panels,
+  commands: () => commands().map(({ run, ...c }) => c), run: runCommand, shapes, place, get placing() { return PLACING; } };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>
