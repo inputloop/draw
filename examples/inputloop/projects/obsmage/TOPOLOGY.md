@@ -5,7 +5,7 @@ pillar: part
 private: hide
 layer: operational
 contains: omg-atoms, omg-compose, omg-heal, obsmage-core
-connects: avalon
+connects: avalon, gw33
 code-licence: GPL-3.0-or-later OR LGPL-3.0-or-later
 prose-licence: CC-BY-SA-4.0
 files: README.md, CONVENTIONS.md, MODEL.md, STAGES.md, AGENTS.md, docs/REQUIREMENTS.md, docs/AR-CONTROL.md, docs/COMPOSER.md, docs/PACKAGING.md
@@ -21,7 +21,7 @@ diff, version and change, with credentials kept out of everything published.
 - `omg-atoms` splits an OBS configuration into atoms and joins it back (INI byte-exact, JSON parse-equal).
 - `omg-compose` audits and rebinds multi-monitor captures by stable id.
 - `omg-heal` plans, builds and heals Debian and source builds.
-- `obsmage-core` is the plugin skeleton (designed, not built).
+- `obsmage-core` is the plugin skeleton: it builds and loads in OBS Studio 32.1.0; its menu entries only log.
 
 ## Files that say what it is
 

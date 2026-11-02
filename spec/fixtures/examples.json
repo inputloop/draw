@@ -691,7 +691,7 @@
     "private": "hide",
     "layer": "operational",
     "contains": "omg-atoms, omg-compose, omg-heal, obsmage-core",
-    "connects": "avalon",
+    "connects": "avalon, gw33",
     "code-licence": "GPL-3.0-or-later OR LGPL-3.0-or-later",
     "prose-licence": "CC-BY-SA-4.0",
     "files": "README.md, CONVENTIONS.md, MODEL.md, STAGES.md, AGENTS.md, docs/REQUIREMENTS.md, docs/AR-CONTROL.md, docs/COMPOSER.md, docs/PACKAGING.md"
@@ -708,7 +708,7 @@
     "- `omg-atoms` splits an OBS configuration into atoms and joins it back (INI byte-exact, JSON parse-equal).",
     "- `omg-compose` audits and rebinds multi-monitor captures by stable id.",
     "- `omg-heal` plans, builds and heals Debian and source builds.",
-    "- `obsmage-core` is the plugin skeleton (designed, not built).",
+    "- `obsmage-core` is the plugin skeleton: it builds and loads in OBS Studio 32.1.0; its menu entries only log.",
     "",
     "## Files that say what it is",
     "",
@@ -739,13 +739,15 @@
     "pillar": "part",
     "layer": "abstract",
     "file": "plugin/obsmage-core/",
-    "state": "skeleton"
+    "state": "skeleton; builds and loads"
    },
    "public": [
     "# obsmage-core",
     "",
     "The core plugin skeleton: where AR desktop control and camera calibration will attach",
-    "(`docs/AR-CONTROL.md`). Designed, not built.",
+    "(`docs/AR-CONTROL.md`). It builds against Ubuntu 26.04's libobs and loads in OBS Studio 32.1.0 on",
+    "gw33 (2026-11-01, `docs/REQUIREMENTS.md`, R4). Its two Tools-menu entries only log so far; no",
+    "Windows build yet.",
     ""
    ],
    "private": [],
@@ -785,7 +787,7 @@
    "public": [
     "# omg-compose",
     "",
-    "`tools/omg_compose.py`: audits which captures bind to a display by index (fragile) or by stable id,",
+    "`tools/omg_compose.py`: `displays`, `audit`, `compose`, `infer-layout`. Audits which captures bind to a display by index (fragile) or by stable id,",
     "rebinds them, keeps screen-map scenes current. Never deletes; hides and reports. Every write is behind",
     "`--write` and leaves a dated backup. See `docs/COMPOSER.md`. Tests: `tests/test_compose.py`.",
     ""
@@ -807,7 +809,9 @@
     "# omg-heal",
     "",
     "`packaging/healer/omg-heal`: the build healer. Follows `main` (the default), project meta, tags, or",
-    "signed tags only. Test: `tests/e2e-healer.sh`.",
+    "signed tags only. Runs on gw33 as an ordinary user's systemd timer (`packaging/healer/user/`) and",
+    "builds the obsmage add-on `.deb` (plugin and tools, 0.0.1) from `main`. A `.deb` of OBS itself waits",
+    "on a patch queue and a `debian/` overlay for OBS. Tests: `tests/e2e-healer.sh`, `tests/e2e-packaging.sh`.",
     ""
    ],
    "private": [],
