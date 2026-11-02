@@ -360,7 +360,7 @@
      await c.close(); }
  
    // ---- B: hiding the app's own chrome, all of it or each piece ----
-@@ -285,9 +288,100 @@
+@@ -285,9 +288,101 @@
    { const { c, p } = await open(A + '/index.html');
      await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
      const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
@@ -413,8 +413,9 @@
 +    const want = [['M-x', false], ['<f10>', false], ['C-x', true], ['5', true], ['2', true], ['C-c', true], ['<escape>', false]];
 +    check('Y1 keys: Alt+x, F10, C-x and C-c pressed in the drawing reach the parent, with the keys of a sequence after them, until endKeys(), C-g or Escape; a plain key outside a sequence, and keys in a text field, stay with the app',
 +      JSON.stringify(k.map(d => [d.key, d.open])) === JSON.stringify(want) && JSON.stringify(k[4].seq) === '["C-x","5","2"]' && r.extra.ended === true && k.every(d => d.raw && 'code' in d.raw), JSON.stringify({ got: k.map(d => [d.key, d.open, d.seq.join(' ')]), extra: r.extra }));
-+    const off = await parentRun(A, A + '/index.html?embed=select&load=/fixture.json', async (p) => { const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.keyboard.press('Alt+x'); await p.keyboard.press('Control+x'); });
-+    check('Y2 without the keys switch no key is sent to the parent', msgs(off.got, 'key').length === 0 && off.ownAll.length === 0, `key messages: ${msgs(off.got, 'key').length}`); }
++    // context is on, so the app's 1.9 key listener is there: it is the keys switch, not a missing listener, that keeps the keys
++    const off = await parentRun(A, A + '/index.html?embed=select,context&load=/fixture.json', async (p) => { const c = await inFrame(p, { x: 900, y: 650 }); await p.mouse.click(c.x, c.y); await p.keyboard.press('Alt+x'); await p.keyboard.press('Control+x'); await p.keyboard.press('5'); });
++    check('Y2 without the keys switch no key is sent to the parent (another 1.9 switch on, so the listener is there)', msgs(off.got, 'key').length === 0 && !off.ownAll.includes('key'), `key messages: ${msgs(off.got, 'key').length}`); }
 +  // Q: right click, long press and the menu key on a shape
 +  { let menuSeen = null; const r = await parentRun(A, A + '/index.html?embed=context&load=/fixture.json', async (p, fr) => {
 +      const s = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.click(s.x, s.y, { button: 'right' }); await p.waitForTimeout(200);
@@ -462,7 +463,7 @@
    // ---- X: axe with every switch on; reduced motion ----
    for (const dark of [false, true]) {
      const { c, p } = await open(A + '/index.html?embed=all&load=/fixture.json', { dark, reduce: true });
-@@ -311,11 +405,11 @@
+@@ -311,11 +406,11 @@
  console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
  const passed = results.filter(r => r.startsWith('PASS')).length;
  fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
