@@ -1,0 +1,738 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Corwin Brust <corwin@bru.st> and Bryant Frankford <nathanielfrankford@gmail.com>
+     SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+     topology board: a canvas for notes in a meeting.  Lanes and cards (kanban), ink anywhere (Bryant's brush
+     presets and Dusk palette from topology paint), a frame drawn round things lifts them into one note, a tag
+     palette whose chips drop onto cards (a tag) or onto the backdrop (a ground: a region whose cards carry the tag),
+     and a reader for one document beside the work.  Two looks: free (borderless, Emacs-like frames floating on the
+     canvas) and classic (menu bar, ribbon, docked reader, status bar).  One file, no network: it keeps the board in
+     this browser, and when the page that serves it answers at ./api it can also list documents and save there.
+     Mentat (for Corwin, claude-opus-5-5) -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>topology board</title>
+<style>
+:root{--bg:#f4f3ee;--dot:#d9d6cc;--panel:#fffefb;--ink:#1c2226;--muted:#56616a;--rule:#cfd3d0;--accent:#2c5f86;--soft:#e3ebf1;
+ --card:#fffef6;--shadow:0 1px 2px rgba(0,0,0,.12),0 6px 18px rgba(0,0,0,.08);--sel:#c2410c;
+ --body:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+ --display:"Archivo","Arial Narrow",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]){--bg:#15191c;--dot:#2a3136;--panel:#1d2428;--ink:#e3e8ea;--muted:#9ba7ad;
+ --rule:#334046;--accent:#8fb9de;--soft:#22384a;--card:#20282c;--shadow:0 1px 2px rgba(0,0,0,.5);--sel:#fb923c;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#15191c;--dot:#2a3136;--panel:#1d2428;--ink:#e3e8ea;--muted:#9ba7ad;--rule:#334046;--accent:#8fb9de;
+ --soft:#22384a;--card:#20282c;--shadow:0 1px 2px rgba(0,0,0,.5);--sel:#fb923c;color-scheme:dark}
+*{box-sizing:border-box} html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body);overflow:hidden}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:8px;top:-40px;z-index:99;background:var(--panel);padding:6px 10px;border:1px solid var(--rule)}
+.skip:focus{top:8px}
+kbd{font:12px var(--mono);border:1px solid var(--rule);border-bottom-width:2px;border-radius:3px;padding:0 4px}
+
+/* ---- the stage: an endless backdrop, a world inside it that pans and zooms ---- */
+#stage{position:fixed;inset:0;overflow:hidden;touch-action:none;
+ background-image:radial-gradient(var(--dot) 1.2px,transparent 1.3px);background-size:24px 24px}
+#world{position:absolute;left:0;top:0;transform-origin:0 0}
+#ink{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+#ink.over{z-index:5}
+#ink path.hl{mix-blend-mode:multiply} @media (prefers-color-scheme: dark){#ink path.hl{mix-blend-mode:screen}}
+#capture{position:fixed;inset:0;z-index:4;display:none;cursor:crosshair;touch-action:none}
+body.inking #capture{display:block}
+
+.lane,.ground{position:absolute;border-radius:10px}
+.lane{background:color-mix(in srgb,var(--panel) 55%,transparent);border:1px solid var(--rule)}
+.lane>h2,.ground>.gl{margin:0;padding:6px 10px;font:600 15px var(--display);font-stretch:88%;cursor:grab;display:flex;gap:8px;align-items:center}
+.lane>h2 .n{font:12px var(--mono);color:var(--muted);margin-left:auto}
+.ground{border:2px dashed var(--gc,#888);background:color-mix(in srgb,var(--gc,#888) 9%,transparent)}
+.ground>.gl{font:600 13px var(--mono);color:var(--ink)}
+.grip{position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;opacity:.5;
+ background:linear-gradient(135deg,transparent 50%,var(--muted) 50%,var(--muted) 60%,transparent 60%,transparent 70%,var(--muted) 70%,var(--muted) 80%,transparent 80%)}
+.card{position:absolute;width:220px;min-height:64px;background:var(--card);border:1px solid var(--rule);border-radius:6px;box-shadow:var(--shadow);
+ display:flex;flex-direction:column;z-index:2}
+.card.sel{outline:2px solid var(--sel);outline-offset:1px}
+.card .hd{display:flex;gap:4px;align-items:center;padding:3px 6px;cursor:grab;min-height:22px;border-bottom:1px solid var(--rule);
+ border-radius:6px 6px 0 0;background:color-mix(in srgb,var(--cc,transparent) 22%,transparent)}
+.card .hd .ti{font:12px var(--mono);color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card textarea{border:0;background:transparent;resize:none;padding:6px 8px;min-height:40px;overflow:hidden;line-height:1.4}
+.card textarea:focus{outline:none}.card:focus-within{border-color:var(--accent)}
+.card .tags{display:flex;flex-wrap:wrap;gap:3px;padding:0 6px 5px}
+.card svg.inkimg{display:block;margin:2px 6px;max-width:calc(100% - 12px);height:auto}
+.chip{display:inline-flex;align-items:center;gap:3px;font:600 11px var(--mono);padding:1px 6px;border-radius:9px;
+ background:color-mix(in srgb,var(--tc,#888) 22%,var(--panel));border:1px solid var(--tc,#888);color:var(--ink)}
+.chip.implicit{border-style:dashed;opacity:.8}
+.chip button{border:0;background:none;padding:0 0 0 2px;cursor:pointer;font-size:12px;line-height:1}
+.marquee{position:absolute;border:1.5px dashed var(--sel);background:color-mix(in srgb,var(--sel) 7%,transparent);pointer-events:none;z-index:6}
+
+/* ---- frames: one DOM, two looks.  free: little floating Emacs frames.  classic: docked office chrome ---- */
+.frame{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);
+ display:flex;flex-direction:column;min-width:200px}
+.frame>.tb{display:flex;align-items:center;gap:6px;padding:3px 8px;font:12px var(--mono);color:var(--muted);border-bottom:1px solid var(--rule);cursor:move;user-select:none}
+.frame>.tb .x{margin-left:auto;border:0;background:none;cursor:pointer;padding:0 4px;font-size:14px}
+#emacs{left:16px;top:16px;width:300px}
+#menubar{display:flex;flex-wrap:wrap;gap:0;padding:2px 4px;border-bottom:1px solid var(--rule)}
+.mb{position:relative}
+.mb>button{border:0;background:none;padding:4px 8px;cursor:pointer;border-radius:4px}
+.mb>button[aria-expanded=true],.mb>button:hover{background:var(--soft)}
+.menu{position:absolute;left:0;top:100%;z-index:40;min-width:250px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;box-shadow:var(--shadow);padding:4px;display:grid}
+.menu[hidden]{display:none}
+.menu button{display:flex;justify-content:space-between;gap:16px;border:0;background:none;text-align:left;padding:5px 8px;border-radius:4px;cursor:pointer}
+.menu button:hover,.menu button:focus{background:var(--soft)}
+.menu button kbd{color:var(--muted)} .menu hr{border:0;border-top:1px solid var(--rule);margin:3px 0;width:100%}
+#toolbar{display:flex;flex-wrap:wrap;gap:3px;padding:6px}
+.tool{width:38px;height:38px;border:1px solid var(--rule);background:var(--panel);border-radius:6px;cursor:pointer;display:grid;place-items:center;font-size:17px;position:relative}
+.tool[aria-pressed=true]{background:var(--soft);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tool .k{position:absolute;right:2px;bottom:0;font:10px var(--mono);color:var(--muted)}
+#toolopts{padding:4px 8px 6px;display:grid;gap:6px;border-top:1px solid var(--rule)}
+#toolopts label{display:flex;gap:8px;align-items:center;font-size:13px}
+#toolopts input[type=range]{flex:1}
+.sw{display:flex;flex-wrap:wrap;gap:3px}
+.sw button{width:20px;height:20px;border-radius:50%;border:1px solid var(--rule);cursor:pointer;padding:0}
+.sw button[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}
+#meter{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}#meter i{display:block;height:100%;width:0;background:var(--accent)}
+#modeline{display:flex;gap:6px;align-items:center;padding:3px 6px;font:12px var(--mono);background:color-mix(in srgb,var(--ink) 88%,var(--bg));color:var(--bg);white-space:nowrap;overflow:hidden}
+#modeline button{border:0;background:none;color:inherit;font:inherit;cursor:pointer;padding:0 2px;border-radius:2px}
+#modeline button:hover,#modeline button:focus-visible{background:color-mix(in srgb,var(--bg) 25%,transparent)}
+#echo{display:flex;align-items:center;gap:4px;padding:2px 6px 4px;font:12.5px var(--mono);min-height:24px;border-radius:0 0 8px 8px}
+#echo .msg{flex:1;color:var(--muted);cursor:text;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#echo input{flex:1;border:0;background:transparent;font:12.5px var(--mono);padding:2px 0}
+#echo input:focus{outline:none}
+#echo .pr{color:var(--accent)}
+#completions{font:12px var(--mono);padding:0 8px 4px;color:var(--muted);max-height:120px;overflow:auto}
+
+#reader{right:16px;top:16px;width:min(460px,42vw);height:calc(100vh - 32px)}
+#reader .rb{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+#reader .rb select{flex:1;min-width:120px;padding:4px;border:1px solid var(--rule);border-radius:4px;background:var(--panel)}
+#reader .rb button,.btn{border:1px solid var(--rule);background:var(--soft);border-radius:4px;padding:4px 9px;cursor:pointer}
+#doc{flex:1;overflow:auto;padding:12px 16px 40px;font-size:14.5px}
+#doc h1{font:700 21px/1.2 var(--display);font-stretch:88%} #doc h2{font:700 17px var(--display);font-stretch:88%;margin-top:18px} #doc h3{font:700 15px var(--display)}
+#doc blockquote{margin:8px 0;padding:4px 12px;border-left:3px solid var(--accent);background:var(--soft)}
+#doc code{font:13px var(--mono)} #doc pre{background:var(--soft);padding:8px;overflow:auto}
+#doc li{margin:3px 0} #doc table{border-collapse:collapse} #doc td,#doc th{border:1px solid var(--rule);padding:3px 6px}
+#doc .empty{color:var(--muted)}
+#quotebtn{position:fixed;z-index:45}
+#tags{left:16px;bottom:16px;width:auto;min-width:0}
+#tags .pal{display:flex;flex-wrap:wrap;gap:5px;padding:7px 8px;max-width:420px;align-items:center}
+#tags .pal .chip{cursor:grab;font-size:12px;padding:3px 8px}
+#tags .pal input{width:90px;border:1px solid var(--rule);border-radius:9px;padding:1px 7px;background:var(--panel);font:12px var(--mono)}
+.ghost{position:fixed;z-index:60;pointer-events:none;opacity:.85}
+#lift{position:fixed;z-index:50;width:320px}
+#lift form{display:grid;gap:7px;padding:9px 10px}
+#lift label{display:grid;gap:2px;font-size:13px}
+#lift input[type=text],#lift select{border:1px solid var(--rule);border-radius:4px;padding:4px 6px;background:var(--panel)}
+#lift .row{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+#lift .pri{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+#outline{left:50%;top:8vh;transform:translateX(-50%);width:min(640px,92vw);max-height:84vh}
+#outline .body{overflow:auto;padding:8px 16px 16px}
+#watermark{position:fixed;right:14px;bottom:10px;z-index:1;font:11px var(--mono);color:var(--muted);opacity:.55;pointer-events:none;text-align:right}
+
+/* classic: the same pieces docked */
+body.classic #emacs{left:0;top:0;width:100vw;border-radius:0;border-width:0 0 1px;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"tb tb" "menu menu" "tools opts"}
+body.classic #emacs>.tb{display:none}
+body.classic #menubar{grid-area:menu;background:var(--panel)}
+body.classic #toolbar{grid-area:tools;flex-wrap:nowrap} body.classic .tool{width:44px;height:44px}
+body.classic #toolopts{grid-area:opts;border-top:0;border-left:1px solid var(--rule);grid-auto-flow:column;align-items:center;justify-content:start;gap:14px}
+body.classic #ml-host{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--rule)}
+body.classic #echo{border-radius:0}
+body.classic #reader{right:0;top:var(--classic-top,108px);height:calc(100vh - var(--classic-top,108px) - 50px);border-radius:0;border-width:0 0 0 1px}
+body.classic #reader>.tb,body.classic #tags>.tb{cursor:default}
+body.classic #tags{left:0;top:auto;bottom:50px;right:auto;border-radius:0;border-width:1px 1px 0 0}
+body.classic #stage{background-image:none;background-color:color-mix(in srgb,var(--bg) 60%,var(--panel))}
+body.classic #watermark{bottom:56px}
+.hidden{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+@media (forced-colors: active){.card,.frame,.lane,.tool{border:1px solid CanvasText}.chip{border:1px solid CanvasText}}
+@media (max-width:700px){#reader{width:calc(100vw - 32px);top:auto;bottom:16px;height:45vh}#tags{left:16px;top:auto;bottom:calc(45vh + 24px)}}
+</style>
+</head>
+<body>
+<a class="skip" href="#echo-msg">Skip to the command line</a>
+<a class="skip" href="#outline-open">Skip to the outline (the board as text)</a>
+<h1 class="sr">topology board</h1>
+<noscript><p>The board needs JavaScript. Its notes are plain JSON and Markdown wherever it saved them.</p></noscript>
+
+<div id="stage" aria-label="Board canvas. Double-click empty space to add a card. The outline lists everything here as text." role="region">
+  <div id="world">
+    <div id="lanes"></div><div id="grounds"></div><div id="cards" role="list" aria-label="Cards"></div>
+    <svg id="ink" width="1" height="1" aria-hidden="true"></svg>
+  </div>
+</div>
+<div id="capture" aria-hidden="true"></div>
+<div id="watermark"><span id="wm-name"></span><br>topology board · GPL-3.0-or-later · ink after Bryant Frankford's topology paint</div>
+
+<!-- the Emacs frame: menus, tool bar, tool options, mode-line, echo area -->
+<section class="frame" id="emacs" aria-label="Tools and commands">
+  <div class="tb" data-drag="emacs"><span aria-hidden="true">◆</span><span id="frame-title">board</span></div>
+  <nav id="menubar" aria-label="Menus"></nav>
+  <div id="toolbar" aria-label="Tools"></div>
+  <div id="toolopts"></div>
+  <div id="ml-host">
+    <div id="modeline" aria-label="Mode line"></div>
+    <div id="echo"><span class="pr" id="echo-pr" hidden></span><span class="msg" id="echo-msg" tabindex="0" role="status" aria-live="polite">Ready. M-x or click here for a command; ? lists the keys.</span>
+      <input id="echo-in" type="text" hidden aria-label="Command" autocomplete="off" spellcheck="false"></div>
+    <div id="completions" hidden aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="frame" id="tags" aria-label="Tag palette">
+  <div class="tb" data-drag="tags"><span>tags</span><span class="muted">drag onto a card, or onto the backdrop for a ground</span><button class="x" data-close="tags" aria-label="Hide the tag palette">×</button></div>
+  <div class="pal" id="pal"></div>
+</section>
+
+<section class="frame" id="reader" aria-label="Reader">
+  <div class="tb" data-drag="reader"><span>reader</span><span id="doc-name" class="muted"></span><button class="x" data-close="reader" aria-label="Hide the reader">×</button></div>
+  <div class="rb">
+    <label class="sr" for="doclist">Document</label><select id="doclist"><option value="">Open a document…</option></select>
+    <button id="docfile" type="button">File…</button><input id="docfile-in" type="file" accept=".md,.org,.txt,.markdown,text/*" hidden>
+    <button id="docquote" type="button" title="Quote the selected text into a card (q)">Quote → card</button>
+  </div>
+  <article id="doc" tabindex="0" aria-label="Document"><p class="empty">No document open. Choose one above, press <kbd>File…</kbd>, or drop a Markdown file here. Select text and press <kbd>q</kbd> to quote it into a card.</p></article>
+</section>
+
+<section class="frame hidden" id="lift" role="dialog" aria-modal="false" aria-labelledby="lift-h">
+  <div class="tb"><span id="lift-h">lift into a note</span></div>
+  <form id="liftform">
+    <p id="lift-what" style="margin:0;font-size:13px"></p>
+    <label>Title<input type="text" id="lift-title" autocomplete="off"></label>
+    <label>Add to<select id="lift-into"></select></label>
+    <label>Lane<select id="lift-lane"></select></label>
+    <div><span style="font-size:13px">Tags</span><div class="sw" id="lift-tags" style="gap:4px"></div></div>
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="lift-keep"> keep the ink on the backdrop too</label>
+    <div class="row"><button type="button" class="btn" id="lift-ink">Just ink</button><button type="button" class="btn" id="lift-cancel">Cancel</button><button class="btn pri" type="submit">Make the note</button></div>
+  </form>
+</section>
+
+<section class="frame hidden" id="outline" role="dialog" aria-modal="true" aria-labelledby="outline-h">
+  <div class="tb"><span id="outline-h">the board as text</span><button class="x" data-close="outline" aria-label="Close the outline">×</button></div>
+  <div class="body" id="outline-body" tabindex="0"></div>
+</section>
+<button id="outline-open" class="sr" type="button">Open the outline</button>
+<button id="quotebtn" class="btn hidden" type="button">Quote → card</button>
+
+<script>
+'use strict';
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const el = (t, a = {}, ...kids) => { const e = document.createElement(t); for (const [k, v] of Object.entries(a)) { if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v); } for (const c of kids) if (c != null) e.append(c); return e; };
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const today = () => new Date().toISOString().slice(0, 10);
+const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private window */ } } };
+
+// ---- Bryant's brushes (topology paint, src/core/brush.c BUILTIN) and his Dusk palette (palettes/Dusk.gpl) ----
+const BRUSHES = {
+  'Pencil':      { size: 4,  hardness: .9,  opacity: 1,  pressure_size: .6, min_size: .3,  smoothing: .1 },
+  'Ink Pen':     { size: 10, hardness: .95, opacity: 1,  pressure_size: 1,  min_size: .05, smoothing: .45 },
+  'Round Brush': { size: 30, hardness: .7,  opacity: .9, pressure_size: .8, min_size: .2,  smoothing: .2 },
+  'Marker':      { size: 26, hardness: .85, opacity: .5, pressure_size: .3, min_size: .6,  smoothing: .2, hl: true },
+  'Calligraphy': { size: 28, hardness: .9,  opacity: 1,  pressure_size: .7, min_size: .25, smoothing: .3, nib: 40 },
+};
+const DUSK = [['night','#120e1e'],['deep violet','#221a38'],['plum','#5a3264'],['mauve','#8c3c6e'],['rose','#c85064'],['ember','#f07850'],['amber','#ffaa50'],['glow','#ffd68c'],['navy','#14285a'],['sea','#1e468c'],['sky','#3c6eb4'],['haze','#78a0d2']];
+const INKS = [['ink','currentColor'],['red','#b42318'],['green','#2f7a4a'],['blue','#1f5fa8']].concat(DUSK);
+const TAGC = ['#2c7be5','#c2410c','#2f7a4a','#8c3c6e','#b7791f','#0f766e','#6d28d9','#be123c'];
+
+// ---- the board ----
+const fresh = (tpl) => ({ v: 1, name: 'board-' + today(), title: '', created: new Date().toISOString(), lanes: tpl === 'blank' ? [] : laneSet(tpl),
+  cards: [], strokes: [], grounds: [], tags: [{ name: 'ask', color: TAGC[0] }, { name: 'decision', color: TAGC[2] }, { name: 'follow-up', color: TAGC[1] }, { name: 'idea', color: TAGC[3] }, { name: 'risk', color: TAGC[7] }],
+  doc: null });
+function laneSet(tpl) {
+  const names = tpl === 'kanban' ? ['To do', 'Doing', 'Done'] : ['Agenda', 'Notes', 'Asks', 'Follow-ups'];
+  return names.map((t, i) => ({ id: uid(), title: t, x: 40 + i * 300, y: 40, w: 280, h: 640 }));
+}
+const KEY = 'topology-board:';
+let B = null;
+const view = { x: 0, y: 0, z: 1 };
+const S = { tool: 'select', brush: 'Ink Pen', color: 'currentColor', size: null, softness: .5, look: LS.get('tb:look') || 'free', major: 'board',
+  loop: LS.get('tb:loop') || 'ask', inkOver: LS.get('tb:inkover') !== '0', host: null, dirty: false, sel: null };
+const undo = [], redo = [];
+function snap() { undo.push(JSON.stringify(B)); if (undo.length > 120) undo.shift(); redo.length = 0; }
+function changed() { S.dirty = true; clearTimeout(changed.t); changed.t = setTimeout(() => { LS.set(KEY + B.name, JSON.stringify(B)); LS.set(KEY + 'last', B.name); modeline(); }, 400); modeline(); }
+
+// ---- view ----
+const stage = $('#stage'), world = $('#world');
+function applyView() { world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`; stage.style.backgroundPosition = `${view.x}px ${view.y}px`; stage.style.backgroundSize = `${24 * view.z}px ${24 * view.z}px`; modeline(); }
+const toWorld = (cx, cy) => ({ x: (cx - view.x) / view.z, y: (cy - view.y) / view.z });
+const toScreen = (x, y) => ({ x: x * view.z + view.x, y: y * view.z + view.y });
+function zoomAt(f, cx, cy) { const w = toWorld(cx, cy); view.z = clamp(view.z * f, .2, 4); view.x = cx - w.x * view.z; view.y = cy - w.y * view.z; applyView(); }
+function centre() { const r = stage.getBoundingClientRect(); const left = S.look === 'classic' ? 0 : 330; return toWorld(left + (r.width - left - ($('#reader').classList.contains('hidden') ? 0 : 470)) / 2, r.height / 2); }
+
+// ---- rendering ----
+function render() {
+  const lanes = $('#lanes'); lanes.replaceChildren(...B.lanes.map(laneEl));
+  $('#grounds').replaceChildren(...B.grounds.map(groundEl));
+  $('#cards').replaceChildren(...B.cards.map(cardEl));
+  drawInk(); counts(); modeline(); palette(); $('#wm-name').textContent = (B.title || B.name);
+  $('#frame-title').textContent = B.name;
+}
+function laneEl(l) {
+  const n = el('span', { class: 'n' });
+  const h = el('h2', { 'data-drag-lane': l.id }, el('span', { text: l.title }), n);
+  h.addEventListener('dblclick', () => ask('Rename lane: ', l.title, v => { snap(); l.title = v || l.title; changed(); render(); }));
+  const e = el('div', { class: 'lane', 'data-id': l.id, style: `left:${l.x}px;top:${l.y}px;width:${l.w}px;height:${l.h}px` }, h, el('div', { class: 'grip', 'data-grip-lane': l.id }));
+  return e;
+}
+function groundEl(g) {
+  const t = tagOf(g.tag);
+  return el('div', { class: 'ground', 'data-id': g.id, style: `left:${g.x}px;top:${g.y}px;width:${g.w}px;height:${g.h}px;--gc:${t ? t.color : '#888'}` },
+    el('div', { class: 'gl', 'data-drag-ground': g.id, title: 'Cards inside carry this tag' }, '#' + g.tag), el('div', { class: 'grip', 'data-grip-ground': g.id }));
+}
+const tagOf = n => B.tags.find(t => t.name === n);
+function implicitTags(c) { const cx = c.x + 110, cy = c.y + 30; return B.grounds.filter(g => cx >= g.x && cx <= g.x + g.w && cy >= g.y && cy <= g.y + g.h).map(g => g.tag).filter(t => !c.tags.includes(t)); }
+function laneOf(c) { const cx = c.x + 110, cy = c.y + 20; const l = B.lanes.find(l => cx >= l.x && cx <= l.x + l.w && cy >= l.y && cy <= l.y + l.h); return l ? l.id : null; }
+function chip(name, opts = {}) {
+  const t = tagOf(name) || { color: '#888' };
+  const c = el('span', { class: 'chip' + (opts.implicit ? ' implicit' : ''), style: `--tc:${t.color}` }, '#' + name);
+  if (opts.remove) c.append(el('button', { type: 'button', 'aria-label': 'remove tag ' + name, onclick: opts.remove, text: '×' }));
+  if (opts.implicit) c.title = 'from the ground it sits in';
+  return c;
+}
+function cardEl(c) {
+  const ta = el('textarea', { 'aria-label': 'Card text', rows: 2, spellcheck: 'true' }); ta.value = c.text;
+  ta.addEventListener('focus', () => { select(c.id); if (!ta.dataset.snap) { snap(); ta.dataset.snap = 1; } });
+  ta.addEventListener('input', () => { c.text = ta.value; grow(ta); hd.querySelector('.ti').textContent = firstLine(c); changed(); });
+  ta.addEventListener('blur', () => { delete ta.dataset.snap; });
+  ta.addEventListener('keydown', e => { if (e.key === 'Escape') { ta.blur(); e.target.closest('.card').focus(); } });
+  const hd = el('div', { class: 'hd', 'data-drag-card': c.id }, el('span', { class: 'ti', text: firstLine(c) }));
+  const tags = el('div', { class: 'tags' }, ...c.tags.map(t => chip(t, { remove: () => { snap(); c.tags = c.tags.filter(x => x !== t); changed(); render(); } })), ...implicitTags(c).map(t => chip(t, { implicit: true })));
+  const e = el('div', { class: 'card' + (S.sel === c.id ? ' sel' : ''), 'data-id': c.id, role: 'listitem', tabindex: 0,
+    'aria-label': 'Card: ' + (firstLine(c) || 'empty') + (c.tags.length ? ', tags ' + c.tags.join(' ') : ''),
+    style: `left:${c.x}px;top:${c.y}px;width:${c.w || 220}px;--cc:${c.color || 'transparent'}` }, hd);
+  if (c.ink) { const s = new DOMParser().parseFromString(c.ink, 'image/svg+xml').documentElement; s.classList.add('inkimg'); s.setAttribute('role', 'img'); s.setAttribute('aria-label', 'ink lifted into this note'); e.append(document.importNode(s, true)); }
+  e.append(ta, tags);
+  e.addEventListener('focus', () => select(c.id));
+  requestAnimationFrame(() => grow(ta));
+  return e;
+}
+const firstLine = c => (c.text.split('\n').find(l => l.trim()) || (c.ink ? '(ink)' : '')).slice(0, 60);
+function grow(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+function select(id) { S.sel = id; $$('.card').forEach(e => e.classList.toggle('sel', e.dataset.id === id)); }
+function counts() { $$('.lane').forEach(le => { const n = B.cards.filter(c => laneOf(c) === le.dataset.id).length; le.querySelector('.n').textContent = n || ''; }); }
+
+// ---- ink: Bryant's model, drawn as vector outlines so the board stays small and editable ----
+function curve(p) { const s = S.softness; const g = s < .5 ? 1 + (.5 - s) * 3 : 1 / (1 + (s - .5) * 3); return Math.pow(clamp(p, 0, 1), g); }
+function widthAt(st, p) { const b = BRUSHES[st.brush] || BRUSHES['Ink Pen']; const k = 1 - b.pressure_size + b.pressure_size * curve(p); return Math.max(st.size * b.min_size, st.size * k); }
+function outline(st) {
+  const P = st.pts; if (!P.length) return '';
+  if (P.length === 1) { const r = widthAt(st, P[0][2]) / 2; return `M${P[0][0] - r},${P[0][1]}a${r},${r} 0 1,0 ${2 * r},0a${r},${r} 0 1,0 ${-2 * r},0`; }
+  const b = BRUSHES[st.brush] || {}; const L = [], R = [];
+  for (let i = 0; i < P.length; i++) {
+    const a = P[Math.max(0, i - 1)], c = P[Math.min(P.length - 1, i + 1)];
+    let dx = c[0] - a[0], dy = c[1] - a[1]; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
+    let w = widthAt(st, P[i][2]) / 2;
+    if (b.nib != null) { const ang = b.nib * Math.PI / 180; w *= .25 + .75 * Math.abs(Math.sin(Math.atan2(dy, dx) - ang)); }
+    L.push([P[i][0] - dy * w, P[i][1] + dx * w]); R.push([P[i][0] + dy * w, P[i][1] - dx * w]);
+  }
+  const f = q => q[0].toFixed(1) + ',' + q[1].toFixed(1);
+  return 'M' + L.map(f).join('L') + 'L' + R.reverse().map(f).join('L') + 'Z';
+}
+function inkPath(st) { const b = BRUSHES[st.brush] || {}; const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', outline(st)); p.setAttribute('fill', st.color); p.setAttribute('stroke', st.color); p.setAttribute('stroke-width', '.6'); p.setAttribute('stroke-linejoin', 'round');
+  p.setAttribute('opacity', b.opacity ?? 1); if (b.hl) p.classList.add('hl'); p.dataset.id = st.id; return p; }
+function drawInk() { const svg = $('#ink'); svg.replaceChildren(...B.strokes.map(inkPath)); svg.classList.toggle('over', S.inkOver); }
+function bbox(pts) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; }
+function pointInPoly(x, y, P) { let inside = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside; } return inside; }
+
+let live = null;   // the stroke in progress
+const cap = $('#capture');
+cap.addEventListener('pointerdown', e => {
+  if (e.button === 1 || (e.button === 0 && spaceDown)) return startPan(e);
+  cap.setPointerCapture(e.pointerId); const w = toWorld(e.clientX, e.clientY);
+  if (S.tool === 'erase') { live = { erase: true }; eraseAt(w); snap(); return; }
+  if (S.tool === 'frame') { live = { frame: true, x0: w.x, y0: w.y, m: el('div', { class: 'marquee' }) }; world.append(live.m); return; }
+  const b = BRUSHES[S.brush]; const p = pressure(e);
+  live = { id: uid(), brush: S.brush, color: S.color === 'currentColor' ? getComputedStyle(document.body).color : S.color, size: S.size || b.size, pts: [[w.x, w.y, p]], sm: [w.x, w.y], t0: performance.now() };
+  live.path = inkPath(live); $('#ink').append(live.path);
+});
+cap.addEventListener('pointermove', e => {
+  if (panning) return;
+  meter(pressure(e));
+  if (!live) return; const w = toWorld(e.clientX, e.clientY);
+  if (live.erase) return eraseAt(w);
+  if (live.frame) { const x = Math.min(live.x0, w.x), y = Math.min(live.y0, w.y); Object.assign(live.m.style, { left: x + 'px', top: y + 'px', width: Math.abs(w.x - live.x0) + 'px', height: Math.abs(w.y - live.y0) + 'px' }); return; }
+  const ev = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  const k = 1 - (BRUSHES[live.brush].smoothing || 0) * .85;      // the stabilizer: the line lags behind the pen
+  for (const ce of ev) { const q = toWorld(ce.clientX, ce.clientY); live.sm[0] += (q.x - live.sm[0]) * k; live.sm[1] += (q.y - live.sm[1]) * k; live.pts.push([live.sm[0], live.sm[1], pressure(ce)]); }
+  live.path.setAttribute('d', outline(live));
+});
+cap.addEventListener('pointerup', e => endInk(e)); cap.addEventListener('pointercancel', e => endInk(e));
+function pressure(e) { if (e.pointerType === 'pen' || (e.pressure && e.pressure !== .5 && e.pressure !== 0)) return e.pressure || .5; return .5; }
+function meter(p) { const m = $('#meter i'); if (m) m.style.width = (curve(p) * 100).toFixed(0) + '%'; }
+function endInk(e) {
+  if (!live) return; const L = live; live = null;
+  if (L.erase) { changed(); return; }
+  if (L.frame) { L.m.remove(); const w = toWorld(e.clientX, e.clientY); const r = { x: Math.min(L.x0, w.x), y: Math.min(L.y0, w.y), w: Math.abs(w.x - L.x0), h: Math.abs(w.y - L.y0) };
+    if (r.w < 8 || r.h < 8) return say('A frame needs a little size: drag round what should become one note.');
+    const inside = gather(r, null); if (!inside.strokes.length && !inside.cards.length) return say('Nothing inside that frame.');
+    return offerLift(inside, r, null);
+  }
+  const last = L.pts[L.pts.length - 1]; L.pts.push([last[0], last[1], last[2]]);
+  delete L.path; delete L.sm; delete L.t0;
+  // edge detect: a stroke that closes on itself round other things is a question, not (only) a drawing
+  const bb = bbox(L.pts), [sx, sy] = L.pts[0], gap = Math.hypot(last[0] - sx, last[1] - sy), diag = Math.hypot(bb.w, bb.h);
+  const closed = diag > 60 && gap < Math.max(24, diag * .15) && L.pts.length > 12;
+  snap(); B.strokes.push(L);
+  if (closed && S.loop !== 'draw') { const inside = gather(bb, L.pts, L.id); if (inside.strokes.length || inside.cards.length) { if (S.loop === 'lift') { lift(inside, { title: '', keep: false, lane: '', tags: [], into: '', loopId: L.id }); return; } drawInk(); offerLift(inside, bb, L.id); changed(); return; } }
+  drawInk(); changed();
+}
+function eraseAt(w) { const r = (S.size || 14) / view.z; const before = B.strokes.length; B.strokes = B.strokes.filter(st => !st.pts.some(([x, y]) => Math.hypot(x - w.x, y - w.y) < r)); if (B.strokes.length !== before) drawInk(); }
+function gather(r, poly, skip) {
+  const inR = (x, y) => poly ? pointInPoly(x, y, poly) : (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h);
+  const strokes = B.strokes.filter(st => st.id !== skip && st.pts.filter(([x, y]) => inR(x, y)).length > st.pts.length * .7);
+  const cards = B.cards.filter(c => { const ce = cardDom(c.id); const h = ce ? ce.offsetHeight : 60; return inR(c.x + (c.w || 220) / 2, c.y + h / 2); });
+  return { strokes, cards, rect: r };
+}
+const cardDom = id => $(`.card[data-id="${id}"]`);
+
+// ---- lift: the frame (or a closed loop) offers to make one note of what it holds, its particulars inline ----
+let pending = null;
+function offerLift(inside, r, loopId) {
+  pending = { inside, loopId };
+  const f = $('#lift'), s = toScreen(r.x + r.w, r.y);
+  $('#lift-what').textContent = `Inside: ${inside.cards.length} card${inside.cards.length === 1 ? '' : 's'}, ${inside.strokes.length} stroke${inside.strokes.length === 1 ? '' : 's'} of ink.`;
+  $('#lift-title').value = inside.cards.length ? firstLine(inside.cards[0]) : '';
+  const into = $('#lift-into'); into.replaceChildren(el('option', { value: '', text: 'a new card' }), ...inside.cards.map(c => el('option', { value: c.id, text: 'the card “' + (firstLine(c) || 'empty') + '”' })));
+  if (inside.cards.length === 1) into.value = inside.cards[0].id;
+  const lane = $('#lift-lane'); lane.replaceChildren(el('option', { value: '', text: 'where it is' }), ...B.lanes.map(l => el('option', { value: l.id, text: l.title })));
+  $('#lift-tags').replaceChildren(...B.tags.map(t => { const b = el('button', { type: 'button', class: 'chip', style: `--tc:${t.color};width:auto;height:auto;border-radius:9px`, 'aria-pressed': 'false', text: '#' + t.name }); b.onclick = () => b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); b.dataset.tag = t.name; return b; }));
+  $('#lift-keep').checked = false;
+  f.classList.remove('hidden'); f.style.left = clamp(s.x + 12, 8, innerWidth - 330) + 'px'; f.style.top = clamp(s.y, 8, innerHeight - 380) + 'px';
+  $('#lift-title').focus(); say('Lift: Enter makes the note, Esc keeps it as ink.');
+}
+function closeLift() { $('#lift').classList.add('hidden'); pending = null; }
+$('#liftform').addEventListener('submit', e => { e.preventDefault(); if (!pending) return;
+  lift(pending.inside, { title: $('#lift-title').value.trim(), into: $('#lift-into').value, lane: $('#lift-lane').value, keep: $('#lift-keep').checked,
+    tags: $$('#lift-tags [aria-pressed=true]').map(b => b.dataset.tag), loopId: pending.loopId }); closeLift(); });
+$('#lift-cancel').onclick = () => { if (pending && pending.loopId) { B.strokes = B.strokes.filter(s => s.id !== pending.loopId); drawInk(); changed(); } closeLift(); say('Nothing lifted.'); };
+$('#lift-ink').onclick = () => { closeLift(); say('Kept as ink.'); };
+function lift(inside, o) {
+  snap();
+  const strokes = inside.strokes; let ink = '';
+  if (strokes.length) { const bb = bbox(strokes.flatMap(s => s.pts)), pad = 6;
+    ink = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(bb.x - pad).toFixed(0)} ${(bb.y - pad).toFixed(0)} ${(bb.w + pad * 2).toFixed(0)} ${(bb.h + pad * 2).toFixed(0)}" width="${Math.min(208, bb.w + pad * 2).toFixed(0)}">` +
+      strokes.map(s => { const p = inkPath(s); return p.outerHTML; }).join('') + '</svg>'; }
+  const others = inside.cards.filter(c => c.id !== o.into);
+  let target = o.into ? B.cards.find(c => c.id === o.into) : null;
+  const r = inside.rect;
+  if (!target) { target = { id: uid(), x: r.x, y: r.y, w: 220, text: '', tags: [], color: '' }; B.cards.push(target); }
+  const text = [o.title && !target.text.startsWith(o.title) ? o.title : '', target.text, ...others.map(c => c.text)].filter(Boolean).join('\n\n');
+  target.text = text; target.tags = [...new Set([...target.tags, ...o.tags, ...others.flatMap(c => c.tags)])];
+  if (ink) target.ink = target.ink ? mergeInk(target.ink, ink) : ink;
+  B.cards = B.cards.filter(c => !others.includes(c));
+  if (!o.keep) { const gone = new Set(strokes.map(s => s.id)); if (o.loopId) gone.add(o.loopId); B.strokes = B.strokes.filter(s => !gone.has(s.id)); }
+  else if (o.loopId) B.strokes = B.strokes.filter(s => s.id !== o.loopId);
+  if (o.lane) { const l = B.lanes.find(l => l.id === o.lane); const n = B.cards.filter(c => laneOf(c) === l.id && c !== target).length; target.x = l.x + 30; target.y = l.y + 44 + n * 90; }
+  changed(); render(); S.sel = target.id; const ce = cardDom(target.id); if (ce) ce.querySelector('textarea').focus();
+  say(`Lifted into one note${others.length ? ', merging ' + others.length + ' card' + (others.length > 1 ? 's' : '') : ''}${strokes.length ? ' with ' + strokes.length + ' stroke(s) of ink' : ''}.`);
+}
+function mergeInk(a, b) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="208"><g>${a}</g><g>${b}</g></svg>`.replace(/<svg[^>]*><g><svg/, '<svg'); }
+
+// ---- moving things: cards, lanes, grounds, grips; panning; double-click for a card ----
+let drag = null, panning = null, spaceDown = false;
+function startPan(e) { panning = { x: e.clientX - view.x, y: e.clientY - view.y }; (e.target).setPointerCapture?.(e.pointerId); e.preventDefault(); }
+stage.addEventListener('pointerdown', e => {
+  if (e.button === 1 || (e.button === 0 && (spaceDown || S.tool === 'hand'))) return startPan(e);
+  const t = e.target; const w = toWorld(e.clientX, e.clientY);
+  const pick = (attr, list) => { const id = t.closest(`[${attr}]`)?.getAttribute(attr); return id ? list.find(x => x.id === id) : null; };
+  let obj, kind;
+  if ((obj = pick('data-drag-card', B.cards))) kind = 'card';
+  else if ((obj = pick('data-drag-lane', B.lanes))) kind = 'lane';
+  else if ((obj = pick('data-drag-ground', B.grounds))) kind = 'ground';
+  else if ((obj = pick('data-grip-lane', B.lanes) || pick('data-grip-ground', B.grounds))) kind = 'grip';
+  if (!obj) { if (t === stage || t.id === 'world' || t.closest('.lane,.ground') && !t.closest('.card')) { if (e.button === 0 && !t.closest('.card')) startPan(e); } return; }
+  e.preventDefault(); snap();
+  const carry = kind === 'lane' || kind === 'ground' ? B.cards.filter(c => { const cx = c.x + 110, cy = c.y + 20; return cx >= obj.x && cx <= obj.x + obj.w && cy >= obj.y && cy <= obj.y + obj.h; }) : [];
+  drag = { kind, obj, w0: w, o0: { x: obj.x, y: obj.y, w: obj.w, h: obj.h }, carry: carry.map(c => [c, c.x, c.y]) };
+  if (kind === 'card') select(obj.id);
+  t.setPointerCapture(e.pointerId);
+});
+addEventListener('pointermove', e => {
+  if (panning) { view.x = e.clientX - panning.x; view.y = e.clientY - panning.y; applyView(); return; }
+  if (!drag) return; const w = toWorld(e.clientX, e.clientY), dx = w.x - drag.w0.x, dy = w.y - drag.w0.y, o = drag.obj;
+  if (drag.kind === 'grip') { o.w = Math.max(140, drag.o0.w + dx); o.h = Math.max(100, drag.o0.h + dy); }
+  else { o.x = drag.o0.x + dx; o.y = drag.o0.y + dy; for (const [c, x, y] of drag.carry) { c.x = x + dx; c.y = y + dy; } }
+  const sel = drag.kind === 'card' ? `.card[data-id="${o.id}"]` : `[data-id="${o.id}"]`;
+  const d = $(sel); if (d) Object.assign(d.style, { left: o.x + 'px', top: o.y + 'px', width: (o.w || 220) + 'px', ...(o.h ? { height: o.h + 'px' } : {}) });
+  for (const [c] of drag.carry) { const ce = cardDom(c.id); if (ce) Object.assign(ce.style, { left: c.x + 'px', top: c.y + 'px' }); }
+});
+addEventListener('pointerup', () => { if (panning) { panning = null; return; } if (drag) { const k = drag.kind; drag = null; changed(); if (k !== 'card') render(); else { counts(); render(); } } });
+stage.addEventListener('dblclick', e => { if (e.target.closest('.card,.lane>h2,.ground>.gl')) return; const w = toWorld(e.clientX, e.clientY); newCard(w.x - 20, w.y - 12); });
+stage.addEventListener('wheel', e => { e.preventDefault(); if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY * .0015), e.clientX, e.clientY); else { view.x -= e.deltaX; view.y -= e.deltaY; applyView(); } }, { passive: false });
+cap.addEventListener('wheel', e => stage.dispatchEvent(new WheelEvent('wheel', e)), { passive: false });
+
+function newCard(x, y, text = '', extra = {}) {
+  snap(); if (x == null) { const c = centre(); x = c.x - 110; y = c.y - 30; }
+  const c = { id: uid(), x, y, w: 220, text, tags: [], color: '', ...extra }; B.cards.push(c); changed(); render();
+  const ce = cardDom(c.id); if (ce) { ce.querySelector('textarea').focus(); } return c;
+}
+
+// ---- the tag palette: drop on a card = a tag; drop on the backdrop = a ground ----
+function palette() {
+  const pal = $('#pal'); pal.replaceChildren(...B.tags.map(t => { const c = chip(t.name); c.tabIndex = 0; c.setAttribute('role', 'button');
+    c.setAttribute('aria-label', `tag ${t.name}: Enter adds it to the selected card, Shift+Enter makes a ground`);
+    c.addEventListener('pointerdown', e => tagDrag(e, t)); c.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.shiftKey ? makeGround(t.name) : tagCard(S.sel, t.name); } }); return c; }));
+  const inp = el('input', { type: 'text', placeholder: '+ tag', 'aria-label': 'New tag name' });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && inp.value.trim()) { addTag(inp.value); } });
+  pal.append(inp);
+}
+function addTag(n) { n = n.trim().replace(/^#/, '').replace(/\s+/g, '-'); if (!n || tagOf(n)) return n; snap(); B.tags.push({ name: n, color: TAGC[B.tags.length % TAGC.length] }); changed(); palette(); return n; }
+function tagCard(id, name) { const c = B.cards.find(c => c.id === id); if (!c) return say('Select a card first (click it or Tab to it), then add the tag.'); if (c.tags.includes(name)) return; snap(); c.tags.push(name); changed(); render(); say(`#${name} on “${firstLine(c) || 'card'}”.`); }
+function makeGround(name, x, y) { snap(); if (x == null) { const c = centre(); x = c.x - 160; y = c.y - 110; } B.grounds.push({ id: uid(), tag: name, x, y, w: 320, h: 220 }); changed(); render(); say(`A #${name} ground: cards set inside it carry the tag.`); }
+function tagDrag(e, t) {
+  e.preventDefault(); const g = chip(t.name); g.classList.add('ghost'); document.body.append(g);
+  const mv = ev => { g.style.left = ev.clientX + 8 + 'px'; g.style.top = ev.clientY + 8 + 'px'; }; mv(e);
+  const up = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); g.remove();
+    const under = document.elementsFromPoint(ev.clientX, ev.clientY); const card = under.find(x => x.classList && x.classList.contains('card'));
+    if (card) return tagCard(card.dataset.id, t.name);
+    if (under.some(x => x.closest && x.closest('.frame'))) return;
+    const w = toWorld(ev.clientX, ev.clientY); makeGround(t.name, w.x - 40, w.y - 20); };
+  addEventListener('pointermove', mv); addEventListener('pointerup', up);
+}
+
+// ---- the reader ----
+async function host(path, opt) { if (!S.host) return null; try { const r = await fetch(S.host + path, opt); return r.ok ? r : null; } catch (e) { return null; } }
+async function probe() {
+  if (!/^https?:/.test(location.protocol)) return;
+  const base = location.pathname.replace(/\/(index\.html)?$/, '') + '/api';
+  try { const r = await fetch(base + '/hello', { headers: { accept: 'application/json' } }); if (!r.ok) return; const j = await r.json(); if (!j || j.board !== 1) return; S.host = base; S.hostName = j.name || 'host'; } catch (e) { return; }
+  const r = await host('/docs'); if (r) { const list = await r.json(); const sel = $('#doclist');
+    sel.replaceChildren(el('option', { value: '', text: `Open a document from ${S.hostName}…` }), ...list.map(d => el('option', { value: d.name, text: d.name + (d.when ? '  · ' + d.when : '') })));
+    if (list.length) say(`${S.hostName}: ${list.length} document(s) to open; saving goes there too (C-x C-s).`); }
+  modeline();
+}
+$('#doclist').addEventListener('change', async e => { const n = e.target.value; if (!n) return; const r = await host('/doc?name=' + encodeURIComponent(n)); if (!r) return say('That document could not be read.'); openDoc(n, await r.text()); });
+$('#docfile').onclick = () => $('#docfile-in').click();
+$('#docfile-in').addEventListener('change', async e => { const f = e.target.files[0]; if (f) openDoc(f.name, await f.text()); });
+$('#reader').addEventListener('dragover', e => e.preventDefault());
+$('#reader').addEventListener('drop', async e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) openDoc(f.name, await f.text()); });
+function openDoc(name, text) {
+  B.doc = { name, text: text.slice(0, 400000) }; showDoc(); changed();
+  if (!B.title) { B.title = name.replace(/\.(md|org|txt|markdown)$/i, ''); }
+  const m = name.match(/(\d{4}-\d\d-\d\d)[-_]?([\w.-]*?)\.(md|org|txt)$/i);
+  if (m && B.name === 'board-' + today() && !B.cards.length && !B.strokes.length) { B.name = (m[1] + (m[2] ? '-' + m[2] : '')).replace(/[^\w.-]/g, '-'); LS.set(KEY + 'last', B.name); }
+  render(); say(`Reading ${name}. Select text and press q to quote it into a card.`);
+}
+function showDoc() { const d = $('#doc'); if (!B.doc) return; $('#doc-name').textContent = B.doc.name; d.innerHTML = /\.org$/i.test(B.doc.name) ? orgHtml(B.doc.text) : mdHtml(B.doc.text); }
+const escH = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function inl(s) { return escH(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|\W)\*([^*\s][^*]*)\*/g, '$1<i>$2</i>')
+  .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" rel="noreferrer noopener" target="_blank">$1</a>'); }
+function mdHtml(t) {
+  const out = []; let list = null, quote = [], code = null, table = [];
+  const flush = () => { if (list) { out.push(`<${list.t}>${list.items.map(i => '<li>' + inl(i) + '</li>').join('')}</${list.t}>`); list = null; }
+    if (quote.length) { out.push('<blockquote>' + mdHtml(quote.join('\n')) + '</blockquote>'); quote = []; }
+    if (table.length) { const rows = table.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r)).map(r => r.replace(/^\s*\||\|\s*$/g, '').split('|'));
+      out.push('<table>' + rows.map((r, i) => '<tr>' + r.map(c => `<${i ? 'td' : 'th'}>${inl(c.trim())}</${i ? 'td' : 'th'}>`).join('') + '</tr>').join('') + '</table>'); table = []; } };
+  for (const line of t.replace(/\r/g, '').split('\n')) {
+    if (code !== null) { if (/^```/.test(line)) { out.push('<pre><code>' + escH(code) + '</code></pre>'); code = null; } else code += (code ? '\n' : '') + line; continue; }
+    if (/^```/.test(line)) { flush(); code = ''; continue; }
+    let m;
+    if (/^\s*>/.test(line)) { if (list || table.length) flush(); quote.push(line.replace(/^\s*>\s?/, '')); continue; } else if (quote.length) flush();
+    if (/^\s*\|/.test(line)) { table.push(line); continue; } else if (table.length) flush();
+    if ((m = line.match(/^(#{1,4})\s+(.*)/))) { flush(); out.push(`<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`); continue; }
+    if ((m = line.match(/^\s*([-*+]|\d+[.)])\s+(.*)/))) { const t2 = /\d/.test(m[1]) ? 'ol' : 'ul'; if (!list || list.t !== t2) { flush(); list = { t: t2, items: [] }; } list.items.push(m[2]); continue; }
+    if (list && /^\s{2,}\S/.test(line)) { list.items[list.items.length - 1] += ' ' + line.trim(); continue; }
+    if (!line.trim()) { flush(); continue; }
+    if (/^-{3,}\s*$/.test(line)) { flush(); out.push('<hr>'); continue; }
+    flush(); out.push('<p>' + inl(line) + '</p>');
+  }
+  flush(); if (code !== null) out.push('<pre><code>' + escH(code) + '</code></pre>');
+  return out.join('\n');
+}
+function orgHtml(t) { return mdHtml(t.replace(/^(\*+)\s/gm, (m, s) => '#'.repeat(Math.min(4, s.length)) + ' ').replace(/^#\+BEGIN_QUOTE[\s\S]*?$/gim, '').replace(/^#\+\w+:.*$/gm, '')); }
+function quoteSel() {
+  const s = getSelection(); const txt = s && String(s).trim(); if (!txt || !$('#doc').contains(s.anchorNode)) return say('Select some text in the reader first, then q.');
+  const notes = B.lanes.find(l => /note/i.test(l.title)) || B.lanes[0]; let x, y;
+  if (notes) { const n = B.cards.filter(c => laneOf(c) === notes.id).length; x = notes.x + 30; y = notes.y + 44 + n * 100; }
+  newCard(x, y, '> ' + txt.replace(/\n+/g, '\n> ') + '\n— ' + (B.doc ? B.doc.name : 'reader') + '\n\n'); s.removeAllRanges(); $('#quotebtn').classList.add('hidden');
+}
+$('#docquote').onclick = quoteSel; $('#quotebtn').onclick = quoteSel;
+document.addEventListener('selectionchange', () => { const s = getSelection(), b = $('#quotebtn'); if (s && String(s).trim() && $('#doc').contains(s.anchorNode)) { const r = s.getRangeAt(0).getBoundingClientRect(); b.style.left = r.left + 'px'; b.style.top = Math.max(4, r.top - 34) + 'px'; b.classList.remove('hidden'); } else b.classList.add('hidden'); });
+
+// ---- saving: this browser always; the host when it answers; Markdown and Org for reading elsewhere ----
+function asText(fmt) {
+  const h = fmt === 'org' ? (n, s) => '*'.repeat(n) + ' ' + s : (n, s) => '#'.repeat(n) + ' ' + s;
+  const out = [h(1, B.title || B.name), '', (fmt === 'org' ? '#+DATE: ' : '_') + today() + (fmt === 'org' ? '' : '_'), ''];
+  if (B.doc) out.push((fmt === 'org' ? 'Reading: =' : 'Reading: `') + B.doc.name + (fmt === 'org' ? '=' : '`'), '');
+  const cardLine = c => { const tags = [...c.tags, ...implicitTags(c)]; const body = c.text.trim() || (c.ink ? '(ink only)' : '(empty)');
+    const lines = body.split('\n'); const head = fmt === 'org' ? '- ' : '- '; return head + lines[0] + (tags.length ? (fmt === 'org' ? '   :' + tags.join(':') + ':' : '  ' + tags.map(t => '#' + t).join(' ')) : '') + (c.ink ? ' [ink]' : '') + lines.slice(1).map(l => '\n  ' + l).join(''); };
+  const byY = (a, b) => a.y - b.y || a.x - b.x; const seen = new Set();
+  for (const l of B.lanes) { const cs = B.cards.filter(c => laneOf(c) === l.id).sort(byY); out.push(h(2, l.title + ` (${cs.length})`)); cs.forEach(c => { seen.add(c.id); out.push(cardLine(c)); }); out.push(''); }
+  const loose = B.cards.filter(c => !seen.has(c.id)).sort(byY); if (loose.length) { out.push(h(2, 'On the backdrop')); loose.forEach(c => out.push(cardLine(c))); out.push(''); }
+  const tagged = {}; for (const c of B.cards) for (const t of [...c.tags, ...implicitTags(c)]) (tagged[t] = tagged[t] || []).push(c);
+  if (Object.keys(tagged).length) { out.push(h(2, 'By tag')); for (const [t, cs] of Object.entries(tagged)) out.push(`- ${fmt === 'org' ? ':' + t + ':' : '#' + t}: ${cs.map(firstLine).join('; ')}`); out.push(''); }
+  out.push(`${B.strokes.length} stroke(s) of loose ink on the backdrop; ${B.cards.filter(c => c.ink).length} card(s) carry lifted ink.`);
+  return out.join('\n') + '\n';
+}
+function download(name, text, type) { const a = el('a', { href: URL.createObjectURL(new Blob([text], { type })), download: name }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+async function save() {
+  LS.set(KEY + B.name, JSON.stringify(B)); LS.set(KEY + 'last', B.name);
+  if (S.host) { const r = await host('/save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: B.name, board: B, md: asText('md'), org: asText('org') }) });
+    if (r) { const j = await r.json().catch(() => ({})); S.dirty = false; modeline(); return say(`Wrote ${j.where || B.name} (${S.hostName}) and kept a copy in this browser.`); }
+    say(`${S.hostName} did not take the save; it is kept in this browser. Export with C-x C-w.`); return; }
+  S.dirty = false; modeline(); say('Kept in this browser. C-x C-w exports Markdown; M-x export-org for Org; M-x export-json for the board itself.');
+}
+async function openBoard(name) {
+  let j = LS.get(KEY + name); if (!j && S.host) { const r = await host('/board?name=' + encodeURIComponent(name)); if (r) j = await r.text(); }
+  if (!j) return say('No board called ' + name + '.'); B = JSON.parse(j); undo.length = 0; render(); if (B.doc) showDoc(); say('Opened ' + name + '.');
+}
+
+// ---- the chrome: menus, tools, mode-line, echo area ----
+const TOOLS = [['select', '↖', 'Select and move', 'v'], ['hand', '✋', 'Pan the board', 'Space'], ['pen', '✎', 'Ink: draw anywhere, even across cards', 'p'], ['marker', '▮', 'Marker (highlighter)', 'm'],
+  ['erase', '⌫', 'Erase whole strokes', 'e'], ['frame', '⬚', 'Frame: drag round things to lift them into one note', 'f'], ['card', '▭', 'New card', 'n']];
+function tools() {
+  $('#toolbar').replaceChildren(...TOOLS.map(([id, icon, label, key]) => el('button', { class: 'tool', type: 'button', 'aria-pressed': String(S.tool === id), 'aria-label': `${label} (${key})`, title: `${label} — ${key}`, onclick: () => setTool(id) }, icon, el('span', { class: 'k', 'aria-hidden': 'true', text: key.length === 1 ? key : '' }))));
+  const o = $('#toolopts'); o.replaceChildren();
+  if (S.tool === 'pen' || S.tool === 'marker' || S.tool === 'erase') {
+    if (S.tool === 'pen') { const sel = el('select', { 'aria-label': 'Brush' }, ...Object.keys(BRUSHES).filter(b => !BRUSHES[b].hl).map(b => el('option', { value: b, text: b, selected: b === S.brush }))); sel.onchange = () => { S.brush = sel.value; S.size = null; tools(); }; o.append(el('label', {}, 'Brush', sel)); }
+    const sz = el('input', { type: 'range', min: 1, max: 80, value: S.size || (S.tool === 'erase' ? 14 : BRUSHES[S.brush].size), 'aria-label': 'Size' }); sz.oninput = () => { S.size = +sz.value; }; o.append(el('label', {}, 'Size', sz));
+    if (S.tool !== 'erase') {
+      const so = el('input', { type: 'range', min: 0, max: 1, step: .05, value: S.softness, 'aria-label': 'Pressure curve: firmer to softer' }); so.oninput = () => { S.softness = +so.value; LS.set('tb:soft', so.value); };
+      o.append(el('label', { title: "Bryant's pressure curve: softer gives more width for a light touch" }, 'Pressure', so), el('div', { id: 'meter', role: 'presentation' }, el('i')));
+      o.append(el('div', { class: 'sw', role: 'group', 'aria-label': 'Ink colour' }, ...INKS.map(([n, c]) => el('button', { type: 'button', 'aria-label': n, title: n, 'aria-pressed': String(S.color === c), style: `background:${c === 'currentColor' ? 'var(--ink)' : c}`, onclick: () => { S.color = c; tools(); } }))));
+    }
+  } else if (S.tool === 'frame') o.append(el('p', { style: 'margin:0;font-size:13px', text: 'Drag a frame round cards and ink. The board offers to make them one note, with its particulars right there.' }));
+  else if (S.tool === 'select') o.append(el('p', { style: 'margin:0;font-size:13px', text: 'Drag a card by its top bar, a lane or ground by its title. Double-click the backdrop for a card. Ctrl+wheel zooms.' }));
+  const loopSel = el('select', { 'aria-label': 'When a stroke closes round things' }, ...[['ask', 'ask'], ['draw', 'just draw'], ['lift', 'lift at once']].map(([v, t]) => el('option', { value: v, text: t, selected: S.loop === v })));
+  loopSel.onchange = () => { S.loop = loopSel.value; LS.set('tb:loop', S.loop); modeline(); };
+  if (S.tool === 'pen' || S.tool === 'marker') o.append(el('label', { title: 'Edge detect: a stroke that closes on itself round cards or ink' }, 'Closed loop', loopSel));
+}
+function setTool(t) {
+  if (t === 'card') { newCard(); return; }
+  S.tool = t; if (t === 'marker') { S.brush = 'Marker'; S.size = null; } else if (t === 'pen' && BRUSHES[S.brush].hl) { S.brush = 'Ink Pen'; S.size = null; }
+  document.body.classList.toggle('inking', ['pen', 'marker', 'erase', 'frame'].includes(t)); cap.style.cursor = t === 'erase' ? 'cell' : 'crosshair';
+  stage.style.cursor = t === 'hand' ? 'grab' : ''; tools(); modeline();
+}
+const MAJOR = { board: 'Board', sketch: 'Sketch', read: 'Read' };
+function major(m) { S.major = m; if (m === 'sketch') { setTool('pen'); } else if (m === 'read') { show('reader', true); $('#reader').style.width = 'min(720px,55vw)'; setTool('select'); $('#doc').focus(); } else { $('#reader').style.width = ''; setTool('select'); } modeline(); say(MAJOR[m] + ' mode.'); }
+function modeline() {
+  const ml = $('#modeline'); if (!ml || !B) return;
+  const minors = ['+Tags', S.inkOver ? '+InkOver' : '', S.loop === 'ask' ? '+Ask' : S.loop === 'lift' ? '+Lift' : '', S.host ? '+' + S.hostName.replace(/\s/g, '') : ''].filter(Boolean).join(' ');
+  const b = (txt, title, fn) => el('button', { type: 'button', title, 'aria-label': title, onclick: fn, text: txt });
+  ml.replaceChildren(el('span', { 'aria-label': S.dirty ? 'unsaved changes' : 'saved', text: S.dirty ? '-:**-' : '-:---' }), ' ',
+    b(B.name, 'Board name: click to rename', () => ask('Board name: ', B.name, v => { if (v) { B.name = v.replace(/[^\w.-]/g, '-'); changed(); render(); } })), ' ',
+    b(`(${MAJOR[S.major]} ${minors})`, 'Major mode: click to cycle Board, Sketch, Read', () => major(S.major === 'board' ? 'sketch' : S.major === 'sketch' ? 'read' : 'board')), ' ',
+    b(S.tool, 'Tool: click for the next', () => setTool(TOOLS[(TOOLS.findIndex(t => t[0] === S.tool) + 1) % (TOOLS.length - 1)][0])), ' ',
+    b(Math.round(view.z * 100) + '%', 'Zoom: click for 100%', () => { view.z = 1; applyView(); }), ' ',
+    el('span', { text: `${B.cards.length}c ${B.strokes.length}s` }), ' ',
+    b(S.look, 'Look: click to switch free / classic', () => look(S.look === 'free' ? 'classic' : 'free')));
+}
+let echoT;
+function say(m) { const e = $('#echo-msg'); e.textContent = m; clearTimeout(echoT); }
+// the minibuffer: one line, M-x commands with completion, or a question with a default
+let mini = null;
+function ask(prompt, def, done, comp) {
+  const inp = $('#echo-in'), pr = $('#echo-pr'), msg = $('#echo-msg'); mini = { done, comp, prev: document.activeElement };
+  pr.textContent = prompt; pr.hidden = false; msg.hidden = true; inp.hidden = false; inp.value = def || ''; inp.focus(); inp.select(); completions();
+}
+function endMini() { const inp = $('#echo-in'); inp.hidden = true; $('#echo-pr').hidden = true; $('#echo-msg').hidden = false; $('#completions').hidden = true; const p = mini && mini.prev; mini = null; if (p && p.focus && document.contains(p)) p.focus(); }
+function completions() { const c = $('#completions'); if (!mini || !mini.comp) { c.hidden = true; return; } const v = $('#echo-in').value; const hits = mini.comp.filter(x => x.startsWith(v.split(' ')[0])); c.hidden = !v || !hits.length; c.textContent = hits.slice(0, 18).join('  '); }
+$('#echo-in').addEventListener('input', completions);
+$('#echo-in').addEventListener('keydown', e => {
+  if (e.key === 'Escape' || (e.ctrlKey && e.key === 'g')) { e.preventDefault(); endMini(); say('Quit'); }
+  else if (e.key === 'Enter') { e.preventDefault(); const v = e.target.value, d = mini && mini.done; endMini(); d && d(v); }
+  else if (e.key === 'Tab' && mini && mini.comp) { e.preventDefault(); const v = e.target.value; const hits = mini.comp.filter(x => x.startsWith(v)); if (hits.length) { let p = hits[0]; for (const h of hits) while (!h.startsWith(p)) p = p.slice(0, -1); e.target.value = hits.length === 1 ? hits[0] : p; completions(); } }
+});
+$('#echo-msg').addEventListener('click', () => mx()); $('#echo-msg').addEventListener('keydown', e => { if (e.key === 'Enter') mx(); });
+const CMDS = {
+  'new-card': () => newCard(), 'pen': () => setTool('pen'), 'marker': () => setTool('marker'), 'eraser': () => setTool('erase'), 'frame': () => setTool('frame'), 'select': () => setTool('select'),
+  'add-lane': a => { snap(); const x = B.lanes.reduce((m, l) => Math.max(m, l.x + l.w), 0) + 20; B.lanes.push({ id: uid(), title: a || 'Lane', x, y: 40, w: 280, h: 640 }); changed(); render(); },
+  'tag': a => { const n = addTag(a || 'tag'); if (S.sel) tagCard(S.sel, n); }, 'ground': a => makeGround(addTag(a || 'tag')),
+  'save': save, 'export-md': () => download(B.name + '.md', asText('md'), 'text/markdown'), 'export-org': () => download(B.name + '.org', asText('org'), 'text/plain'),
+  'export-json': () => download(B.name + '.board.json', JSON.stringify(B, null, 1), 'application/json'),
+  'open-board': a => a ? openBoard(a) : ask('Open board: ', '', openBoard, boards()),
+  'new-board': a => { const tpl = ['meeting', 'kanban', 'blank'].includes(a) ? a : 'meeting'; snap(); B = fresh(tpl); render(); $('#doc').innerHTML = '<p class="empty">No document open.</p>'; say('A new ' + tpl + ' board. M-x new-board kanban or blank for the others.'); },
+  'open-doc': () => { show('reader', true); $('#doclist').focus(); }, 'quote': quoteSel,
+  'board-mode': () => major('board'), 'sketch-mode': () => major('sketch'), 'read-mode': () => major('read'),
+  'free-look': () => look('free'), 'classic-look': () => look('classic'), 'outline': outline_, 'undo': doUndo, 'redo': doRedo,
+  'toggle-tags': () => show('tags'), 'toggle-reader': () => show('reader'), 'toggle-watermark': () => $('#watermark').classList.toggle('hidden'),
+  'ink-over-cards': () => { S.inkOver = !S.inkOver; LS.set('tb:inkover', S.inkOver ? '1' : '0'); drawInk(); modeline(); say('Ink ' + (S.inkOver ? 'over' : 'under') + ' the cards.'); },
+  'closed-loop': a => { S.loop = ['ask', 'draw', 'lift'].includes(a) ? a : 'ask'; LS.set('tb:loop', S.loop); tools(); modeline(); say('A stroke that closes round things: ' + S.loop + '.'); },
+  'clear-ink': () => { snap(); B.strokes = []; drawInk(); changed(); }, 'tidy-lanes': tidy, 'dark': () => theme('dark'), 'light': () => theme('light'), 'system-theme': () => theme(''),
+  'help': help, 'delete': del,
+};
+function mx() { ask('M-x ', '', v => { const [c, ...rest] = v.trim().split(/\s+/); if (CMDS[c]) CMDS[c](rest.join(' ')); else if (c) say(`[No match] ${c}`); }, Object.keys(CMDS).sort()); }
+function boards() { const out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(KEY) && k !== KEY + 'last') out.push(k.slice(KEY.length)); } } catch (e) {} return out.sort(); }
+function doUndo() { if (!undo.length) return say('No further undo information'); redo.push(JSON.stringify(B)); B = JSON.parse(undo.pop()); render(); changed(); say('Undo'); }
+function doRedo() { if (!redo.length) return say('No redo'); undo.push(JSON.stringify(B)); B = JSON.parse(redo.pop()); render(); changed(); say('Redo'); }
+function del() { if (!S.sel) return; snap(); B.cards = B.cards.filter(c => c.id !== S.sel); S.sel = null; changed(); render(); say('Card deleted (C-/ brings it back).'); }
+function tidy() { snap(); for (const l of B.lanes) { let y = l.y + 44; B.cards.filter(c => laneOf(c) === l.id).sort((a, b) => a.y - b.y).forEach(c => { c.x = l.x + 30; c.y = y; const ce = cardDom(c.id); y += (ce ? ce.offsetHeight : 80) + 12; }); } changed(); render(); }
+function theme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; LS.set('tb:theme', t); drawInk(); }
+function show(id, on) { const f = $('#' + id); const vis = on ?? f.classList.contains('hidden'); f.classList.toggle('hidden', !vis); LS.set('tb:show:' + id, vis ? '1' : '0'); }
+function look(l) { S.look = l; LS.set('tb:look', l); document.body.classList.toggle('classic', l === 'classic'); $$('.frame').forEach(f => { if (l === 'classic') { f.dataset.fx = f.style.left; f.dataset.fy = f.style.top; f.style.left = f.style.top = ''; } });
+  requestAnimationFrame(() => { const h = $('#emacs').offsetHeight; document.documentElement.style.setProperty('--classic-top', h + 'px');
+    if (l === 'classic' && view.y < h + 10) { view.y = h + 16; view.x = Math.min(view.x, 24); applyView(); } else if (l === 'free' && view.x < 330) { view.x = 340; applyView(); } }); modeline(); say(l === 'free' ? 'Free: no borders, frames float; drag them by their title.' : 'Classic: menu bar, ribbon, reader docked right, status line below.'); }
+function outline_() {
+  const b = $('#outline-body'); b.innerHTML = mdHtml(asText('md')); show('outline', true); b.focus();
+}
+function help() { const k = [['M-x', 'a command, with Tab completion'], ['C-x C-s', 'save'], ['C-x C-w', 'export Markdown'], ['C-/  C-z', 'undo'], ['C-S-z', 'redo'], ['C-x 5 2', 'the reader as a frame'], ['C-x o', 'next frame'],
+  ['v p m e f n', 'select, pen, marker, eraser, frame, new card'], ['q', 'quote the reader\'s selection into a card'], ['#', 'tag the selected card'], ['g', 'make a ground'], ['Del', 'delete the selected card'], ['Space+drag', 'pan'], ['+ − 0', 'zoom'], ['o', 'outline (the board as text)'], ['Esc', 'leave a field; close a frame']];
+  $('#outline-body').innerHTML = '<h2>Keys</h2><table>' + k.map(([a, b]) => `<tr><td><kbd>${escH(a)}</kbd></td><td>${escH(b)}</td></tr>`).join('') + '</table><p>Menus hold everything the keys do. The board keeps itself in this browser as you go; the outline is its text alternative.</p>'; show('outline', true); }
+
+const MENUS = [
+  ['File', [['New board (meeting)', 'new-board'], ['New kanban board', () => CMDS['new-board']('kanban')], ['Open board…', 'open-board'], ['Open document…', 'open-doc'], '-', ['Save', 'save', 'C-x C-s'], ['Export Markdown', 'export-md', 'C-x C-w'], ['Export Org', 'export-org'], ['Export board (JSON)', 'export-json']]],
+  ['Edit', [['Undo', 'undo', 'C-/'], ['Redo', 'redo', 'C-S-z'], '-', ['Delete card', 'delete', 'Del'], ['Clear loose ink', 'clear-ink'], ['Tidy lanes', 'tidy-lanes']]],
+  ['Insert', [['Card', 'new-card', 'n'], ['Lane', () => ask('Lane title: ', 'Lane', v => CMDS['add-lane'](v))], ['Tag on selected card…', () => ask('Tag: ', '', v => CMDS.tag(v), B.tags.map(t => t.name)), '#'], ['Ground (tagged region)…', () => ask('Ground tag: ', '', v => CMDS.ground(v), B.tags.map(t => t.name)), 'g'], ['Quote from reader', 'quote', 'q']]],
+  ['Tools', [['Select', 'select', 'v'], ['Pen', 'pen', 'p'], ['Marker', 'marker', 'm'], ['Eraser', 'eraser', 'e'], ['Frame → note', 'frame', 'f'], '-', ['Closed loop: ask', () => CMDS['closed-loop']('ask')], ['Closed loop: just draw', () => CMDS['closed-loop']('draw')], ['Closed loop: lift at once', () => CMDS['closed-loop']('lift')], ['Ink over / under cards', 'ink-over-cards']]],
+  ['View', [['Board mode', 'board-mode'], ['Sketch mode', 'sketch-mode'], ['Read mode', 'read-mode'], '-', ['Free look', 'free-look'], ['Classic look', 'classic-look'], '-', ['Reader', 'toggle-reader', 'C-x 5 2'], ['Tag palette', 'toggle-tags'], ['Watermark', 'toggle-watermark'], ['Outline (text)', 'outline', 'o'], '-', ['Dark', 'dark'], ['Light', 'light'], ['Follow the system', 'system-theme']]],
+  ['Help', [['Keys', 'help', '?'], ['Command…', mx, 'M-x']]],
+];
+function menus() {
+  const bar = $('#menubar');
+  bar.replaceChildren(...MENUS.map(([name, items]) => {
+    const list = el('div', { class: 'menu', hidden: true });
+    for (const it of items) { if (it === '-') { list.append(el('hr')); continue; } const [label, act, key] = it;
+      list.append(el('button', { type: 'button', onclick: () => { close(); typeof act === 'function' ? act() : CMDS[act](); } }, el('span', { text: label }), key ? el('kbd', { text: key }) : null)); }
+    const btn = el('button', { type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false', 'aria-label': name + ' menu', text: name });
+    const close = () => { list.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.onclick = () => { const open = list.hidden; $$('.menu').forEach(m => m.hidden = true); $$('.mb>button').forEach(b => b.setAttribute('aria-expanded', 'false')); list.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) list.querySelector('button').focus(); };
+    list.addEventListener('keydown', e => { const bs = [...list.querySelectorAll('button')], i = bs.indexOf(document.activeElement);
+      if (e.key === 'Escape') { close(); btn.focus(); } else if (e.key === 'ArrowDown') { e.preventDefault(); bs[(i + 1) % bs.length].focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); bs[(i - 1 + bs.length) % bs.length].focus(); } });
+    return el('div', { class: 'mb' }, btn, list);
+  }));
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.mb')) { $$('.menu').forEach(m => m.hidden = true); $$('.mb>button').forEach(b => b.setAttribute('aria-expanded', 'false')); } });
+}
+
+// ---- keys: Emacs where Emacs has an answer, one letter where the board needs a quick one ----
+let prefix = '';
+addEventListener('keydown', e => {
+  const typing = e.target.matches('input,textarea,select,[contenteditable]');
+  if (e.key === ' ' && !typing) { spaceDown = true; if (S.tool !== 'hand') e.preventDefault(); }
+  const k = (e.ctrlKey ? 'C-' : '') + (e.altKey || e.metaKey ? 'M-' : '') + (e.shiftKey && e.key.length > 1 ? 'S-' : '') + (e.key.length === 1 ? e.key.toLowerCase() : e.key);
+  if (e.target.id === 'echo-in') return;
+  if (prefix) { const seq = prefix + ' ' + k; prefix = ''; e.preventDefault();
+    if (seq === 'C-x C-s') return save(); if (seq === 'C-x C-w') return CMDS['export-md']();
+    if (seq === 'C-x o') { const fs = $$('.frame:not(.hidden)'); const i = fs.findIndex(f => f.contains(document.activeElement)); const n = fs[(i + 1) % fs.length]; (n.querySelector('button,select,input,textarea,[tabindex]') || n).focus(); return; }
+    if (seq === 'C-x 5') { prefix = 'C-x 5'; return say('C-x 5-'); } if (seq === 'C-x 5 2') { show('reader', true); $('#doclist').focus(); return; }
+    return say(seq + ' is undefined'); }
+  if (k === 'C-x') { prefix = 'C-x'; e.preventDefault(); return say('C-x-'); }
+  if (k === 'M-x') { e.preventDefault(); return mx(); }
+  if (k === 'C-/' || k === 'C-z' || k === 'C-_') { if (typing) return; e.preventDefault(); return doUndo(); }
+  if (k === 'C-S-z' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) { e.preventDefault(); return doRedo(); }
+  if (k === 'C-s' && !typing) { e.preventDefault(); return save(); }
+  if (e.key === 'Escape') { if (!$('#lift').classList.contains('hidden')) { $('#lift-ink').click(); return; } if (!$('#outline').classList.contains('hidden')) { show('outline', false); return; } $$('.menu').forEach(m => m.hidden = true); if (typing) e.target.blur(); return; }
+  if (typing || e.ctrlKey || e.altKey || e.metaKey) return;
+  const single = { v: () => setTool('select'), p: () => setTool('pen'), m: () => setTool('marker'), e: () => setTool('erase'), f: () => setTool('frame'), n: () => newCard(), h: () => setTool('hand'),
+    q: quoteSel, o: outline_, '?': help, '#': () => ask('Tag: ', '', v => CMDS.tag(v), B.tags.map(t => t.name)), g: () => ask('Ground tag: ', '', v => CMDS.ground(v), B.tags.map(t => t.name)),
+    '+': () => zoomAt(1.2, innerWidth / 2, innerHeight / 2), '=': () => zoomAt(1.2, innerWidth / 2, innerHeight / 2), '-': () => zoomAt(1 / 1.2, innerWidth / 2, innerHeight / 2), '0': () => { view.z = 1; applyView(); },
+    Delete: del, Backspace: del, ArrowLeft: () => { view.x += 60; applyView(); }, ArrowRight: () => { view.x -= 60; applyView(); }, ArrowUp: () => { view.y += 60; applyView(); }, ArrowDown: () => { view.y -= 60; applyView(); } };
+  const fn = single[e.key] || single[e.key.toLowerCase()]; if (fn) { e.preventDefault(); fn(); }
+});
+addEventListener('keyup', e => { if (e.key === ' ') spaceDown = false; });
+
+// frames move by their title bar (free look) and close with ×
+$$('[data-drag]').forEach(tb => tb.addEventListener('pointerdown', e => { if (S.look === 'classic' || e.target.closest('button')) return; const f = tb.parentElement, r = f.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+  f.style.right = 'auto'; const mv = ev => { f.style.left = clamp(ev.clientX - dx, 0, innerWidth - 60) + 'px'; f.style.top = clamp(ev.clientY - dy, 0, innerHeight - 30) + 'px'; };
+  const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); LS.set('tb:pos:' + f.id, f.style.left + ',' + f.style.top); }; addEventListener('pointermove', mv); addEventListener('pointerup', up); }));
+$$('[data-close]').forEach(b => b.onclick = () => show(b.dataset.close, false));
+$('#outline-open').onclick = outline_;
+
+// ---- start ----
+const last = LS.get(KEY + 'last'); try { B = last && JSON.parse(LS.get(KEY + last)); } catch (e) { B = null; } if (!B || B.v !== 1) B = fresh('meeting');
+S.softness = +(LS.get('tb:soft') || .5); const th = LS.get('tb:theme'); if (th) document.documentElement.dataset.theme = th;
+for (const id of ['emacs', 'tags', 'reader']) { const p = LS.get('tb:pos:' + id); if (p) { const [l, t] = p.split(','); const f = $('#' + id); f.style.left = l; f.style.top = t; f.style.right = 'auto'; } if (LS.get('tb:show:' + id) === '0') $('#' + id).classList.add('hidden'); }
+view.x = 340; view.y = 24; menus(); tools(); look(S.look); applyView(); render(); if (B.doc) showDoc(); probe();
+window.topologyBoard = { get board() { return B; }, command: (c, a) => CMDS[c] && CMDS[c](a), asText, openDoc };   // for an embedding page and for tests
+})();
+</script>
+</body>
+</html>

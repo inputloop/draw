@@ -5,6 +5,16 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- topology board (www/board/): a canvas for notes in a meeting.  Lanes
+  and cards, ink anywhere with topology paint's brushes and Dusk palette,
+  a frame (or a closed loop) round things lifts them into one note, a
+  tag palette whose chips tag a card or make a ground on the backdrop,
+  and a reader for one document with q to quote into a card.  Free and
+  classic looks; board, sketch and read modes; an Emacs mode-line and
+  minibuffer; an outline that is the board as text.  It asks a host at
+  ./api when one answers (c4 serve's Notes room does).  See
+  design/DESIGN-2026-11-03-board.md.
+
 - topology forge (formerly TopoForge) 1.11: a pad on the overview map (a
   drawn slider for its mode, an arm for its scale, a grip to move it) and
   Reset layout, for a page that asks.  See topoforge/NEWS.

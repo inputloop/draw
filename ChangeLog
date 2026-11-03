@@ -1,3 +1,13 @@
+2026-11-03  Corwin Brust  <corwin@bru.st>
+
+	topology board: notes in a meeting, on a canvas (Corwin's request,
+	2026-11-03).
+	* www/board/index.html: the board, one file, nothing fetched.
+	* tests/js/board.test.mjs: B1-B4, each with a planted fault; B3
+	reads paint/src/core/brush.c so the shared brushes stay paint's.
+	* design/DESIGN-2026-11-03-board.md: what it is, control by control.
+	* NEWS: say so.
+
 2026-11-02  Bryant Frankford  <nathanielfrankford@gmail.com>
 
 	topology paint: a drawing and painting program built into topology,
