@@ -25,6 +25,12 @@ The first three commits on `corwin` (8487a29, 7792b46, 924d117) were made before
 hook existed, and carry vendor trailers and a session link. They stay in history, because this
 branch only moves forward.
 
+One later commit, adff93a (topology forge 1.11, 2026-11-02), is authored correctly but names the
+vendor as its committer: after a container restart, a rebase ran without the repository's own
+identity. Corwin chose to leave it in the history rather than force-push, as a visible record of
+why the house removes such marks. Every clone now sets its own identity, and the pre-push hook
+refuses a vendor author or committer.
+
 ## Before every push
 
 - `sh bin/test.sh` green. It runs the Perl tests, the JavaScript tests (including the example
