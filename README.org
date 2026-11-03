@@ -27,6 +27,15 @@ names, and the brand and title in the app, which a visitor opening it on its own
 page may embed it with switches (no frame, floating panels, page tabs in the overview map, a
 selection hook, a ready event): =topoforge/spec/EMBED-v1.md=.
 
+* The painting app: topology paint
+
+=paint/= holds *topology paint*, made for Bryant Frankford: a drawing and painting program in C for
+Windows, Linux and macOS, with pen pressure and tilt (written with the XP-Pen Artist 13.3 Pro V2 in
+mind), brushes, layers with blend modes, OpenRaster and Photoshop files with their layers, the
+common flat formats, and mods.  =paint/build.bat= (Windows) or =paint/build.sh= builds, installs and
+updates it; =sh bin/test.sh= checks its core with any C compiler.  [[file:paint/README.md][paint/README.md]] says the rest,
+with [[file:paint/docs/MODDING.md][how to mod it]] and [[file:paint/docs/LESSONS-LEARNED.md][what was learned]].
+
 * This branch
 
 This is the =corwin= branch: one of several versions being made from the
@@ -47,6 +56,7 @@ own, see [[file:context/FOR-OTHERS.md][context/FOR-OTHERS.md]].
 | =RECIPE.org=            | the source of =bin/=, =debian/= and =etc/=; tangle it to rebuild them  |
 | =www/=                  | the front door, the app, topology forge (formerly TopoForge) 1.11      |
 | =topoforge/=            | topology forge's own kits: tests, story and embedding specs, project files, recipe, patches from 1.5 |
+| =paint/=                | topology paint: the C painting program, its build scripts, mods, tests and guides |
 | =www/css/egad.css=      | egad's colours and type, the default palette (see below)               |
 | =examples/inputloop/=   | the shop drawn: hosts, projects, tools, paths, people (37 files)        |
 | =AGENTS.md=             | who commits, where work lands, what to run before a push               |

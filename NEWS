@@ -14,6 +14,16 @@ Version 0.02 (2026-11-01; the corwin branch; unreleased)
   drawing, or rings), the map's own scale, and the wheel over the map.
   See topoforge/NEWS.
 
+- topology paint, made for Bryant Frankford (paint/): a drawing and
+  painting program in C for Windows, Linux and macOS.  Pen pressure and
+  tilt through SDL3 (Windows Ink, XInput2 and Wayland, macOS), a pressure
+  curve with a live meter, 12 brushes plus brush files, up to 256 layers
+  with 13 blend modes, undo, autosave, and OpenRaster and Photoshop files
+  with their layers, PNG, JPEG, TIFF, BMP, TGA, QOI and PPM.  Mods add
+  filters, formats and brush tips.  paint/build.bat or paint/build.sh
+  builds, installs and updates it; sh bin/test.sh now checks its core
+  (77 checks, two planted faults).  See paint/README.md.
+
 - topology forge (formerly TopoForge) 1.9, by Bryant Frankford, with our
   changes: calls and switches a page that embeds it asked for (the view,
   where the selection is, keys and right clicks for the page, setting a

@@ -13,3 +13,5 @@ perl/Topology/MYMETA.*
 perl/Topology/blib/
 perl/Topology/pm_to_blib
 out-*/
+paint/build/
+paint/dist/

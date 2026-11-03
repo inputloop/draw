@@ -366,12 +366,12 @@
     "kind": "user",
     "pillar": "person",
     "layer": "abstract",
-    "connects": "quantum3d5, topoforge"
+    "connects": "quantum3d5, topoforge, topology-paint"
    },
    "public": [
     "# bryant",
     "",
-    "Bryant Frankford. Made TopoForge and quantum3d5.",
+    "Bryant Frankford. Made TopoForge and quantum3d5; topology paint was made for him.",
     ""
    ],
    "private": [],
@@ -977,17 +977,18 @@
     "kind": "container",
     "pillar": "part",
     "layer": "operational",
-    "contains": "topology-command, topology-www, topology-core, topoforge",
+    "contains": "topology-command, topology-www, topology-core, topoforge, topology-paint",
     "connects": "gw26, obsmage, vibrobeast",
     "branch": "corwin",
     "repo": "https://github.com/inputloop/topology",
-    "files": "README.org, RECIPE.org, AGENTS.md, spec/TOPOLOGY-md.md, taxonomy/pillars.json, design/TAXONOMY.org, www/index.html, www/app.html, www/css/egad.css, tests/a11y-check.mjs"
+    "files": "README.org, RECIPE.org, AGENTS.md, spec/TOPOLOGY-md.md, taxonomy/pillars.json, design/TAXONOMY.org, www/index.html, www/app.html, www/css/egad.css, tests/a11y-check.mjs, paint/README.md"
    },
    "public": [
     "# topology",
     "",
     "Draw what you have, from the files that describe it. Reads `TOPOLOGY.md` from the git repositories you",
-    "keep, sorts what they say by place, part, path and person, and draws it with TopoForge.",
+    "keep, sorts what they say by place, part, path and person, and draws it with TopoForge. Carries a",
+    "painting program too, topology paint (`paint/`).",
     "",
     "## Files that say what it is",
     "",
@@ -999,10 +1000,33 @@
     "| `taxonomy/pillars.json` | the four pillars, two axes, six tensions, as data |",
     "| `AGENTS.md` | who commits and where work lands |",
     "| `examples/inputloop/` | this drawing of the shop |",
+    "| `paint/README.md` | topology paint: build, install, pen tablets, mods |",
     "",
     "Private parts of any `TOPOLOGY.md` stay hidden until the component or the person says show.",
     "",
     "The repository is public, on the `corwin` branch (public since 2026-11-01).",
+    ""
+   ],
+   "private": [],
+   "declared": null
+  },
+  {
+   "file": "examples/inputloop/projects/topology/paint/TOPOLOGY.md",
+   "meta": {
+    "name": "topology-paint",
+    "kind": "rect",
+    "pillar": "part",
+    "layer": "operational",
+    "file": "paint/README.md",
+    "connects": "bryant"
+   },
+   "public": [
+    "# topology-paint",
+    "",
+    "topology paint, the drawing and painting program built into topology: one C program for Windows, Linux",
+    "and macOS with brushes, layers, pen pressure and tilt, OpenRaster and Photoshop files, and mods. Made",
+    "for Bryant Frankford. `paint/build.bat` or `paint/build.sh` builds, installs and updates it;",
+    "`sh bin/test.sh` checks its core.",
     ""
    ],
    "private": [],

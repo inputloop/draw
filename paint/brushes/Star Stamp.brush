@@ -1,0 +1,12 @@
+# A stamp brush: the five-pointed tip comes from the star-tip mod
+# (mods/star-tip).  Without that mod loaded the brush falls back to round.
+name = Star Stamp
+tip = star
+size = 40
+hardness = 1
+spacing = 1.6
+jitter = 0.5
+scatter = 1.2
+pressure_size = 0.6
+min_size = 0.3
+smoothing = 0
