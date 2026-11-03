@@ -5,6 +5,10 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- topology forge (formerly TopoForge) 1.11: a pad on the overview map (a
+  drawn slider for its mode, an arm for its scale, a grip to move it) and
+  Reset layout, for a page that asks.  See topoforge/NEWS.
+
 - topology forge (formerly TopoForge) 1.10: the overview map's three modes
   for a page's preview (a card, the card with the matches lit in the
   drawing, or rings), the map's own scale, and the wheel over the map.

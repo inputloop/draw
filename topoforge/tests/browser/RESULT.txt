@@ -1,8 +1,8 @@
 GREEN
 TopoForge in a real browser from file:// -- written by tests/browser/topoforge.browser.mjs (do not edit by hand)
 Licence of this note: CC-BY-SA-4.0
-Run at: 2026-11-02T18:59:58.542Z on Linux 6.18.44-fc-v185, node v22.23.4
-File tested: index.html sha256 7b8ffd5075820848d08c600bab741aaac2dbe0604172f9cf5a011b7f64e56184
+Run at: 2026-11-02T23:44:37.920Z on Linux 6.18.44-fc-v185, node v22.23.4
+File tested: index.html sha256 a139db49856ead956b70df1e3f8aaf992b96e175d9fddd871477aeb0a707e376
 Upstream beside it: not present
 Kit: tests/browser/topoforge.browser.mjs sha256 0a4e087ea5fecb5d5332211d9c168cb224c989d62ea11b2167cadcdf84c23717
 Result: 41 checks passed, 0 failed. Exit 0 (0 green, 1 red, 2 kit broken).
@@ -10,10 +10,10 @@ A check fails on any critical or serious axe finding; moderate and minor finding
 
 CHECKS
 NOTE browser 153.0.8010.12, playwright 1.63.0, axe-core 4.14.0
-PASS loads from file:// and exposes TopoForge :: TF_VERSION=1.10
+PASS loads from file:// and exposes TopoForge :: TF_VERSION=1.11
 PASS axe main: no critical/serious violations :: no violations
 PASS palette clicks added 9 shapes :: nodes=9
-PASS every shape and link has data.tf_ref :: dmz-sbz3,vlan-ra0d,router-92g7,firewall-foyc,server-rr0y,server-uycu,switch-sfle,desktop-lmpw,desktop-9pt3,link-5xbj,link-znnk,link-dwcj,link-3zpc,link-vxgy,link-wsed
+PASS every shape and link has data.tf_ref :: dmz-t56o,vlan-jhhg,router-k31b,firewall-dz22,server-uf57,server-cv4i,switch-py9u,desktop-qp5u,desktop-mon2,link-7qto,link-bul4,link-07n3,link-9o3g,link-4piu,link-ge1w
 PASS tf_refs unique
 PASS axe props-selected: no critical/serious violations :: no violations
 PASS menu bar has no menubar role; each menu button says it opens a menu :: {"role":null,"pop":true}
@@ -38,16 +38,16 @@ PASS focus visible on Download button :: ok
 PASS Enter on Download saves .json and -story.md :: Untitled topology.json,Untitled topology-story.md
 PASS Space on Download also saves :: Untitled topology.json,Untitled topology-story.md
 PASS story .md has exactly one facts block :: facts fences=1
-PASS story .md header carries sha256 lines :: > story v=1 fence=facts-6jna drawing-sha256=80704c8fdbfa1ac4803aa3e78c760af3c89c16f7364b229d6897e25cc0e8e36d facts-sha256=7c058cfc629e85406b76fc26f3f9999689caa37096290db44f69dab32310593b / > Drawing f
+PASS story .md header carries sha256 lines :: > story v=1 fence=facts-c2qj drawing-sha256=95fd4157d2475d3eac3dfc9e931fa0d0c157daf5ad3e07a43f0b3b2e81934325 facts-sha256=35f83d51e64a1eb092b62bc30a8ee2df6ade927d07cfdc9f9cdba84df90207aa / > Drawing f
 PASS story .md has a Gaps section
-PASS story header names the saved JSON by its sha256 :: 80704c8fdbfa1ac4
+PASS story header names the saved JSON by its sha256 :: 95fd4157d2475d3e
 PASS no keyboard trap (focus keeps moving under Tab) :: distinct stops=98
 PASS headings do not skip a level (no axe heading-order in any scan) :: none
 PASS no console errors
 PASS load 1c: without ?load= a first visit still shows the sample (the sample guard acts only on ?load=) :: nodes=19
 PASS load 1: ?load=/x.csv from the page's own origin imports the rows, and only the rows, on a first visit :: nodes=4 links=3 toasts=Imported 4 devices, 3 links from CSV
 PASS load 1b: ?load=/x.json opens the TopoForge JSON drawing in place of the sample :: nodes=2 links=1 toasts=Loaded /x.json doc=Loaded by query
-PASS load 2: ?load= another origin is refused: nothing imported, the toast names the refusal, the other server is never asked :: nodes=0 links=0 toasts=load refused: http://127.0.0.1:33205 is not this page's origin otherServerHits=0
+PASS load 2: ?load= another origin is refused: nothing imported, the toast names the refusal, the other server is never asked :: nodes=0 links=0 toasts=load refused: http://127.0.0.1:38907 is not this page's origin otherServerHits=0
 PASS load 3: file://...index.html?load=x.csv imports nothing and says it is refused :: nodes=0 links=0 toasts=load refused: file:// is not this page's origin
 PASS load 4: ?load= a path that is not there says "load failed: 404" and imports nothing :: nodes=0 links=0 toasts=load failed: 404 Not Found
 PASS load 5: window.TopoForge.importCSV is a function :: function

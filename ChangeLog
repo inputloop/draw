@@ -1,5 +1,19 @@
 2026-11-02  Corwin Brust  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.11 in www/topoforge/: the map's
+	pad and Reset layout (Corwin, c4 q/2026-11-02-obsmage-and-resume, with
+	READINGS.md; readings S1.1-S4.1).  topoforge/ChangeLog has the detail.
+	* www/topoforge/index.html: 1.11.
+	* topoforge/: the 1.10-to-1.11 patch, the spec, the kit and its plants,
+	NEWS, ChangeLog, AUTHORS, README.org, RECIPE.org.
+	* RECIPE.org: the app's row, 1.11, and its sha256; a row for each
+	patch, 1.5-to-1.6 through 1.10-to-1.11, with that patch's sha256
+	(AGENTS.md: "a versioned patch ... whose sha256 is recorded in
+	RECIPE.org").
+	* README.org, NEWS: 1.11.
+
+2026-11-02  Corwin Brust  <corwin@bru.st>
+
 	topology forge (formerly TopoForge) 1.10 in www/topoforge/: the
 	overview map's modes, the card, the drawing's highlight, the map's
 	scale and the wheel over it (Corwin, c4 q/2026-11-02-minimap-modes).

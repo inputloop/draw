@@ -4,7 +4,27 @@ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
-Version 1.10 (2026-11-02; checked: tests/run.sh, the project-files check, the
+Version 1.11 (2026-11-02; checked: tests/run.sh, the project-files check, the
+browser kit and the embedding kit green, with their planted faults; see
+RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+yet)
+
+- The map's pad, for a page that asks (switch mappad; Corwin, 2026-11-02
+  17:27: "bring the D-pad gadget"; "left/right/center: mini-map mode"; "a
+  movable control for positioning/calibration").  A cross that hangs on the
+  overview map's edge and moves with it.  Its horizontal bar is a drawn
+  slider for the map's mode: Preview shapes on the left, Both in the middle
+  (the default), Highlight matches on the right; the thumb glides between
+  them.  Its vertical arm sets the map's scale (Closer, Farther; a press on
+  the thumb is the whole drawing), and its grip moves the map.
+  TopoForge.padArrows('pan') turns the arms into panning the drawing
+  instead.  A new message, topoforge:mapscale.
+- Reset layout (switch reset; TopoForge.resetLayout() and undoReset()):
+  every panel and the overview map (place, size, scale, mode) back where
+  they started, the drawing untouched; Undo reset puts them back.  In the
+  map's Mode menu and the View menu; the page gets topoforge:reset.
+
+ checked: tests/run.sh, the project-files check, the
 browser kit and the embedding kit green, with their planted faults; see
 RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
 yet)

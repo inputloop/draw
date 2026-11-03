@@ -1,5 +1,38 @@
 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.11: the map's pad and Reset
+	layout (Corwin, c4 q/2026-11-02-obsmage-and-resume, 17:27, and its
+	resume note: "the original framing was in terms of slider ... but we
+	didn't draw a slider"; readings S1.1, S2.1, S3.1, S4.1 of READINGS.md).
+	* index.html (TF_VERSION): 1.11.  (header comment): the 1.11 lines.
+	(1.11 CSS): the pad, its drawn slider and its arms.
+	(EMBED_WORDS): mappad, reset.
+	(embed): mappad turns map on.
+	(embed110): calls embed111.
+	(mapMode): the pad follows; topoforge:mapmode with mappad too.
+	(mapScale): topoforge:mapscale; the pad follows.
+	(mmApply): the pad's side.
+	(mapFloat): the pad is within reach for the door-handle rule; the Mode
+	menu ends with Reset layout when the reset switch is on.
+	(MENUS.view): the same.
+	(PAD_LABEL, embed111, buildPad, padSide, padSync, padArrows)
+	(layoutState, layoutPut, RESET_PARTS, resetLayout, undoReset)
+	(resetItems): New.
+	(window.TopoForge): padArrows, resetLayout, undoReset.
+	* spec/EMBED-v1.md: "Added in 1.11 (still v1)".
+	* tests/browser/embed.browser.mjs: standalone compared with 1.10;
+	PD1-PD8, RS1-RS4, E10; X1, X2 and X3 with the pad.
+	* tests/browser/embed-prove-red.sh: twenty more plants (95).
+	* tests/run.sh (patch_sums): New.  Every patch's own sha256 is in
+	topology's RECIPE.org, one row each, as AGENTS.md now says
+	(851840b); with a plant (one byte added to a copy of the newest
+	patch).
+	* RECIPE.org: the index.html row, 1.11.
+	* patches/topoforge-1.10-to-1.11.patch: New.
+	* NEWS, AUTHORS, README.org: 1.11.
+
+2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
 	topology forge (formerly TopoForge) 1.10: the overview map's modes and
 	the wheel over it (Corwin, c4 q/2026-11-02-minimap-modes, 12:48:
 	"three state slider default in the middle"; "scroll-wheel over the

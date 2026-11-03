@@ -78,6 +78,27 @@ if [ -f "$here/../../RECIPE.org" ]; then
   recipe_red() { printf ' ' >> "$tmp/r.html"; cat "$html" >> "$tmp/r.html"; recipe_sum "$tmp/r.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
   step "prove-red: a changed app no longer matches RECIPE.org" recipe_red
 fi
+# 1.11: every patch's own sha256 is in topology's RECIPE.org, one row each (AGENTS.md, 2026-11-02: "a versioned
+# patch in topoforge/patches/, whose sha256 is recorded in RECIPE.org")
+patch_sums() { # $1 = the patches folder
+  r=$here/../../RECIPE.org; [ -f "$r" ] || { echo "no topology RECIPE.org beside topoforge/"; return 2; }
+  n=0; bad=''
+  for p in $(ls "$1"/topoforge-*.patch | sort -V); do
+    b=$(basename "$p"); n=$((n + 1))
+    want=$(sed -n "s/^| the patch [0-9.]* to [0-9.]* *| =topoforge\/patches\/$b= *| sha256 =\([0-9a-f]\{64\}\)= |\$/\1/p" "$r")
+    got=$(sha256sum "$p" | cut -d' ' -f1)
+    [ -n "$want" ] && [ "$want" = "$got" ] || bad="$bad $b"
+  done
+  [ "$n" -ge 1 ] && [ -z "$bad" ] || { echo "RECIPE.org has no sum, or another sum, for:${bad:- (no patches found)}"; return 1; }
+  echo "$n patches, each one's sha256 in RECIPE.org"
+}
+if [ -f "$here/../../RECIPE.org" ]; then
+  step "topology's RECIPE.org names every patch's sha256" patch_sums "$here/../patches"
+  patch_sums_red() { mkdir -p "$tmp/pp" && cp "$here"/../patches/topoforge-*.patch "$tmp/pp/" || return 2
+    last=$(ls "$tmp"/pp/topoforge-*.patch | sort -V | tail -1); printf ' ' >> "$last"
+    patch_sums "$tmp/pp" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
+  step "prove-red: a changed patch no longer matches RECIPE.org" patch_sums_red
+fi
 spelled_red() { sed 's/topology forge (formerly/topography forge (formerly/' "$html" > "$tmp/s.html"; cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
   spelled "$tmp/s.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
 step "prove-red: \"topography\" planted in the app is caught" spelled_red

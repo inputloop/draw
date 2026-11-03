@@ -1,0 +1,719 @@
+--- topoforge-1.10/AUTHORS
++++ topoforge-1.11/AUTHORS
+@@ -14,7 +14,8 @@
+                                           1.9, more for an embedding page,
+                                           the overview map's handles and
+                                           preview, page tabs that fit;
+-                                          1.10, the map's modes and wheel
++                                          1.10, the map's modes and wheel;
++                                          1.11, the map's pad and Reset layout
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.10/ChangeLog
++++ topoforge-1.11/ChangeLog
+@@ -1,5 +1,38 @@
+ 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
++	topology forge (formerly TopoForge) 1.11: the map's pad and Reset
++	layout (Corwin, c4 q/2026-11-02-obsmage-and-resume, 17:27, and its
++	resume note: "the original framing was in terms of slider ... but we
++	didn't draw a slider"; readings S1.1, S2.1, S3.1, S4.1 of READINGS.md).
++	* index.html (TF_VERSION): 1.11.  (header comment): the 1.11 lines.
++	(1.11 CSS): the pad, its drawn slider and its arms.
++	(EMBED_WORDS): mappad, reset.
++	(embed): mappad turns map on.
++	(embed110): calls embed111.
++	(mapMode): the pad follows; topoforge:mapmode with mappad too.
++	(mapScale): topoforge:mapscale; the pad follows.
++	(mmApply): the pad's side.
++	(mapFloat): the pad is within reach for the door-handle rule; the Mode
++	menu ends with Reset layout when the reset switch is on.
++	(MENUS.view): the same.
++	(PAD_LABEL, embed111, buildPad, padSide, padSync, padArrows)
++	(layoutState, layoutPut, RESET_PARTS, resetLayout, undoReset)
++	(resetItems): New.
++	(window.TopoForge): padArrows, resetLayout, undoReset.
++	* spec/EMBED-v1.md: "Added in 1.11 (still v1)".
++	* tests/browser/embed.browser.mjs: standalone compared with 1.10;
++	PD1-PD8, RS1-RS4, E10; X1, X2 and X3 with the pad.
++	* tests/browser/embed-prove-red.sh: twenty more plants (95).
++	* tests/run.sh (patch_sums): New.  Every patch's own sha256 is in
++	topology's RECIPE.org, one row each, as AGENTS.md now says
++	(851840b); with a plant (one byte added to a copy of the newest
++	patch).
++	* RECIPE.org: the index.html row, 1.11.
++	* patches/topoforge-1.10-to-1.11.patch: New.
++	* NEWS, AUTHORS, README.org: 1.11.
++
++2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
+ 	topology forge (formerly TopoForge) 1.10: the overview map's modes and
+ 	the wheel over it (Corwin, c4 q/2026-11-02-minimap-modes, 12:48:
+ 	"three state slider default in the middle"; "scroll-wheel over the
+--- topoforge-1.10/NEWS
++++ topoforge-1.11/NEWS
+@@ -4,7 +4,27 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
+-Version 1.10 (2026-11-02; checked: tests/run.sh, the project-files check, the
++Version 1.11 (2026-11-02; checked: tests/run.sh, the project-files check, the
++browser kit and the embedding kit green, with their planted faults; see
++RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
++yet)
++
++- The map's pad, for a page that asks (switch mappad; Corwin, 2026-11-02
++  17:27: "bring the D-pad gadget"; "left/right/center: mini-map mode"; "a
++  movable control for positioning/calibration").  A cross that hangs on the
++  overview map's edge and moves with it.  Its horizontal bar is a drawn
++  slider for the map's mode: Preview shapes on the left, Both in the middle
++  (the default), Highlight matches on the right; the thumb glides between
++  them.  Its vertical arm sets the map's scale (Closer, Farther; a press on
++  the thumb is the whole drawing), and its grip moves the map.
++  TopoForge.padArrows('pan') turns the arms into panning the drawing
++  instead.  A new message, topoforge:mapscale.
++- Reset layout (switch reset; TopoForge.resetLayout() and undoReset()):
++  every panel and the overview map (place, size, scale, mode) back where
++  they started, the drawing untouched; Undo reset puts them back.  In the
++  map's Mode menu and the View menu; the page gets topoforge:reset.
++
++ checked: tests/run.sh, the project-files check, the
+ browser kit and the embedding kit green, with their planted faults; see
+ RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+ yet)
+--- topoforge-1.10/README.org
++++ topoforge-1.11/README.org
+@@ -65,6 +65,9 @@
+ - New in 1.10: the overview map's modes for a preview (=mapMode=: cards, both,
+   rings), a card in the map, the matches lit in the drawing, the map's own
+   scale (=mapScale=), and the wheel over the map (=mapwheel=).
++- New in 1.11: the map's pad (=mappad=: a drawn slider for the mode, an arm
++  for the scale, a grip; =padArrows('pan')= to pan instead) and Reset layout
++  (=reset=, =resetLayout()=, =undoReset()=).
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+--- topoforge-1.10/RECIPE.org
++++ topoforge-1.11/RECIPE.org
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.10: Bryant's v1.5 plus our changes (1.6 to 1.10) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, then =1.9-to-1.10= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
++| =index.html=                  | v1.11: Bryant's v1.5 plus our changes (1.6 to 1.11) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, then =1.10-to-1.11= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+--- topoforge-1.10/spec/EMBED-v1.md
++++ topoforge-1.11/spec/EMBED-v1.md
+@@ -2,7 +2,7 @@
+ SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ -->
+-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9 and 1.10)
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10 and 1.11)
+ 
+ topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
+ This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
+@@ -293,6 +293,54 @@
+ Farther, or `mapScale()`, do the same. With `mapwheel` off the wheel over the map does nothing, as before
+ (MW2).
+ 
++## Added in 1.11 (still v1): the map's pad, and Reset layout
++
++Two new switch words, `mappad` and `reset`, off unless a page asks and in neither `all` nor `bare`.
++Nothing 1.10 promised changes; a page opened on its own draws the same pixels as 1.10 (S1).
++
++### The map's pad: `mappad`
++
++`mappad` turns `map` on too (the pad hangs on the map's own frame). The pad is a cross of 44-pixel
++cells that hangs on the map's outer edge, beside the handles: on its left, or on its right when the map
++is too near the drawing's left edge. It moves with the map, and is shown and hidden with the handles (the
++pointer within reach, a handle or the pad focused, or always on a screen with no hover) (PD1).
++
++- **The horizontal bar is a drawn slider** for `mapMode` (`role="slider"`, `aria-valuenow` 0, 1, 2,
++  `aria-valuetext` in words): left **Preview shapes** (`cards`), centre **Both** (the default), right
++  **Highlight matches** (`rings`). A visible track with three marked and labelled stops; the thumb glides
++  between them (0.18 s), and jumps when reduced motion is asked. ← and → (also ↓ and ↑, as a slider
++  takes them), Home and End, a click on a stop, or dragging the thumb, all move it. It drives `mapMode`
++  and follows it: the Mode menu, `mapMode()` and the pad are always in step (PD2-PD4, PD8).
++- **The vertical arm** calibrates the map: ▲ Closer and ▼ Farther (`mapScale` × or ÷ 1.5, between 1
++  and 8). **The centre press** is The whole drawing (`mapScale(1)`): a press on the slider's thumb (without
++  dragging it), or Enter or Space on the slider (PD5).
++- **The grip** (⠿, top left of the cross) moves the map: drag it, or the arrow keys (16 pixels, 64 with
++  Shift). The mode never moves or resizes the map (PD6).
++- `TopoForge.padArrows('mode-scale' | 'pan')`: `mode-scale` is the default (above). `pan` swaps the arms
++  for panning the drawing: ▲ north, ▼ south, ◀ west, ▶ east, 64 pixels a press, Fit in the middle; the
++  slider is not shown meanwhile. `padArrows()` reads it; any other word returns `false`. It is not kept
++  in the browser: the page sets it (PD7).
++
++Messages, with `map`, `preview` or `mappad` on: `topoforge:mapmode` `{ mode, mapCaption }` as in 1.10
++(now also with `mappad` alone), and new `topoforge:mapscale` `{ scale }` whenever the map's scale changes,
++by any route (PD3, PD5).
++
++### Reset layout: `reset`, `TopoForge.resetLayout()`, `TopoForge.undoReset()`
++
++`resetLayout()` puts every movable or resizable part back to its first placement: the floating panels
++(Shapes, Properties, the pages box: their places, and shown), the map's place and size (190 by 130, 12
++pixels from the drawing's right and foot), its scale (1) and its mode (`both`, caption not in the map),
++and the pad (which goes with the map). It touches nothing in the drawing: the document and the undo history
++are unchanged. It keeps the first placement in this browser, says so in the live region and returns
++`{ parts: ['panels', 'minimap', 'mapScale', 'mapMode', 'pad'], undo: true }` (RS1, RS2, RS4).
++
++`undoReset()` puts back exactly what the last reset changed, one level, and returns `true`; with nothing to
++undo it returns `false` (RS3). The calls work whenever called. With the `reset` switch on, **Reset layout**
++(and, after one, **Undo reset**) appears at the foot of the map's Mode menu and of the View menu (and so
++in `commands()`), and each reset and undo sends `topoforge:reset`: `{ parts, undo: true }` for a reset,
++`{ parts, undone: true, undo: false }` for an undo, so the page can reset its own frames too (RS3). Without
++the switch the menus are as in 1.10 (RS4).
++
+ ## Page tabs that do not fit (1.9, everywhere)
+ 
+ This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
+--- topoforge-1.10/tests/browser/embed-prove-red.sh
++++ topoforge-1.11/tests/browser/embed-prove-red.sh
+@@ -87,6 +87,27 @@
+ #   menu-dead      Mode, Rings does nothing               -> MM6
+ #   hi-faint       the highlight too faint to see         -> MM7
+ #   mode-not-kept  the mode chosen is not kept            -> MM8
++# 1.11:
++#   pad-inside     the pad sits inside the map's frame    -> PD1
++#   pad-small      the pad's buttons are under 44 pixels  -> PD1
++#   pad-no-keys    the slider ignores the arrow keys      -> PD2
++#   pad-thumb-stuck the thumb stays in the middle         -> PD2
++#   pad-no-click   a click on a stop does nothing         -> PD3
++#   pad-silent     the pad's mode change is not told      -> PD3
++#   pad-out-of-step mapMode() leaves the pad behind       -> PD4
++#   pad-arm-dead   Closer does nothing                    -> PD5
++#   pad-no-whole   the thumb's press is not the whole drawing -> PD5
++#   scale-silent   a scale change is not told             -> PD5
++#   pad-grip-dead  the pad's grip moves nothing           -> PD6
++#   pad-no-pan     padArrows('pan') changes nothing       -> PD7
++#   pad-faint      the slider's words too faint           -> PD8
++#   pad-glides     the thumb glides with reduced motion   -> PD8
++#   reset-partial  Reset layout leaves the map's scale    -> RS1
++#   reset-doc      Reset layout touches the drawing       -> RS2
++#   reset-no-undo  Undo reset does nothing                -> RS3
++#   reset-silent   the page is not told of a reset        -> RS3
++#   reset-always   Reset layout in the menus with no switch -> RS4
++#   any-origin-111 postMessage to '*', the new messages   -> E10
+ # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
+ #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
+ # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
+@@ -185,7 +206,7 @@
+ plant wheel-deltax   MW4 's@const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) \* unit;@const d = e.deltaY * unit;@'
+ plant wheel-ns-dead  MW5 's@if (e.altKey \&\& e.shiftKey) { S.view.y -= d; applyView(); }@if (e.altKey \&\& e.shiftKey) { }@'
+ plant mode-default   MM1 "s@^let MAPMODE = 'both',@let MAPMODE = 'rings',@"
+-plant mode-silent    MM1 "s@ if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap });@@"
++plant mode-silent    MM1 "s@ if (EMBED.preview || EMBED.mappad) tell('topoforge:mapmode', { mode, mapCaption: cap });@@"
+ plant mode-any       MM1 's@^  if (!MAP_MODES.includes(mode)) return false;$@@'
+ plant preview-silent MM1 's@const r = drawPreview(); tellPreview(r); return r;@const r = drawPreview(); return r;@'
+ plant rings-cap-in   MM2 's@cap.hidden = !(rings \&\& MAPCAP);@cap.hidden = !rings;@'
+@@ -197,5 +218,26 @@
+ plant menu-dead      MM6 "s@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') }@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: () => {} }@"
+ plant hi-faint       MM7 's@rx="10" fill="${c}" fill-opacity=".10" stroke="${c}"@rx="10" fill="${c}" fill-opacity=".10" stroke="#e5e7eb"@'
+ plant mode-not-kept  MM8 "s@if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview();@if (changed) { drawPreview();@"
++# 1.11
++plant pad-inside     PD1 's@^#mmPad{position:absolute;top:50%;right:calc(100% + 6px);@#mmPad{position:absolute;top:50%;right:0;@'
++plant pad-small      PD1 's@#mmPad .mp-b{display:flex;align-items:center;justify-content:center;width:44px;height:44px;@#mmPad .mp-b{display:flex;align-items:center;justify-content:center;width:30px;height:30px;@'
++plant pad-no-keys    PD2 "s@if (j !== undefined) { e.preventDefault(); setI(j); }@if (false) { }@"
++plant pad-thumb-stuck PD2 "s@PAD.thumb.style.setProperty('--tx', (22 + i \* 44) + 'px');@@"
++plant pad-no-click   PD3 's@if (was.onThumb \&\& !was.moved) whole(); else setI(stopAt(e.clientX));@if (was.onThumb \&\& !was.moved) whole(); else if (was.moved) setI(stopAt(e.clientX));@'
++plant pad-silent     PD3 "s@if (EMBED.preview || EMBED.mappad) tell('topoforge:mapmode'@if (EMBED.preview) tell('topoforge:mapmode'@"
++plant pad-out-of-step PD4 's@^  padSync();   // 1.11: the pad.s slider follows, whoever changed the mode$@@'
++plant pad-arm-dead   PD5 "s@else { mapScale(MAPSCALE \* 1.5); flSay(\`Overview map: scale \${MAPSCALE}.\`); } });@else { } });@"
++plant pad-no-whole   PD5 's@if (was.onThumb \&\& !was.moved) whole(); else@if (false) whole(); else@'
++plant scale-silent   PD5 "s@ if (EMBED.preview || EMBED.map || EMBED.mappad) tell('topoforge:mapscale', { scale: n });@@"
++plant pad-grip-dead  PD6 's@if (v) { e.preventDefault(); mmMove(v\[0\], v\[1\], true); }@if (v) { e.preventDefault(); }@'
++plant pad-no-pan     PD7 "s@^  PADARROWS = mode; padSync(); return mode;\$@  padSync(); return mode;@"
++plant pad-faint      PD8 's@#mmPad .mp-lab{position:absolute;bottom:3px;width:44px;margin-left:-22px;text-align:center;font-size:9.5px;line-height:1;color:var(--text-2);@#mmPad .mp-lab{position:absolute;bottom:3px;width:44px;margin-left:-22px;text-align:center;font-size:9.5px;line-height:1;color:#b8bec7;@'
++plant pad-glides     PD8 's|^@media (prefers-reduced-motion:reduce){#mmPad .mp-thumb{transition:none}}$||'
++plant reset-partial  RS1 "s@mmw: { ...MMW_DEF }, scale: 1, mode: 'both', cap: false });@mmw: { ...MMW_DEF }, scale: MAPSCALE, mode: 'both', cap: false });@"
++plant reset-doc      RS2 "s@^  _resetUndo = layoutState();\$@  _resetUndo = layoutState(); edit(() => { DOC.name += ' '; });@"
++plant reset-no-undo  RS3 's@^  const st = _resetUndo; _resetUndo = null; layoutPut(st);$@  const st = _resetUndo; _resetUndo = null;@'
++plant reset-silent   RS3 "s@^  if (EMBED.reset) tell('topoforge:reset', { parts: RESET_PARTS, undo: true });\$@@"
++plant reset-always   RS4 's@function resetItems() { return EMBED.reset ?@function resetItems() { return true ?@'
++plant any-origin-111 E10 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+ [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
+ exit $bad
+--- topoforge-1.10/tests/browser/embed.browser.mjs
++++ topoforge-1.11/tests/browser/embed.browser.mjs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 and 1.10 checks 2026-11-02.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02.
+ //
+-// embed.browser.mjs -- the embedding switches (1.8, 1.9, 1.10) in real Chromium, held to spec/EMBED-v1.md.
++// embed.browser.mjs -- the embedding switches (1.8 to 1.11) in real Chromium, held to spec/EMBED-v1.md.
+ //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+ //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+ //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+@@ -34,7 +34,7 @@
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+ // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+-const VER = '1.10', PREV = '1.9';
++const VER = '1.11', PREV = '1.10';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -45,7 +45,7 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+@@ -53,7 +53,7 @@
+   return cur;
+ }
+ let v17, v18;
+-try { v17 = rebuild(4); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
++try { v17 = rebuild(5); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -130,7 +130,7 @@
+     if (w === 1400 && !dark) {
+       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
+       check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
+-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
++      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi', '#mmPad'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+       check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
+     }
+     await a.c.close(); await b.c.close();
+@@ -375,8 +375,8 @@
+   // W1: 'all' and 'bare' mean what they meant in 1.8
+   { const { c, p } = await open(A + '/index.html?embed=all,bare');
+     const w = await p.evaluate(() => TopoForge.embed());
+-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];
+-    check('W1 ?embed=all and bare turn on none of the 1.9 and 1.10 switches (view, keys, context, pagelist, map, preview, mapwheel); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
++    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];
++    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.11 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+     await c.close(); }
+   // E8: the new messages never reach a parent of another origin
+   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
+@@ -591,9 +591,105 @@
+   { const r = await parentRun(B, A + '/index.html?embed=preview&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.preview({ category: 'net' }); }); });
+     check('E9 topoforge:preview and topoforge:mapmode never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
+ 
++  // ======== 1.11: the map's pad (mappad) and Reset layout (reset) ========
++  { const PDX = {}; const r = await parentRun(A, A + '/index.html?embed=mappad&load=/fixture.json', async (p, fr) => {
++      const thumbX = () => fr.evaluate(() => { const t = document.querySelector('#mmPad .mp-thumb').getBoundingClientRect(), s = document.querySelector('#mmPad .mp-sl').getBoundingClientRect(); return Math.round(t.left + t.width / 2 - s.left - document.querySelector('#mmPad .mp-sl').clientLeft); });   // from the slider's inner edge
++      const st = () => fr.evaluate(() => { const s = document.querySelector('#mmPad .mp-sl'); return { mode: TopoForge.mapMode().mode, now: s.getAttribute('aria-valuenow'), text: s.getAttribute('aria-valuetext'), scale: TopoForge.mapScale() }; });
++      const P0 = await fr.evaluate(() => { const g = document.querySelector('#mmPad'), m = document.querySelector('#minimap').getBoundingClientRect(), b = g.getBoundingClientRect();
++        const big = [...g.querySelectorAll('.mp-b')].filter(x => getComputedStyle(x).display !== 'none').every(x => { const r = x.getBoundingClientRect(); return r.width >= 44 && r.height >= 44; });
++        return { role: g.getAttribute('role'), label: g.getAttribute('aria-label'), slider: document.querySelector('#mmPad [role=slider]') ? 1 : 0, outside: b.right <= m.left || b.left >= m.right, big, map: TopoForge.embed().map }; });
++      PDX.p0 = { ...P0, ...(await st()), x: await thumbX() };
++      // the transition is the same smooth glide as the mode changes, and it is there unless reduced motion is asked
++      PDX.tr = await fr.evaluate(() => getComputedStyle(document.querySelector('#mmPad .mp-thumb')).transitionDuration);
++      await fr.focus('#mmPad .mp-sl'); await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(250); PDX.k1 = { ...(await st()), x: await thumbX() };
++      await p.keyboard.press('End'); await p.waitForTimeout(250); PDX.k2 = { ...(await st()), x: await thumbX() };
++      await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(250); PDX.k3 = { ...(await st()), x: await thumbX() };
++      // a click on a position, then a drag of the thumb
++      const fb = await (await p.$('#f')).boundingBox(), sb = await fr.evaluate(() => { const b = document.querySelector('#mmPad .mp-sl').getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
++      await p.mouse.click(fb.x + sb.x + sb.w - 22, fb.y + sb.y + 30); await p.waitForTimeout(250); PDX.c1 = await st();
++      await p.mouse.move(fb.x + sb.x + sb.w - 22, fb.y + sb.y + 16); await p.mouse.down(); await p.mouse.move(fb.x + sb.x + 30, fb.y + sb.y + 16, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(250); PDX.d1 = await st();
++      // the Mode menu and the pad stay in step, both ways
++      await fr.evaluate(() => TopoForge.mapMode('both')); PDX.m1 = await st();
++      await fr.click('#mmwrap .mm-mode'); PDX.menu = await fr.evaluate(() => [...document.querySelectorAll('.menu .mi')].filter(b => b.querySelector('.ck').textContent).map(b => b.querySelector('.lb').textContent)); await p.keyboard.press('Escape');
++      // the vertical arm: up Closer, down Farther; the thumb's press (and Enter) is the whole drawing
++      // (pressed from script, so a disabled button is a press that does nothing, not a step that waits and throws)
++      await fr.evaluate(() => document.querySelector('#mmPad .mp-up').click()); PDX.u1 = await st(); await fr.evaluate(() => document.querySelector('#mmPad .mp-up').click()); PDX.u2 = await st();
++      await fr.evaluate(() => document.querySelector('#mmPad .mp-dn').click()); PDX.u3 = await st();
++      await fr.click('#mmPad .mp-thumb'); PDX.u4 = await st();
++      await fr.evaluate(() => document.querySelector('#mmPad .mp-up').click()); await fr.focus('#mmPad .mp-sl'); await p.keyboard.press('Enter'); PDX.u5 = await st();
++      PDX.names = await fr.evaluate(() => ['.mp-up', '.mp-dn', '.mp-grip'].map(s => document.querySelector('#mmPad ' + s).getAttribute('aria-label')));
++    }, { after: async () => PDX });
++    const d = r.extra, mm = msgs(r.got, 'mapmode'), ms = msgs(r.got, 'mapscale');
++    check('PD1 mappad: a pad of buttons (role group, named) hangs outside the map\'s frame and turns map on; its horizontal bar is a drawn slider (role slider) whose thumb starts at the centre, Both; every button is at least 44 by 44',
++      d.p0.role === 'group' && d.p0.label === 'Overview map pad' && d.p0.slider === 1 && d.p0.outside && d.p0.big && d.p0.map === true && d.p0.mode === 'both' && d.p0.now === '1' && d.p0.x === 66 && d.tr !== '0s', JSON.stringify({ p0: d.p0, tr: d.tr }));
++    check('PD2 the slider by keyboard: ← to the left (Preview shapes, cards), End to the right (Highlight matches, rings), ← back to the centre; the thumb glides to each stop and aria-valuetext says the mode in words',
++      d.k1.mode === 'cards' && d.k1.x === 22 && /^Preview shapes/.test(d.k1.text) && d.k2.mode === 'rings' && d.k2.x === 110 && /^Highlight matches/.test(d.k2.text) && d.k3.mode === 'both' && d.k3.x === 66 && /^Both/.test(d.k3.text), JSON.stringify([d.k1, d.k2, d.k3]));
++    check('PD3 a click on a stop, or dragging the thumb, moves the slider and sets the mode; each change is told to the page (topoforge:mapmode)',
++      d.c1.mode === 'rings' && d.d1.mode === 'cards' && mm.map(x => x.mode).join(',') === 'cards,rings,both,rings,cards,both', JSON.stringify({ c1: d.c1, d1: d.d1, mm: mm.map(x => x.mode) }));
++    check('PD4 the Mode menu and the pad stay in step: mapMode() moves the thumb, and the menu checks what the pad set', d.m1.now === '1' && d.menu.some(t => /^Both/.test(t)), JSON.stringify({ m1: d.m1, menu: d.menu }));
++    check('PD5 the vertical arm sets the map\'s scale: up Closer (1.5, then 2.25), down Farther (1.5); a press on the thumb or Enter on the slider is The whole drawing (1); each change is told (topoforge:mapscale); the arm\'s buttons have names',
++      d.u1.scale === 1.5 && d.u2.scale === 2.25 && d.u3.scale === 1.5 && d.u4.scale === 1 && d.u4.mode === 'both' && d.u5.scale === 1 && ms.map(x => x.scale).join(',') === '1.5,2.25,1.5,1,1.5,1' && d.names.join('|') === 'Overview map closer|Overview map farther|Move the overview map: drag, or the arrow keys (Shift goes further)',
++      JSON.stringify({ u: [d.u1, d.u2, d.u3, d.u4, d.u5].map(x => x.scale), ms: ms.map(x => x.scale), names: d.names })); }
++  { const { c, p } = await open(A + '/index.html?embed=mappad&load=/fixture.json');
++    at = 'PD6'; const m0 = await boxOf(p, '#minimap'), g0 = await boxOf(p, '#mmPad');
++    await p.focus('#mmPad .mp-grip'); await p.keyboard.press('Shift+ArrowUp'); const m1 = await boxOf(p, '#minimap'), g1 = await boxOf(p, '#mmPad');
++    const gb = await boxOf(p, '#mmPad .mp-grip'); await p.mouse.move(gb.x + 20, gb.y + 20); await p.mouse.down(); await p.mouse.move(gb.x - 80, gb.y - 20, { steps: 6 }); await p.mouse.up(); const m2 = await boxOf(p, '#minimap'), g2 = await boxOf(p, '#mmPad');
++    await p.evaluate(() => TopoForge.mapMode('cards')); const m3 = await boxOf(p, '#minimap');
++    check('PD6 the pad\'s grip moves the map (arrow keys, or a drag) and the pad moves with it; the mode never moves or resizes the map',
++      m1.y === m0.y - 64 && g1.y === g0.y - 64 && m2.x === m1.x - 100 && g2.x === g1.x - 100 && m2.y === m1.y - 40 && JSON.stringify(m3) === JSON.stringify(m2), JSON.stringify({ m0, m1, m2, m3, g0, g2 }));
++    at = 'PD7'; const pan = await p.evaluate(() => { const a = TopoForge.padArrows(), b = TopoForge.padArrows('pan'), bad = TopoForge.padArrows('sideways'), v0 = { ...S.view };
++      const sl = getComputedStyle(document.querySelector('#mmPad .mp-sl')).display, w = getComputedStyle(document.querySelector('#mmPad .mp-w')).display;
++      document.querySelector('#mmPad .mp-up').click(); const v1 = { ...S.view }; document.querySelector('#mmPad .mp-e').click(); const v2 = { ...S.view };
++      document.querySelector('#mmPad .mp-dn').click(); document.querySelector('#mmPad .mp-w').click(); const v3 = { ...S.view }; const sc = TopoForge.mapScale();
++      const names = ['.mp-up', '.mp-dn', '.mp-w', '.mp-e', '.mp-c'].map(s => document.querySelector('#mmPad ' + s).getAttribute('aria-label'));
++      TopoForge.padArrows('mode-scale'); return { a, b, bad, sl, w, v0, v1, v2, v3, sc, names, back: getComputedStyle(document.querySelector('#mmPad .mp-sl')).display }; });
++    check('PD7 padArrows(\'pan\') swaps the arms for panning the drawing (north, east, south, west, 64 pixels a press; Fit in the middle), leaves the map\'s scale alone, and padArrows(\'mode-scale\') (the default) brings the slider back',
++      pan.a === 'mode-scale' && pan.b === 'pan' && pan.bad === false && pan.sl === 'none' && pan.w === 'flex' && pan.v1.y === pan.v0.y + 64 && pan.v2.x === pan.v1.x - 64 && pan.v3.x === pan.v0.x && pan.v3.y === pan.v0.y && pan.sc === 1 && pan.names.join('|') === 'Pan north|Pan south|Pan west|Pan east|Fit the drawing' && pan.back !== 'none', JSON.stringify(pan));
++    await c.close(); }
++  for (const dark of [false, true]) {
++    const { c, p } = await open(A + '/index.html?embed=mappad&load=/fixture.json', { dark, reduce: true });
++    const k = await p.evaluate(() => { const L = h => { const m = h.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
++      const ratio = (a, b) => { const x = L(a), y = L(b); return Math.round((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) * 100) / 100; };
++      const sl = getComputedStyle(document.querySelector('#mmPad .mp-sl')).backgroundColor, th = getComputedStyle(document.querySelector('#mmPad .mp-thumb')), tr = getComputedStyle(document.querySelector('#mmPad .mp-track')).backgroundColor, lab = getComputedStyle(document.querySelector('#mmPad .mp-lab')).color;
++      return { thumb: ratio(th.backgroundColor, sl), track: ratio(tr, sl), label: ratio(lab, sl), motion: th.transitionDuration }; });
++    check(`PD8 the pad, ${dark ? 'dark' : 'light'}: thumb and track at least 3 to 1 against the slider, its words at least 4.5 to 1 (AA); with reduced motion asked the thumb jumps, it does not glide`, k.thumb >= 3 && k.track >= 3 && k.label >= 4.5 && k.motion === '0s', JSON.stringify(k));
++    await c.close();
++  }
++  // RS: Reset layout
++  { const RSX = {}; const r = await parentRun(A, A + '/index.html?embed=reset,mappad,props,shapes&load=/fixture.json', async (p, fr) => {
++      const doc0 = await fr.evaluate(() => JSON.stringify(TopoForge.doc) + '|' + H.undo.length);
++      const look = () => fr.evaluate(() => { const b = s => { const e = document.querySelector(s).getBoundingClientRect(); return [Math.round(e.left), Math.round(e.top), Math.round(e.width), Math.round(e.height)].join(','); };
++        return { side: b('#side'), pal: b('#palette'), map: b('#minimap'), pad: b('#mmPad'), sideHidden: document.querySelector('#side').classList.contains('fl-hidden'), mode: TopoForge.mapMode().mode, cap: TopoForge.mapMode().mapCaption, scale: TopoForge.mapScale() }; });
++      RSX.start = await look();
++      await fr.focus('#side .fl-grip'); await p.keyboard.press('Shift+ArrowLeft'); await fr.focus('#palette .fl-grip'); await p.keyboard.press('Shift+ArrowDown');
++      await fr.click('#side .fl-bar [data-act=hide]');
++      await fr.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await fr.focus('#mmPad .mp-grip'); await p.keyboard.press('Shift+ArrowUp');
++      await fr.evaluate(() => { TopoForge.mapScale(3); TopoForge.mapMode('rings', { mapCaption: true }); });
++      RSX.moved = await look();
++      await fr.click('#mmwrap .mm-mode'); RSX.menu = await fr.evaluate(() => [...document.querySelectorAll('.menu .mi .lb')].map(x => x.textContent)); await fr.click('.menu .mi:has-text("Reset layout")'); await p.waitForTimeout(150);
++      RSX.after = await look(); RSX.doc = (await fr.evaluate(() => JSON.stringify(TopoForge.doc) + '|' + H.undo.length)) === doc0;
++      RSX.kept = await fr.evaluate(() => { const o = JSON.parse(localStorage.getItem('topoforge.ui.v1')); return { mm: o.minimap, mode: o.mapMode, scale: o.mapScale, props: o.props }; });
++      await fr.click('.menu-btn[data-menu="view"]'); RSX.view = await fr.evaluate(() => [...document.querySelectorAll('.menu .mi .lb')].map(x => x.textContent)); await fr.click('.menu .mi:has-text("Undo reset")'); await p.waitForTimeout(150);
++      RSX.undone = await look(); RSX.again = await fr.evaluate(() => TopoForge.undoReset());
++    }, { after: async () => RSX });
++    const x = r.extra, rs = msgs(r.got, 'reset');
++    check('RS1 Reset layout (in the Mode menu with the reset switch) puts every part back where it started: both panels (and shown), the map\'s place and size, its scale (1) and its mode (both), and the pad with the map',
++      x.menu.includes('Reset layout') && JSON.stringify(x.after) === JSON.stringify(x.start) && x.moved.side !== x.start.side && x.moved.pal !== x.start.pal && x.moved.map !== x.start.map && x.moved.sideHidden && x.moved.scale === 3 && x.moved.mode === 'rings',
++      JSON.stringify({ start: x.start, moved: x.moved, after: x.after, menu: x.menu }));
++    check('RS2 the reset touches nothing in the drawing (the document and the undo history are byte for byte the same) and keeps the first placement in this browser', x.doc && x.kept.mm && x.kept.mm.w === 190 && x.kept.mode.mode === 'both' && x.kept.scale === 1 && x.kept.props.dx === null && x.kept.props.hidden === false, JSON.stringify({ doc: x.doc, kept: x.kept }));
++    check('RS3 View offers Reset layout and, after one, Undo reset, which puts back exactly what the reset changed (one level: a second undo says false); the page is told each time (topoforge:reset)',
++      x.view.includes('Reset layout') && x.view.includes('Undo reset') && JSON.stringify(x.undone) === JSON.stringify(x.moved) && x.again === false && rs.length === 2 && rs[0].parts.join(',') === 'panels,minimap,mapScale,mapMode,pad' && rs[0].undo === true && rs[1].undone === true,
++      JSON.stringify({ view: x.view, undone: x.undone, rs })); }
++  { const { c, p } = await open(A + '/index.html?embed=mappad&load=/fixture.json');
++    const r = await p.evaluate(async () => { const v = MENUS.view().map(i => i.label).filter(Boolean), m = TopoForge.commands().some(c => c.label === 'Reset layout' || c.label === 'Undo reset'); TopoForge.mapScale(2); const out = TopoForge.resetLayout(); return { v: v.includes('Reset layout'), m, scale: TopoForge.mapScale(), parts: out.parts.length }; });
++    const got = await p.evaluate(() => (document.querySelector('#flLive') || {}).textContent);
++    check('RS4 without the reset switch the menus offer no Reset layout, but TopoForge.resetLayout() still works when a page calls it, and it is said to a screen reader', !r.v && !r.m && r.scale === 1 && r.parts === 5 && /^Layout reset/.test(got), JSON.stringify({ r, got })); await c.close(); }
++  { const r = await parentRun(B, A + '/index.html?embed=mappad,reset&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.mapScale(2); TopoForge.resetLayout(); }); });
++    check('E10 topoforge:mapscale, topoforge:mapmode and topoforge:reset never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
++
+   // ---- X: axe with every switch on; reduced motion ----
+   for (const dark of [false, true]) {
+-    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist&load=/fixture.json', { dark, reduce: true });
++    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset&load=/fixture.json', { dark, reduce: true });
+     await p.evaluate(() => TopoForge.preview({ category: 'net' }));
+     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
+     await p.addScriptTag({ content: axeSrc });
+@@ -602,14 +698,14 @@
+     const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
+     check(`X1 axe, every switch on, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
+     if (!dark) {
+-      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar', '#mmwrap .mm-handles', '#mmwrap .mm-h'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
++      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar', '#mmwrap .mm-handles', '#mmwrap .mm-h', '#mmPad .mp-thumb'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
+       check('X2 the floating parts do not move by themselves (no transition) with reduced motion asked', mo.every(d => d === '0s'), mo.join(','));
+       await p.screenshot({ path: path.join(outdir, 'embed-all-light.png') });
+     } else await p.screenshot({ path: path.join(outdir, 'embed-all-dark.png') });
+     await c.close();
+   }
+   for (const dark of [false, true]) {   // 1.9: the map's handles and the preview's caption, shown (the pages box is off, so the map is in its own frame)
+-    const { c, p } = await open(A + '/index.html?embed=map,preview,shapes&load=/fixture.json', { dark, reduce: true });
++    const { c, p } = await open(A + '/index.html?embed=map,preview,shapes,mappad&load=/fixture.json', { dark, reduce: true });
+     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
+     await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.focus('#mmwrap .mm-grip');
+     await p.addScriptTag({ content: axeSrc });
+--- topoforge-1.10/tests/run.sh
++++ topoforge-1.11/tests/run.sh
+@@ -78,6 +78,27 @@
+   recipe_red() { printf ' ' >> "$tmp/r.html"; cat "$html" >> "$tmp/r.html"; recipe_sum "$tmp/r.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
+   step "prove-red: a changed app no longer matches RECIPE.org" recipe_red
+ fi
++# 1.11: every patch's own sha256 is in topology's RECIPE.org, one row each (AGENTS.md, 2026-11-02: "a versioned
++# patch in topoforge/patches/, whose sha256 is recorded in RECIPE.org")
++patch_sums() { # $1 = the patches folder
++  r=$here/../../RECIPE.org; [ -f "$r" ] || { echo "no topology RECIPE.org beside topoforge/"; return 2; }
++  n=0; bad=''
++  for p in $(ls "$1"/topoforge-*.patch | sort -V); do
++    b=$(basename "$p"); n=$((n + 1))
++    want=$(sed -n "s/^| the patch [0-9.]* to [0-9.]* *| =topoforge\/patches\/$b= *| sha256 =\([0-9a-f]\{64\}\)= |\$/\1/p" "$r")
++    got=$(sha256sum "$p" | cut -d' ' -f1)
++    [ -n "$want" ] && [ "$want" = "$got" ] || bad="$bad $b"
++  done
++  [ "$n" -ge 1 ] && [ -z "$bad" ] || { echo "RECIPE.org has no sum, or another sum, for:${bad:- (no patches found)}"; return 1; }
++  echo "$n patches, each one's sha256 in RECIPE.org"
++}
++if [ -f "$here/../../RECIPE.org" ]; then
++  step "topology's RECIPE.org names every patch's sha256" patch_sums "$here/../patches"
++  patch_sums_red() { mkdir -p "$tmp/pp" && cp "$here"/../patches/topoforge-*.patch "$tmp/pp/" || return 2
++    last=$(ls "$tmp"/pp/topoforge-*.patch | sort -V | tail -1); printf ' ' >> "$last"
++    patch_sums "$tmp/pp" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
++  step "prove-red: a changed patch no longer matches RECIPE.org" patch_sums_red
++fi
+ spelled_red() { sed 's/topology forge (formerly/topography forge (formerly/' "$html" > "$tmp/s.html"; cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
+   spelled "$tmp/s.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
+ step "prove-red: \"topography\" planted in the app is caught" spelled_red
+--- topoforge-1.10/index.html
++++ topoforge-1.11/index.html
+@@ -17,6 +17,8 @@
+   1.10: the map's modes for a preview (mapMode: cards, both, rings; both by default), a card in the map, the matches
+   highlighted in the drawing, the map's own scale (mapScale), and, with the switch mapwheel, the wheel over the map.
+   Nothing changes for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
++  1.11: the map's pad (mappad: a drawn slider for the mode, an arm for the scale, a grip; padArrows('pan') to pan
++  instead) and Reset layout (reset; resetLayout, undoReset). Off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -331,6 +333,30 @@
+ #minimap .mm-card .mc-f dd{margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #minimap .mm-card .mc-s{grid-column:1/-1;grid-row:3;margin:0;font-size:11px;line-height:1.3;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+ #minimap.mm-carded #mmSvg{opacity:.14}
++/* 1.11: the map's pad (mappad), hung on the map's outer edge beside the handles; only that switch adds #mmPad */
++#mmPad{position:absolute;top:50%;right:calc(100% + 6px);transform:translateY(-50%);display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:0;z-index:1}
++#mmwrap.mm-pad-right #mmPad{right:auto;left:calc(100% + 6px)}
++#mmwrap:not(.mm-near):not(:focus-within) #mmPad{opacity:0}
++@media (hover:none){#mmPad{opacity:1 !important}}
++#mmPad .mp-b{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid var(--border-2);background:var(--panel);color:var(--text);border-radius:8px;padding:0;font-size:15px;line-height:1;box-shadow:var(--shadow)}
++#mmPad .mp-b:hover{background:var(--hover)}
++#mmPad .mp-b:focus-visible,#mmPad .mp-sl:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
++#mmPad .mp-grip{grid-area:1/1;cursor:grab;touch-action:none;font-size:13px}
++#mmPad .mp-up{grid-area:1/2}
++#mmPad .mp-dn{grid-area:3/2}
++#mmPad .mp-sl{grid-area:2/1/3/4;position:relative;border:1px solid var(--border-2);background:var(--panel);border-radius:22px;box-shadow:var(--shadow);cursor:pointer;touch-action:none}
++#mmPad .mp-track{position:absolute;left:22px;right:22px;top:15px;height:2px;background:var(--text-2);border-radius:1px}
++#mmPad .mp-tick{position:absolute;top:11px;width:2px;height:10px;margin-left:-1px;background:var(--text-2)}
++#mmPad .mp-lab{position:absolute;bottom:3px;width:44px;margin-left:-22px;text-align:center;font-size:9.5px;line-height:1;color:var(--text-2);pointer-events:none}
++#mmPad .mp-thumb{position:absolute;top:6px;left:var(--tx,50%);width:20px;height:20px;margin-left:-10px;border-radius:50%;background:var(--accent);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--accent);transition:left .18s ease}
++#mmPad .mp-sl.mp-drag .mp-thumb{transition:none}
++#mmPad .mp-pan{display:none}
++#mmPad.mp-panmode .mp-sl{display:none}
++#mmPad.mp-panmode .mp-pan{display:flex}
++#mmPad .mp-w{grid-area:2/1}
++#mmPad .mp-c{grid-area:2/2;font-size:11px}
++#mmPad .mp-e{grid-area:2/3}
++@media (prefers-reduced-motion:reduce){#mmPad .mp-thumb{transition:none}}
+ @media print{body *{visibility:hidden}}
+ 
+ </style>
+@@ -412,7 +438,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.10';
++const TF_VERSION = '1.11';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -2862,6 +2888,7 @@
+     ...[['showGrid', 'Grid'], ['snap', 'Snap to grid'], ['guides', 'Alignment guides'], ['netLabels', 'IP addresses & link speeds'], ['ifLabels', 'Interface names'], ['minimap', 'Overview map']].map(([k, l]) => ({ label: l, checked: () => !!ST()[k], action: () => { edit(() => { ST()[k] = !ST()[k]; }); applyMinimapVisibility(); } })),
+     '-',
+     { label: 'Dark theme', checked: isDark, action: toggleTheme },
++    ...resetItems(),   // 1.11: with the reset switch only
+   ],
+   help: () => [
+     { label: 'Keyboard shortcuts', action: showHelp },
+@@ -4137,7 +4164,7 @@
+    for any other, and nothing is posted from file://).
+    ============================================================ */
+ const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
+-  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];   // 1.9: view to preview; 1.10: mapwheel; never turned on by 'all' or 'bare'
++  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; never turned on by 'all' or 'bare'
+ const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
+ const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+ const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
+@@ -4155,6 +4182,7 @@
+   if (opts && typeof opts === 'object') {
+     if ('chrome' in opts && !('frameless' in opts)) opts = { ...opts, frameless: !opts.chrome };
+     for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
++    if (EMBED.mappad) EMBED.map = true;   // 1.11: the pad hangs on the map's own frame
+   }
+   document.body.classList.toggle('tf-frameless', EMBED.frameless);
+   for (const k of EMBED_WORDS) if (k.startsWith('hide-')) document.body.classList.toggle('tf-' + k, EMBED[k]);
+@@ -4345,7 +4373,7 @@
+    its own); each message waits for its own switch: view, keys, context, pagelist. None is in 'all' or 'bare'. ---- */
+ let _viewKey = null, _viewT = null, _pagesKey = null, _pagesPrev = null, _wired19 = false, KEYSEQ = null, _lp = null, _lpAt = 0;
+ function embed19(was) {
+-  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'].some(k => EMBED[k])) wire19();
++  if (['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'].some(k => EMBED[k])) wire19();
+   if (EMBED.view && !was.view) { _viewKey = null; tellView(); }
+   if (EMBED.pagelist && !was.pagelist) { _pagesPrev = DOC.pages.map(p => p.name); _pagesKey = JSON.stringify(_pagesPrev); }
+   if (!EMBED.keys) KEYSEQ = null;
+@@ -4537,13 +4565,15 @@
+       openMenuAt([{ header: 'Map mode' }, { label: 'Cards: a card about what you point at', checked: MAPMODE === 'cards', action: set('cards') },
+         { label: 'Both: the card, and matches lit in the drawing', checked: MAPMODE === 'both', action: set('both') },
+         { label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') },
+-        '-', { header: 'Map scale' }, { label: 'Closer', action: sc(MAPSCALE * 1.5) }, { label: 'Farther', action: sc(MAPSCALE / 1.5) }, { label: 'The whole drawing', checked: MAPSCALE === 1, action: sc(1) }], r.left, r.bottom + 4, modeB);
++        '-', { header: 'Map scale' }, { label: 'Closer', action: sc(MAPSCALE * 1.5) }, { label: 'Farther', action: sc(MAPSCALE / 1.5) }, { label: 'The whole drawing', checked: MAPSCALE === 1, action: sc(1) }, ...resetItems()], r.left, r.bottom + 4, modeB);
+     });
+     // the door handle: shown while the pointer is within 40 pixels of the map or its handles, or one has focus
+     document.addEventListener('pointermove', e => {
+       if (!MMW || !EMBED.map) return; const b = MMW.wrap.getBoundingClientRect(), near = 40;
+-      const top = b.top - MMW_ROOM;
+-      MMW.wrap.classList.toggle('mm-near', b.width > 0 && e.clientX >= b.left - near && e.clientX <= b.right + near && e.clientY >= top - near && e.clientY <= b.bottom + near);
++      const top = b.top - MMW_ROOM, pr = PAD && !PAD.el.hidden ? PAD.el.getBoundingClientRect() : null;   // 1.11: the pad is in reach too
++      const inMap = e.clientX >= b.left - near && e.clientX <= b.right + near && e.clientY >= top - near && e.clientY <= b.bottom + near;
++      const inPad = !!pr && e.clientX >= pr.left - near && e.clientX <= pr.right + near && e.clientY >= pr.top - near && e.clientY <= pr.bottom + near;
++      MMW.wrap.classList.toggle('mm-near', b.width > 0 && (inMap || inPad));
+     });
+     document.documentElement.addEventListener('pointerleave', () => { if (MMW) MMW.wrap.classList.remove('mm-near'); });
+     window.addEventListener('resize', () => { if (MMW && EMBED.map) mmApply(); });
+@@ -4561,6 +4591,7 @@
+   const w = MMW.wrap.style; w.setProperty('--mr', MMW.r + 'px'); w.setProperty('--mb', MMW.b + 'px'); w.setProperty('--mw', MMW.w + 'px'); w.setProperty('--mh', MMW.h + 'px');
+   drawMinimapViewport();
+   if (FL.props && FL.props.on) FL.props.apply();
++  padSide();
+ }
+ function mmWhere() { return `Overview map: ${MMW.w} by ${MMW.h} pixels, ${MMW.r} from the right of the drawing and ${MMW.b} from its foot.`; }
+ function mmMove(dx, dy, say) { MMW.r -= dx; MMW.b -= dy; mmApply(); mmSave(); if (say) flSay(mmWhere()); }
+@@ -4628,9 +4659,10 @@
+   if (Number.isFinite(o.mapScale)) MAPSCALE = clamp(o.mapScale, 1, 8);
+ }
+ function embed110(was) {
+-  if (EMBED.preview || EMBED.map || EMBED.mapwheel) mapStateRead();
++  if (EMBED.preview || EMBED.map || EMBED.mapwheel || EMBED.mappad) mapStateRead();
+   if (EMBED.mapwheel && !_mapWheelWired) { _mapWheelWired = true; $('#minimap').addEventListener('wheel', onMapWheel, { passive: false }); }
+   if (MAPSCALE > 1) scheduleMinimap();
++  embed111(was);
+ }
+ function mapMode(mode, opts) {
+   if (mode === undefined) return { mode: MAPMODE, mapCaption: MAPCAP };
+@@ -4638,14 +4670,16 @@
+   const cap = opts && typeof opts === 'object' && 'mapCaption' in opts ? !!opts.mapCaption : MAPCAP;
+   const changed = mode !== MAPMODE || cap !== MAPCAP;
+   MAPMODE = mode; MAPCAP = cap;
+-  if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview(); if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap }); }
++  if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview(); if (EMBED.preview || EMBED.mappad) tell('topoforge:mapmode', { mode, mapCaption: cap }); }
++  padSync();   // 1.11: the pad's slider follows, whoever changed the mode
+   return { mode, mapCaption: cap };
+ }
+ function mapScale(s) {
+   if (typeof s === 'number' && Number.isFinite(s)) {
+     const n = rnd(clamp(s, 1, 8), 3);
+-    if (n !== MAPSCALE) { MAPSCALE = n; uiPut('mapScale', n); drawMinimap(); }
++    if (n !== MAPSCALE) { MAPSCALE = n; uiPut('mapScale', n); drawMinimap(); if (EMBED.preview || EMBED.map || EMBED.mappad) tell('topoforge:mapscale', { scale: n }); }
+   }
++  padSync();
+   return MAPSCALE;
+ }
+ // the part of the drawing the map shows: all of it at scale 1; nearer, centred on the view, at a larger scale
+@@ -4718,6 +4752,111 @@
+   tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card }
+     : { mode: MAPMODE, caption: '', count: 0, other: 0, ids: [], card: null });
+ }
++/* ---- 1.11: the map's pad (mappad) and Reset layout (reset) ----
++   mappad (it turns map on too): a cross that hangs on the map's outer edge with the handles and moves with the map.
++   Its horizontal bar is a drawn slider for the map's mode: left cards, centre both, right rings. Its vertical arm is
++   the map's scale: up Closer, down Farther; pressing the slider's thumb (or Enter on the slider) is The whole
++   drawing. Its grip moves the map. padArrows('pan') swaps the arms for panning the drawing (N, S, E, W; centre Fit).
++   resetLayout(): every panel, the map's place, size, scale and mode, and the pad back where they started; the
++   drawing is not touched; undoReset() puts back what the last reset changed (one level). */
++const PAD_LABEL = { cards: 'Preview shapes (cards)', both: 'Both: a card, and the matches lit in the drawing', rings: 'Highlight matches (rings)' };
++let PAD = null, PADARROWS = 'mode-scale', _resetUndo = null;
++function embed111(was) {
++  if (EMBED.mappad && MMW && !PAD) buildPad();
++  if (PAD) { PAD.el.hidden = !EMBED.mappad; padSide(); padSync(); }
++}
++function buildPad() {
++  const el = document.createElement('div'); el.id = 'mmPad'; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Overview map pad');
++  const stop = (i, l) => `<span class="mp-tick" style="left:${22 + i * 44}px" aria-hidden="true"></span><span class="mp-lab" style="left:${22 + i * 44}px" aria-hidden="true">${l}</span>`;
++  el.innerHTML = '<button type="button" class="mp-b mp-grip" aria-label="Move the overview map: drag, or the arrow keys (Shift goes further)"><span aria-hidden="true">⠿</span></button>' +
++    '<button type="button" class="mp-b mp-up"></button><button type="button" class="mp-b mp-dn"></button>' +
++    '<div class="mp-sl" role="slider" tabindex="0" aria-label="Map mode" aria-valuemin="0" aria-valuemax="2" aria-description="Left, right, Home and End choose the mode; Enter shows the whole drawing">' +
++    '<span class="mp-track" aria-hidden="true"></span>' + stop(0, 'Cards') + stop(1, 'Both') + stop(2, 'Rings') + '<span class="mp-thumb" aria-hidden="true"></span></div>' +
++    '<button type="button" class="mp-b mp-pan mp-w" aria-label="Pan west">◀</button><button type="button" class="mp-b mp-pan mp-c" aria-label="Fit the drawing">Fit</button><button type="button" class="mp-b mp-pan mp-e" aria-label="Pan east">▶</button>';
++  MMW.wrap.appendChild(el);
++  const sl = el.querySelector('.mp-sl'), thumb = sl.querySelector('.mp-thumb'), grip = el.querySelector('.mp-grip');
++  PAD = { el, sl, thumb, up: el.querySelector('.mp-up'), dn: el.querySelector('.mp-dn') };
++  el.addEventListener('keydown', e => e.stopPropagation());   // not the canvas's arrows
++  const whole = () => { mapScale(1); flSay('Overview map: the whole drawing.'); };
++  const setI = i => { const m = MAP_MODES[clamp(i, 0, 2)]; if (m !== MAPMODE) { mapMode(m); flSay(`Overview map: ${PAD_LABEL[m]}.`); } else padSync(); };
++  sl.addEventListener('keydown', e => {
++    const i = MAP_MODES.indexOf(MAPMODE), j = { ArrowLeft: i - 1, ArrowDown: i - 1, ArrowRight: i + 1, ArrowUp: i + 1, Home: 0, End: 2 }[e.key];
++    if (j !== undefined) { e.preventDefault(); setI(j); } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); whole(); }
++  });
++  const stopAt = x => { const r = sl.getBoundingClientRect(); return clamp(Math.round((x - r.left - 22) / 44), 0, 2); };
++  let d = null;
++  sl.addEventListener('pointerdown', e => {
++    if (e.button > 0) return; e.preventDefault(); sl.focus();
++    d = { x: e.clientX, onThumb: e.target === thumb, moved: false }; try { sl.setPointerCapture(e.pointerId); } catch (er) { }
++  });
++  sl.addEventListener('pointermove', e => {
++    if (!d) return; if (!d.moved && Math.abs(e.clientX - d.x) < 4) return;
++    d.moved = true; sl.classList.add('mp-drag'); const r = sl.getBoundingClientRect();
++    thumb.style.setProperty('--tx', clamp(e.clientX - r.left, 22, r.width - 22) + 'px');
++  });
++  const end = e => { if (!d) return; const was = d; d = null; sl.classList.remove('mp-drag');
++    if (was.onThumb && !was.moved) whole(); else setI(stopAt(e.clientX)); };
++  sl.addEventListener('pointerup', end); sl.addEventListener('pointercancel', () => { d = null; sl.classList.remove('mp-drag'); padSync(); });
++  const pan = (dx, dy) => { S.view.x += dx; S.view.y += dy; applyView(); updateStatus(); scheduleMinimap(); };
++  PAD.up.addEventListener('click', () => { if (PADARROWS === 'pan') pan(0, FL_BIG); else { mapScale(MAPSCALE * 1.5); flSay(`Overview map: scale ${MAPSCALE}.`); } });
++  PAD.dn.addEventListener('click', () => { if (PADARROWS === 'pan') pan(0, -FL_BIG); else { mapScale(MAPSCALE / 1.5); flSay(`Overview map: scale ${MAPSCALE}.`); } });
++  el.querySelector('.mp-w').addEventListener('click', () => pan(FL_BIG, 0));
++  el.querySelector('.mp-e').addEventListener('click', () => pan(-FL_BIG, 0));
++  el.querySelector('.mp-c').addEventListener('click', () => fitView());
++  grip.addEventListener('keydown', e => { const n = e.shiftKey ? FL_BIG : FL_STEP, v = { ArrowLeft: [-n, 0], ArrowRight: [n, 0], ArrowUp: [0, -n], ArrowDown: [0, n] }[e.key]; if (v) { e.preventDefault(); mmMove(v[0], v[1], true); } });
++  let g = null;
++  grip.addEventListener('pointerdown', e => { if (e.button > 0) return; g = { x: e.clientX, y: e.clientY, r: MMW.r, b: MMW.b, moved: false }; try { grip.setPointerCapture(e.pointerId); } catch (er) { } e.preventDefault(); });
++  grip.addEventListener('pointermove', e => { if (!g) return; const dx = e.clientX - g.x, dy = e.clientY - g.y; if (!g.moved && Math.abs(dx) + Math.abs(dy) < 3) return; g.moved = true; MMW.r = g.r - dx; MMW.b = g.b - dy; mmApply(); });
++  const gend = () => { if (!g) return; const m = g.moved; g = null; if (m) { mmSave(); flSay(mmWhere()); } };
++  grip.addEventListener('pointerup', gend); grip.addEventListener('pointercancel', gend);
++}
++// the pad hangs left of the map, or right of it when there is no room on the left
++function padSide() {
++  if (!PAD || !MMW || PAD.el.hidden) return;
++  const s = $('#stage').getBoundingClientRect(), w = MMW.wrap.getBoundingClientRect();
++  MMW.wrap.classList.toggle('mm-pad-right', w.left - s.left < 132 + 12);
++}
++function padSync() {
++  if (!PAD) return;
++  const i = MAP_MODES.indexOf(MAPMODE), pan = PADARROWS === 'pan';
++  PAD.sl.setAttribute('aria-valuenow', String(i)); PAD.sl.setAttribute('aria-valuetext', PAD_LABEL[MAPMODE]);
++  PAD.thumb.style.setProperty('--tx', (22 + i * 44) + 'px');
++  PAD.el.classList.toggle('mp-panmode', pan);
++  PAD.up.textContent = '▲'; PAD.dn.textContent = '▼';
++  PAD.up.setAttribute('aria-label', pan ? 'Pan north' : 'Overview map closer'); PAD.dn.setAttribute('aria-label', pan ? 'Pan south' : 'Overview map farther');
++  PAD.dn.disabled = !pan && MAPSCALE <= 1; PAD.up.disabled = !pan && MAPSCALE >= 8;
++}
++function padArrows(mode) {
++  if (mode === undefined) return PADARROWS;
++  if (mode !== 'mode-scale' && mode !== 'pan') return false;
++  PADARROWS = mode; padSync(); return mode;
++}
++function layoutState() {
++  return { fl: Object.fromEntries(Object.values(FL).map(f => [f.name, { dx: f.dx, dy: f.dy, hidden: f.hidden }])),
++    mmw: MMW ? { r: MMW.r, b: MMW.b, w: MMW.w, h: MMW.h } : (uiLoad().minimap || null), scale: MAPSCALE, mode: MAPMODE, cap: MAPCAP };
++}
++function layoutPut(st) {
++  for (const [n, v] of Object.entries(st.fl)) if (FL[n]) { Object.assign(FL[n], v); FL[n].apply(); }
++  if (Object.keys(FL).length) { uiSave(); relayoutFloats(); }
++  if (MMW) { Object.assign(MMW, st.mmw || MMW_DEF); mmApply(); mmSave(); padSide(); } else uiPut('minimap', st.mmw);
++  mapScale(st.scale); mapMode(st.mode, { mapCaption: st.cap }); padSync(); scheduleMinimap();
++}
++const RESET_PARTS = ['panels', 'minimap', 'mapScale', 'mapMode', 'pad'];
++function resetLayout() {
++  _resetUndo = layoutState();
++  layoutPut({ fl: Object.fromEntries(Object.keys(FL).map(n => [n, { dx: null, dy: null, hidden: false }])), mmw: { ...MMW_DEF }, scale: 1, mode: 'both', cap: false });
++  flSay('Layout reset: every panel and the overview map are back where they started. Undo reset puts them back.');
++  if (EMBED.reset) tell('topoforge:reset', { parts: RESET_PARTS, undo: true });
++  return { parts: RESET_PARTS, undo: true };
++}
++function undoReset() {
++  if (!_resetUndo) return false;
++  const st = _resetUndo; _resetUndo = null; layoutPut(st);
++  flSay('Reset undone.');
++  if (EMBED.reset) tell('topoforge:reset', { parts: RESET_PARTS, undone: true, undo: false });
++  return true;
++}
++function resetItems() { return EMBED.reset ? ['-', { label: 'Reset layout', action: resetLayout }, ...(_resetUndo ? [{ label: 'Undo reset', action: undoReset }] : [])] : []; }
+ /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
+    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
+    tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
+@@ -4845,7 +4984,9 @@
+   // 1.9
+   get view() { return viewInfo(); }, setView, selectionRect, setProps, endKeys, preview: (what, opt) => preview(what, opt),
+   // 1.10
+-  mapMode, mapScale };
++  mapMode, mapScale,
++  // 1.11
++  padArrows, resetLayout, undoReset };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

@@ -87,6 +87,27 @@
 #   menu-dead      Mode, Rings does nothing               -> MM6
 #   hi-faint       the highlight too faint to see         -> MM7
 #   mode-not-kept  the mode chosen is not kept            -> MM8
+# 1.11:
+#   pad-inside     the pad sits inside the map's frame    -> PD1
+#   pad-small      the pad's buttons are under 44 pixels  -> PD1
+#   pad-no-keys    the slider ignores the arrow keys      -> PD2
+#   pad-thumb-stuck the thumb stays in the middle         -> PD2
+#   pad-no-click   a click on a stop does nothing         -> PD3
+#   pad-silent     the pad's mode change is not told      -> PD3
+#   pad-out-of-step mapMode() leaves the pad behind       -> PD4
+#   pad-arm-dead   Closer does nothing                    -> PD5
+#   pad-no-whole   the thumb's press is not the whole drawing -> PD5
+#   scale-silent   a scale change is not told             -> PD5
+#   pad-grip-dead  the pad's grip moves nothing           -> PD6
+#   pad-no-pan     padArrows('pan') changes nothing       -> PD7
+#   pad-faint      the slider's words too faint           -> PD8
+#   pad-glides     the thumb glides with reduced motion   -> PD8
+#   reset-partial  Reset layout leaves the map's scale    -> RS1
+#   reset-doc      Reset layout touches the drawing       -> RS2
+#   reset-no-undo  Undo reset does nothing                -> RS3
+#   reset-silent   the page is not told of a reset        -> RS3
+#   reset-always   Reset layout in the menus with no switch -> RS4
+#   any-origin-111 postMessage to '*', the new messages   -> E10
 # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
 # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
@@ -185,7 +206,7 @@ plant wheel-alt-dead MW3 's@else if (e.altKey) mapScale(MAPSCALE \* Math.exp(-d 
 plant wheel-deltax   MW4 's@const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) \* unit;@const d = e.deltaY * unit;@'
 plant wheel-ns-dead  MW5 's@if (e.altKey \&\& e.shiftKey) { S.view.y -= d; applyView(); }@if (e.altKey \&\& e.shiftKey) { }@'
 plant mode-default   MM1 "s@^let MAPMODE = 'both',@let MAPMODE = 'rings',@"
-plant mode-silent    MM1 "s@ if (EMBED.preview) tell('topoforge:mapmode', { mode, mapCaption: cap });@@"
+plant mode-silent    MM1 "s@ if (EMBED.preview || EMBED.mappad) tell('topoforge:mapmode', { mode, mapCaption: cap });@@"
 plant mode-any       MM1 's@^  if (!MAP_MODES.includes(mode)) return false;$@@'
 plant preview-silent MM1 's@const r = drawPreview(); tellPreview(r); return r;@const r = drawPreview(); return r;@'
 plant rings-cap-in   MM2 's@cap.hidden = !(rings \&\& MAPCAP);@cap.hidden = !rings;@'
@@ -197,5 +218,26 @@ plant card-markup    MM5 "s@el.querySelector('.mc-t').textContent = card.title |
 plant menu-dead      MM6 "s@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') }@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: () => {} }@"
 plant hi-faint       MM7 's@rx="10" fill="${c}" fill-opacity=".10" stroke="${c}"@rx="10" fill="${c}" fill-opacity=".10" stroke="#e5e7eb"@'
 plant mode-not-kept  MM8 "s@if (changed) { uiPut('mapMode', { mode, mapCaption: cap }); drawPreview();@if (changed) { drawPreview();@"
+# 1.11
+plant pad-inside     PD1 's@^#mmPad{position:absolute;top:50%;right:calc(100% + 6px);@#mmPad{position:absolute;top:50%;right:0;@'
+plant pad-small      PD1 's@#mmPad .mp-b{display:flex;align-items:center;justify-content:center;width:44px;height:44px;@#mmPad .mp-b{display:flex;align-items:center;justify-content:center;width:30px;height:30px;@'
+plant pad-no-keys    PD2 "s@if (j !== undefined) { e.preventDefault(); setI(j); }@if (false) { }@"
+plant pad-thumb-stuck PD2 "s@PAD.thumb.style.setProperty('--tx', (22 + i \* 44) + 'px');@@"
+plant pad-no-click   PD3 's@if (was.onThumb \&\& !was.moved) whole(); else setI(stopAt(e.clientX));@if (was.onThumb \&\& !was.moved) whole(); else if (was.moved) setI(stopAt(e.clientX));@'
+plant pad-silent     PD3 "s@if (EMBED.preview || EMBED.mappad) tell('topoforge:mapmode'@if (EMBED.preview) tell('topoforge:mapmode'@"
+plant pad-out-of-step PD4 's@^  padSync();   // 1.11: the pad.s slider follows, whoever changed the mode$@@'
+plant pad-arm-dead   PD5 "s@else { mapScale(MAPSCALE \* 1.5); flSay(\`Overview map: scale \${MAPSCALE}.\`); } });@else { } });@"
+plant pad-no-whole   PD5 's@if (was.onThumb \&\& !was.moved) whole(); else@if (false) whole(); else@'
+plant scale-silent   PD5 "s@ if (EMBED.preview || EMBED.map || EMBED.mappad) tell('topoforge:mapscale', { scale: n });@@"
+plant pad-grip-dead  PD6 's@if (v) { e.preventDefault(); mmMove(v\[0\], v\[1\], true); }@if (v) { e.preventDefault(); }@'
+plant pad-no-pan     PD7 "s@^  PADARROWS = mode; padSync(); return mode;\$@  padSync(); return mode;@"
+plant pad-faint      PD8 's@#mmPad .mp-lab{position:absolute;bottom:3px;width:44px;margin-left:-22px;text-align:center;font-size:9.5px;line-height:1;color:var(--text-2);@#mmPad .mp-lab{position:absolute;bottom:3px;width:44px;margin-left:-22px;text-align:center;font-size:9.5px;line-height:1;color:#b8bec7;@'
+plant pad-glides     PD8 's|^@media (prefers-reduced-motion:reduce){#mmPad .mp-thumb{transition:none}}$||'
+plant reset-partial  RS1 "s@mmw: { ...MMW_DEF }, scale: 1, mode: 'both', cap: false });@mmw: { ...MMW_DEF }, scale: MAPSCALE, mode: 'both', cap: false });@"
+plant reset-doc      RS2 "s@^  _resetUndo = layoutState();\$@  _resetUndo = layoutState(); edit(() => { DOC.name += ' '; });@"
+plant reset-no-undo  RS3 's@^  const st = _resetUndo; _resetUndo = null; layoutPut(st);$@  const st = _resetUndo; _resetUndo = null;@'
+plant reset-silent   RS3 "s@^  if (EMBED.reset) tell('topoforge:reset', { parts: RESET_PARTS, undo: true });\$@@"
+plant reset-always   RS4 's@function resetItems() { return EMBED.reset ?@function resetItems() { return true ?@'
+plant any-origin-111 E10 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
 [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
 exit $bad

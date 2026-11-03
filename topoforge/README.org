@@ -65,6 +65,9 @@ of your work outside the browser.
 - New in 1.10: the overview map's modes for a preview (=mapMode=: cards, both,
   rings), a card in the map, the matches lit in the drawing, the map's own
   scale (=mapScale=), and the wheel over the map (=mapwheel=).
+- New in 1.11: the map's pad (=mappad=: a drawn slider for the mode, an arm
+  for the scale, a grip; =padArrows('pan')= to pan instead) and Reset layout
+  (=reset=, =resetLayout()=, =undoReset()=).
 
 * Accessibility
 We want TopoForge usable without a mouse, without colour, and without seeing

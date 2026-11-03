@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9 and 1.10)
+# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10 and 1.11)
 
 topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
 This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
@@ -292,6 +292,54 @@ whichever of the two moved most, so both arrive the same (MW4). Some desktops ta
 the pointer) for themselves before the page sees it; where that happens, the Mode menu's Closer and
 Farther, or `mapScale()`, do the same. With `mapwheel` off the wheel over the map does nothing, as before
 (MW2).
+
+## Added in 1.11 (still v1): the map's pad, and Reset layout
+
+Two new switch words, `mappad` and `reset`, off unless a page asks and in neither `all` nor `bare`.
+Nothing 1.10 promised changes; a page opened on its own draws the same pixels as 1.10 (S1).
+
+### The map's pad: `mappad`
+
+`mappad` turns `map` on too (the pad hangs on the map's own frame). The pad is a cross of 44-pixel
+cells that hangs on the map's outer edge, beside the handles: on its left, or on its right when the map
+is too near the drawing's left edge. It moves with the map, and is shown and hidden with the handles (the
+pointer within reach, a handle or the pad focused, or always on a screen with no hover) (PD1).
+
+- **The horizontal bar is a drawn slider** for `mapMode` (`role="slider"`, `aria-valuenow` 0, 1, 2,
+  `aria-valuetext` in words): left **Preview shapes** (`cards`), centre **Both** (the default), right
+  **Highlight matches** (`rings`). A visible track with three marked and labelled stops; the thumb glides
+  between them (0.18 s), and jumps when reduced motion is asked. ← and → (also ↓ and ↑, as a slider
+  takes them), Home and End, a click on a stop, or dragging the thumb, all move it. It drives `mapMode`
+  and follows it: the Mode menu, `mapMode()` and the pad are always in step (PD2-PD4, PD8).
+- **The vertical arm** calibrates the map: ▲ Closer and ▼ Farther (`mapScale` × or ÷ 1.5, between 1
+  and 8). **The centre press** is The whole drawing (`mapScale(1)`): a press on the slider's thumb (without
+  dragging it), or Enter or Space on the slider (PD5).
+- **The grip** (⠿, top left of the cross) moves the map: drag it, or the arrow keys (16 pixels, 64 with
+  Shift). The mode never moves or resizes the map (PD6).
+- `TopoForge.padArrows('mode-scale' | 'pan')`: `mode-scale` is the default (above). `pan` swaps the arms
+  for panning the drawing: ▲ north, ▼ south, ◀ west, ▶ east, 64 pixels a press, Fit in the middle; the
+  slider is not shown meanwhile. `padArrows()` reads it; any other word returns `false`. It is not kept
+  in the browser: the page sets it (PD7).
+
+Messages, with `map`, `preview` or `mappad` on: `topoforge:mapmode` `{ mode, mapCaption }` as in 1.10
+(now also with `mappad` alone), and new `topoforge:mapscale` `{ scale }` whenever the map's scale changes,
+by any route (PD3, PD5).
+
+### Reset layout: `reset`, `TopoForge.resetLayout()`, `TopoForge.undoReset()`
+
+`resetLayout()` puts every movable or resizable part back to its first placement: the floating panels
+(Shapes, Properties, the pages box: their places, and shown), the map's place and size (190 by 130, 12
+pixels from the drawing's right and foot), its scale (1) and its mode (`both`, caption not in the map),
+and the pad (which goes with the map). It touches nothing in the drawing: the document and the undo history
+are unchanged. It keeps the first placement in this browser, says so in the live region and returns
+`{ parts: ['panels', 'minimap', 'mapScale', 'mapMode', 'pad'], undo: true }` (RS1, RS2, RS4).
+
+`undoReset()` puts back exactly what the last reset changed, one level, and returns `true`; with nothing to
+undo it returns `false` (RS3). The calls work whenever called. With the `reset` switch on, **Reset layout**
+(and, after one, **Undo reset**) appears at the foot of the map's Mode menu and of the View menu (and so
+in `commands()`), and each reset and undo sends `topoforge:reset`: `{ parts, undo: true }` for a reset,
+`{ parts, undone: true, undo: false }` for an undo, so the page can reset its own frames too (RS3). Without
+the switch the menus are as in 1.10 (RS4).
 
 ## Page tabs that do not fit (1.9, everywhere)
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
 // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9 and 1.10 checks 2026-11-02.
+// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02.
 //
-// embed.browser.mjs -- the embedding switches (1.8, 1.9, 1.10) in real Chromium, held to spec/EMBED-v1.md.
+// embed.browser.mjs -- the embedding switches (1.8 to 1.11) in real Chromium, held to spec/EMBED-v1.md.
 //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
 //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
 //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
@@ -34,7 +34,7 @@ const results = []; let red = 0, at = '';   // at: the check whose steps are run
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
 
 // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
-const VER = '1.10', PREV = '1.9';
+const VER = '1.11', PREV = '1.10';
 function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
   const out = []; let on = false;
   for (const l of patchText.split('\n')) {
@@ -45,7 +45,7 @@ function indexPart(patchText) { // the hunks of one multi-file patch that touch 
 }
 function rebuild(upto) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10'].slice(0, upto)) {
+  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11'].slice(0, upto)) {
     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
@@ -53,7 +53,7 @@ function rebuild(upto) {
   return cur;
 }
 let v17, v18;
-try { v17 = rebuild(4); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+try { v17 = rebuild(5); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
 
 // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
 const html = fs.readFileSync(file);
@@ -130,7 +130,7 @@ try {
     if (w === 1400 && !dark) {
       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
       check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi', '#mmPad'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
       check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
     }
     await a.c.close(); await b.c.close();
@@ -375,8 +375,8 @@ try {
   // W1: 'all' and 'bare' mean what they meant in 1.8
   { const { c, p } = await open(A + '/index.html?embed=all,bare');
     const w = await p.evaluate(() => TopoForge.embed());
-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel'];
-    check('W1 ?embed=all and bare turn on none of the 1.9 and 1.10 switches (view, keys, context, pagelist, map, preview, mapwheel); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];
+    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.11 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
     await c.close(); }
   // E8: the new messages never reach a parent of another origin
   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
@@ -591,9 +591,105 @@ try {
   { const r = await parentRun(B, A + '/index.html?embed=preview&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.preview({ category: 'net' }); }); });
     check('E9 topoforge:preview and topoforge:mapmode never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
 
+  // ======== 1.11: the map's pad (mappad) and Reset layout (reset) ========
+  { const PDX = {}; const r = await parentRun(A, A + '/index.html?embed=mappad&load=/fixture.json', async (p, fr) => {
+      const thumbX = () => fr.evaluate(() => { const t = document.querySelector('#mmPad .mp-thumb').getBoundingClientRect(), s = document.querySelector('#mmPad .mp-sl').getBoundingClientRect(); return Math.round(t.left + t.width / 2 - s.left - document.querySelector('#mmPad .mp-sl').clientLeft); });   // from the slider's inner edge
+      const st = () => fr.evaluate(() => { const s = document.querySelector('#mmPad .mp-sl'); return { mode: TopoForge.mapMode().mode, now: s.getAttribute('aria-valuenow'), text: s.getAttribute('aria-valuetext'), scale: TopoForge.mapScale() }; });
+      const P0 = await fr.evaluate(() => { const g = document.querySelector('#mmPad'), m = document.querySelector('#minimap').getBoundingClientRect(), b = g.getBoundingClientRect();
+        const big = [...g.querySelectorAll('.mp-b')].filter(x => getComputedStyle(x).display !== 'none').every(x => { const r = x.getBoundingClientRect(); return r.width >= 44 && r.height >= 44; });
+        return { role: g.getAttribute('role'), label: g.getAttribute('aria-label'), slider: document.querySelector('#mmPad [role=slider]') ? 1 : 0, outside: b.right <= m.left || b.left >= m.right, big, map: TopoForge.embed().map }; });
+      PDX.p0 = { ...P0, ...(await st()), x: await thumbX() };
+      // the transition is the same smooth glide as the mode changes, and it is there unless reduced motion is asked
+      PDX.tr = await fr.evaluate(() => getComputedStyle(document.querySelector('#mmPad .mp-thumb')).transitionDuration);
+      await fr.focus('#mmPad .mp-sl'); await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(250); PDX.k1 = { ...(await st()), x: await thumbX() };
+      await p.keyboard.press('End'); await p.waitForTimeout(250); PDX.k2 = { ...(await st()), x: await thumbX() };
+      await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(250); PDX.k3 = { ...(await st()), x: await thumbX() };
+      // a click on a position, then a drag of the thumb
+      const fb = await (await p.$('#f')).boundingBox(), sb = await fr.evaluate(() => { const b = document.querySelector('#mmPad .mp-sl').getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
+      await p.mouse.click(fb.x + sb.x + sb.w - 22, fb.y + sb.y + 30); await p.waitForTimeout(250); PDX.c1 = await st();
+      await p.mouse.move(fb.x + sb.x + sb.w - 22, fb.y + sb.y + 16); await p.mouse.down(); await p.mouse.move(fb.x + sb.x + 30, fb.y + sb.y + 16, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(250); PDX.d1 = await st();
+      // the Mode menu and the pad stay in step, both ways
+      await fr.evaluate(() => TopoForge.mapMode('both')); PDX.m1 = await st();
+      await fr.click('#mmwrap .mm-mode'); PDX.menu = await fr.evaluate(() => [...document.querySelectorAll('.menu .mi')].filter(b => b.querySelector('.ck').textContent).map(b => b.querySelector('.lb').textContent)); await p.keyboard.press('Escape');
+      // the vertical arm: up Closer, down Farther; the thumb's press (and Enter) is the whole drawing
+      // (pressed from script, so a disabled button is a press that does nothing, not a step that waits and throws)
+      await fr.evaluate(() => document.querySelector('#mmPad .mp-up').click()); PDX.u1 = await st(); await fr.evaluate(() => document.querySelector('#mmPad .mp-up').click()); PDX.u2 = await st();
+      await fr.evaluate(() => document.querySelector('#mmPad .mp-dn').click()); PDX.u3 = await st();
+      await fr.click('#mmPad .mp-thumb'); PDX.u4 = await st();
+      await fr.evaluate(() => document.querySelector('#mmPad .mp-up').click()); await fr.focus('#mmPad .mp-sl'); await p.keyboard.press('Enter'); PDX.u5 = await st();
+      PDX.names = await fr.evaluate(() => ['.mp-up', '.mp-dn', '.mp-grip'].map(s => document.querySelector('#mmPad ' + s).getAttribute('aria-label')));
+    }, { after: async () => PDX });
+    const d = r.extra, mm = msgs(r.got, 'mapmode'), ms = msgs(r.got, 'mapscale');
+    check('PD1 mappad: a pad of buttons (role group, named) hangs outside the map\'s frame and turns map on; its horizontal bar is a drawn slider (role slider) whose thumb starts at the centre, Both; every button is at least 44 by 44',
+      d.p0.role === 'group' && d.p0.label === 'Overview map pad' && d.p0.slider === 1 && d.p0.outside && d.p0.big && d.p0.map === true && d.p0.mode === 'both' && d.p0.now === '1' && d.p0.x === 66 && d.tr !== '0s', JSON.stringify({ p0: d.p0, tr: d.tr }));
+    check('PD2 the slider by keyboard: ← to the left (Preview shapes, cards), End to the right (Highlight matches, rings), ← back to the centre; the thumb glides to each stop and aria-valuetext says the mode in words',
+      d.k1.mode === 'cards' && d.k1.x === 22 && /^Preview shapes/.test(d.k1.text) && d.k2.mode === 'rings' && d.k2.x === 110 && /^Highlight matches/.test(d.k2.text) && d.k3.mode === 'both' && d.k3.x === 66 && /^Both/.test(d.k3.text), JSON.stringify([d.k1, d.k2, d.k3]));
+    check('PD3 a click on a stop, or dragging the thumb, moves the slider and sets the mode; each change is told to the page (topoforge:mapmode)',
+      d.c1.mode === 'rings' && d.d1.mode === 'cards' && mm.map(x => x.mode).join(',') === 'cards,rings,both,rings,cards,both', JSON.stringify({ c1: d.c1, d1: d.d1, mm: mm.map(x => x.mode) }));
+    check('PD4 the Mode menu and the pad stay in step: mapMode() moves the thumb, and the menu checks what the pad set', d.m1.now === '1' && d.menu.some(t => /^Both/.test(t)), JSON.stringify({ m1: d.m1, menu: d.menu }));
+    check('PD5 the vertical arm sets the map\'s scale: up Closer (1.5, then 2.25), down Farther (1.5); a press on the thumb or Enter on the slider is The whole drawing (1); each change is told (topoforge:mapscale); the arm\'s buttons have names',
+      d.u1.scale === 1.5 && d.u2.scale === 2.25 && d.u3.scale === 1.5 && d.u4.scale === 1 && d.u4.mode === 'both' && d.u5.scale === 1 && ms.map(x => x.scale).join(',') === '1.5,2.25,1.5,1,1.5,1' && d.names.join('|') === 'Overview map closer|Overview map farther|Move the overview map: drag, or the arrow keys (Shift goes further)',
+      JSON.stringify({ u: [d.u1, d.u2, d.u3, d.u4, d.u5].map(x => x.scale), ms: ms.map(x => x.scale), names: d.names })); }
+  { const { c, p } = await open(A + '/index.html?embed=mappad&load=/fixture.json');
+    at = 'PD6'; const m0 = await boxOf(p, '#minimap'), g0 = await boxOf(p, '#mmPad');
+    await p.focus('#mmPad .mp-grip'); await p.keyboard.press('Shift+ArrowUp'); const m1 = await boxOf(p, '#minimap'), g1 = await boxOf(p, '#mmPad');
+    const gb = await boxOf(p, '#mmPad .mp-grip'); await p.mouse.move(gb.x + 20, gb.y + 20); await p.mouse.down(); await p.mouse.move(gb.x - 80, gb.y - 20, { steps: 6 }); await p.mouse.up(); const m2 = await boxOf(p, '#minimap'), g2 = await boxOf(p, '#mmPad');
+    await p.evaluate(() => TopoForge.mapMode('cards')); const m3 = await boxOf(p, '#minimap');
+    check('PD6 the pad\'s grip moves the map (arrow keys, or a drag) and the pad moves with it; the mode never moves or resizes the map',
+      m1.y === m0.y - 64 && g1.y === g0.y - 64 && m2.x === m1.x - 100 && g2.x === g1.x - 100 && m2.y === m1.y - 40 && JSON.stringify(m3) === JSON.stringify(m2), JSON.stringify({ m0, m1, m2, m3, g0, g2 }));
+    at = 'PD7'; const pan = await p.evaluate(() => { const a = TopoForge.padArrows(), b = TopoForge.padArrows('pan'), bad = TopoForge.padArrows('sideways'), v0 = { ...S.view };
+      const sl = getComputedStyle(document.querySelector('#mmPad .mp-sl')).display, w = getComputedStyle(document.querySelector('#mmPad .mp-w')).display;
+      document.querySelector('#mmPad .mp-up').click(); const v1 = { ...S.view }; document.querySelector('#mmPad .mp-e').click(); const v2 = { ...S.view };
+      document.querySelector('#mmPad .mp-dn').click(); document.querySelector('#mmPad .mp-w').click(); const v3 = { ...S.view }; const sc = TopoForge.mapScale();
+      const names = ['.mp-up', '.mp-dn', '.mp-w', '.mp-e', '.mp-c'].map(s => document.querySelector('#mmPad ' + s).getAttribute('aria-label'));
+      TopoForge.padArrows('mode-scale'); return { a, b, bad, sl, w, v0, v1, v2, v3, sc, names, back: getComputedStyle(document.querySelector('#mmPad .mp-sl')).display }; });
+    check('PD7 padArrows(\'pan\') swaps the arms for panning the drawing (north, east, south, west, 64 pixels a press; Fit in the middle), leaves the map\'s scale alone, and padArrows(\'mode-scale\') (the default) brings the slider back',
+      pan.a === 'mode-scale' && pan.b === 'pan' && pan.bad === false && pan.sl === 'none' && pan.w === 'flex' && pan.v1.y === pan.v0.y + 64 && pan.v2.x === pan.v1.x - 64 && pan.v3.x === pan.v0.x && pan.v3.y === pan.v0.y && pan.sc === 1 && pan.names.join('|') === 'Pan north|Pan south|Pan west|Pan east|Fit the drawing' && pan.back !== 'none', JSON.stringify(pan));
+    await c.close(); }
+  for (const dark of [false, true]) {
+    const { c, p } = await open(A + '/index.html?embed=mappad&load=/fixture.json', { dark, reduce: true });
+    const k = await p.evaluate(() => { const L = h => { const m = h.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+      const ratio = (a, b) => { const x = L(a), y = L(b); return Math.round((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) * 100) / 100; };
+      const sl = getComputedStyle(document.querySelector('#mmPad .mp-sl')).backgroundColor, th = getComputedStyle(document.querySelector('#mmPad .mp-thumb')), tr = getComputedStyle(document.querySelector('#mmPad .mp-track')).backgroundColor, lab = getComputedStyle(document.querySelector('#mmPad .mp-lab')).color;
+      return { thumb: ratio(th.backgroundColor, sl), track: ratio(tr, sl), label: ratio(lab, sl), motion: th.transitionDuration }; });
+    check(`PD8 the pad, ${dark ? 'dark' : 'light'}: thumb and track at least 3 to 1 against the slider, its words at least 4.5 to 1 (AA); with reduced motion asked the thumb jumps, it does not glide`, k.thumb >= 3 && k.track >= 3 && k.label >= 4.5 && k.motion === '0s', JSON.stringify(k));
+    await c.close();
+  }
+  // RS: Reset layout
+  { const RSX = {}; const r = await parentRun(A, A + '/index.html?embed=reset,mappad,props,shapes&load=/fixture.json', async (p, fr) => {
+      const doc0 = await fr.evaluate(() => JSON.stringify(TopoForge.doc) + '|' + H.undo.length);
+      const look = () => fr.evaluate(() => { const b = s => { const e = document.querySelector(s).getBoundingClientRect(); return [Math.round(e.left), Math.round(e.top), Math.round(e.width), Math.round(e.height)].join(','); };
+        return { side: b('#side'), pal: b('#palette'), map: b('#minimap'), pad: b('#mmPad'), sideHidden: document.querySelector('#side').classList.contains('fl-hidden'), mode: TopoForge.mapMode().mode, cap: TopoForge.mapMode().mapCaption, scale: TopoForge.mapScale() }; });
+      RSX.start = await look();
+      await fr.focus('#side .fl-grip'); await p.keyboard.press('Shift+ArrowLeft'); await fr.focus('#palette .fl-grip'); await p.keyboard.press('Shift+ArrowDown');
+      await fr.click('#side .fl-bar [data-act=hide]');
+      await fr.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await fr.focus('#mmPad .mp-grip'); await p.keyboard.press('Shift+ArrowUp');
+      await fr.evaluate(() => { TopoForge.mapScale(3); TopoForge.mapMode('rings', { mapCaption: true }); });
+      RSX.moved = await look();
+      await fr.click('#mmwrap .mm-mode'); RSX.menu = await fr.evaluate(() => [...document.querySelectorAll('.menu .mi .lb')].map(x => x.textContent)); await fr.click('.menu .mi:has-text("Reset layout")'); await p.waitForTimeout(150);
+      RSX.after = await look(); RSX.doc = (await fr.evaluate(() => JSON.stringify(TopoForge.doc) + '|' + H.undo.length)) === doc0;
+      RSX.kept = await fr.evaluate(() => { const o = JSON.parse(localStorage.getItem('topoforge.ui.v1')); return { mm: o.minimap, mode: o.mapMode, scale: o.mapScale, props: o.props }; });
+      await fr.click('.menu-btn[data-menu="view"]'); RSX.view = await fr.evaluate(() => [...document.querySelectorAll('.menu .mi .lb')].map(x => x.textContent)); await fr.click('.menu .mi:has-text("Undo reset")'); await p.waitForTimeout(150);
+      RSX.undone = await look(); RSX.again = await fr.evaluate(() => TopoForge.undoReset());
+    }, { after: async () => RSX });
+    const x = r.extra, rs = msgs(r.got, 'reset');
+    check('RS1 Reset layout (in the Mode menu with the reset switch) puts every part back where it started: both panels (and shown), the map\'s place and size, its scale (1) and its mode (both), and the pad with the map',
+      x.menu.includes('Reset layout') && JSON.stringify(x.after) === JSON.stringify(x.start) && x.moved.side !== x.start.side && x.moved.pal !== x.start.pal && x.moved.map !== x.start.map && x.moved.sideHidden && x.moved.scale === 3 && x.moved.mode === 'rings',
+      JSON.stringify({ start: x.start, moved: x.moved, after: x.after, menu: x.menu }));
+    check('RS2 the reset touches nothing in the drawing (the document and the undo history are byte for byte the same) and keeps the first placement in this browser', x.doc && x.kept.mm && x.kept.mm.w === 190 && x.kept.mode.mode === 'both' && x.kept.scale === 1 && x.kept.props.dx === null && x.kept.props.hidden === false, JSON.stringify({ doc: x.doc, kept: x.kept }));
+    check('RS3 View offers Reset layout and, after one, Undo reset, which puts back exactly what the reset changed (one level: a second undo says false); the page is told each time (topoforge:reset)',
+      x.view.includes('Reset layout') && x.view.includes('Undo reset') && JSON.stringify(x.undone) === JSON.stringify(x.moved) && x.again === false && rs.length === 2 && rs[0].parts.join(',') === 'panels,minimap,mapScale,mapMode,pad' && rs[0].undo === true && rs[1].undone === true,
+      JSON.stringify({ view: x.view, undone: x.undone, rs })); }
+  { const { c, p } = await open(A + '/index.html?embed=mappad&load=/fixture.json');
+    const r = await p.evaluate(async () => { const v = MENUS.view().map(i => i.label).filter(Boolean), m = TopoForge.commands().some(c => c.label === 'Reset layout' || c.label === 'Undo reset'); TopoForge.mapScale(2); const out = TopoForge.resetLayout(); return { v: v.includes('Reset layout'), m, scale: TopoForge.mapScale(), parts: out.parts.length }; });
+    const got = await p.evaluate(() => (document.querySelector('#flLive') || {}).textContent);
+    check('RS4 without the reset switch the menus offer no Reset layout, but TopoForge.resetLayout() still works when a page calls it, and it is said to a screen reader', !r.v && !r.m && r.scale === 1 && r.parts === 5 && /^Layout reset/.test(got), JSON.stringify({ r, got })); await c.close(); }
+  { const r = await parentRun(B, A + '/index.html?embed=mappad,reset&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.mapScale(2); TopoForge.resetLayout(); }); });
+    check('E10 topoforge:mapscale, topoforge:mapmode and topoforge:reset never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
+
   // ---- X: axe with every switch on; reduced motion ----
   for (const dark of [false, true]) {
-    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist&load=/fixture.json', { dark, reduce: true });
+    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset&load=/fixture.json', { dark, reduce: true });
     await p.evaluate(() => TopoForge.preview({ category: 'net' }));
     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
     await p.addScriptTag({ content: axeSrc });
@@ -602,14 +698,14 @@ try {
     const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
     check(`X1 axe, every switch on, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
     if (!dark) {
-      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar', '#mmwrap .mm-handles', '#mmwrap .mm-h'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
+      const mo = await p.evaluate(() => ['#palette', '#side', '#mapbox', '.fl-bar', '#mmwrap .mm-handles', '#mmwrap .mm-h', '#mmPad .mp-thumb'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration));
       check('X2 the floating parts do not move by themselves (no transition) with reduced motion asked', mo.every(d => d === '0s'), mo.join(','));
       await p.screenshot({ path: path.join(outdir, 'embed-all-light.png') });
     } else await p.screenshot({ path: path.join(outdir, 'embed-all-dark.png') });
     await c.close();
   }
   for (const dark of [false, true]) {   // 1.9: the map's handles and the preview's caption, shown (the pages box is off, so the map is in its own frame)
-    const { c, p } = await open(A + '/index.html?embed=map,preview,shapes&load=/fixture.json', { dark, reduce: true });
+    const { c, p } = await open(A + '/index.html?embed=map,preview,shapes,mappad&load=/fixture.json', { dark, reduce: true });
     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
     await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.focus('#mmwrap .mm-grip');
     await p.addScriptTag({ content: axeSrc });
