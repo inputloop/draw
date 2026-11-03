@@ -4,7 +4,7 @@
 # Corwin Brust <corwin@bru.st> and Contributors
 # Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
 #
-# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the 1.8 switches.
+# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.12).
 # A control run on the file as given must be green first. Then each plant changes a COPY of index.html
 # in one place, the kit runs on the copy, and the check named for that plant must be among those that
 # fail (a plant may trip others too: the standalone ones watch the whole page).
@@ -108,6 +108,47 @@
 #   reset-silent   the page is not told of a reset        -> RS3
 #   reset-always   Reset layout in the menus with no switch -> RS4
 #   any-origin-111 postMessage to '*', the new messages   -> E10
+# 1.12:
+#   bc-leak        a big-card rule reaches 1.10's card     -> S6
+#   bc-implies     bigcard leaves preview off             -> BC1
+#   bc-unfitted    the words stay at 1.10's size          -> BC1
+#   bc-overflow    the size chosen is past what fits      -> BC1
+#   bc-below-floor the words may shrink below 1.10's size -> BC1
+#   bc-ceiling     the ceiling is 9, not 4                -> BC2
+#   bc-no-refit    a new size of the map is not fitted    -> BC2
+#   bc-small-art   the art is 40 pixels again             -> BC3
+#   bc-no-mosaic   several matches: no pictures side by side -> BC3
+#   bc-any-host    a picture from another host is taken   -> BC4
+#   bc-img-markup  the picture is written as markup       -> BC4
+#   bc-no-alt      a picture without alt has none         -> BC4
+#   bc-no-box      never a box score                      -> BC5
+#   bc-cut         facts that do not fit are cut, not left out -> BC5
+#   bc-no-pages    several matches make one card          -> BC6
+#   bc-page-silent a turn of the page is not told         -> BC6
+#   bc-page-unsaid a turn of the page is not said         -> BC6
+#   bc-hi-all      a match's card lights every match      -> BC6
+#   bc-no-cap      the pages do not stop at 9             -> BC7
+#   bc-phone-hidden on a phone the card stays hidden       -> BC8
+#   bc-msg-always  pages told without bigcard             -> BC9
+#   bc-off-stays   bigcard turned off keeps the big card  -> BC10
+#   cp-implies     cardpad turns nothing else on          -> CP1
+#   cp-no-turn     the pad does not turn                  -> CP2
+#   cp-same-colour the pad keeps its colour               -> CP2
+#   cp-focus-stays the focus is lost with the slider      -> CP2
+#   cp-arms-old    the arms keep their 1.11 jobs          -> CP3
+#   cp-centre-mute the centre says nothing                -> CP3
+#   cp-no-titles   the cells get no tooltip               -> CP4
+#   cp-unsaid      the turn is not said                   -> CP5
+#   cp-stays-turned the pad stays turned after the card    -> CP6
+#   cp-title-left  the tooltips are left behind           -> CP6
+#   cp-focus-lost  the focus is lost when the card goes   -> CP6
+#   cp-back-unsaid the return is not said                 -> CP6
+#   cp-snaps-back  the pad turns back at once, not briefly -> CP6
+#   cp-no-keys     the keys do not page                   -> CP7
+#   cp-glides-reduced the turn moves with reduced motion  -> CP8
+#   cp-unasked     the pad turns without cardpad          -> CP9
+#   any-origin-112 postMessage to '*', the new messages   -> E11
+#   cp-no-names    the turned arms have no names           -> X4
 # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
 # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
@@ -212,8 +253,8 @@ plant preview-silent MM1 's@const r = drawPreview(); tellPreview(r); return r;@c
 plant rings-cap-in   MM2 's@cap.hidden = !(rings \&\& MAPCAP);@cap.hidden = !rings;@'
 plant card-no-fade   MM3 's@^#minimap.mm-carded #mmSvg{opacity:.14}$@@'
 plant mode-moves-map MM3 's@^  MAPMODE = mode; MAPCAP = cap;$@  MAPMODE = mode; MAPCAP = cap; if (MMW) { MMW.w = 190; MMW.h = 130; mmApply(); }@'
-plant both-no-hi     MM4 "s@drawHighlight(MAPMODE === 'both' ? hits : null);@drawHighlight(null);@"
-plant both-no-clear  MM4 's@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); return true; }@'
+plant both-no-hi     MM4 "s@drawHighlight(MAPMODE === 'both' ? (deck ? deck\[PREVIEW.page\].hits : hits) : null);@drawHighlight(null);@"
+plant both-no-clear  MM4 's@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); padCard(false); return true; }@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); padCard(false); return true; }@'
 plant card-markup    MM5 "s@el.querySelector('.mc-t').textContent = card.title || '';@el.querySelector('.mc-t').innerHTML = card.title || '';@"
 plant menu-dead      MM6 "s@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') }@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: () => {} }@"
 plant hi-faint       MM7 's@rx="10" fill="${c}" fill-opacity=".10" stroke="${c}"@rx="10" fill="${c}" fill-opacity=".10" stroke="#e5e7eb"@'
@@ -239,5 +280,46 @@ plant reset-no-undo  RS3 's@^  const st = _resetUndo; _resetUndo = null; layoutP
 plant reset-silent   RS3 "s@^  if (EMBED.reset) tell('topoforge:reset', { parts: RESET_PARTS, undo: true });\$@@"
 plant reset-always   RS4 's@function resetItems() { return EMBED.reset ?@function resetItems() { return true ?@'
 plant any-origin-111 E10 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+# 1.12
+plant bc-leak        S6  's@^#minimap .mm-card.mc-big{gap:8px;padding:8px;--mck:1}$@#minimap .mm-card{gap:8px;padding:8px;--mck:1}@'
+plant bc-implies     BC1 's@^    if (EMBED.bigcard) EMBED.preview = true;   // 1.12: the card is the preview.s$@@'
+plant bc-unfitted    BC1 "s@cardForm(el, best.f); el.style.setProperty('--mck', String(best.k));@cardForm(el, best.f); el.style.setProperty('--mck', '1');@"
+plant bc-overflow    BC1 's@^  return Math.floor(lo \* 100) / 100;$@  return Math.ceil(hi * 100) / 100 + 0.05;@'
+plant bc-below-floor BC1 's@^  if (!at(1)) return null;$@  if (!at(0.6)) return null;@; s@^  let lo = 1, hi = CARD_KMAX;$@  let lo = 0.6, hi = CARD_KMAX;@'
+plant bc-ceiling     BC2 's@^const CARD_KMAX = 4, CARD_CAP = 9;@const CARD_KMAX = 9, CARD_CAP = 9;@'
+plant bc-no-refit    BC2 "s@_cardRO = new ResizeObserver(() => refitCard()); _cardRO.observe(\$('#minimap'));@_cardRO = {};@"
+plant bc-small-art   BC3 "s@el.style.setProperty('--mcaw', Math.round(Math.max(24, Math.min(H - 2 \* pad, (W - 2 \* pad - gap) \* 0.42))) + 'px');@el.style.setProperty('--mcaw', '40px');@"
+plant bc-no-mosaic   BC3 "s@const ownOf = a => a === 'matches' \&\& hits.length ? mosaicSVG(hits, aspect) : artSVG(a, hits);@const ownOf = a => artSVG(a, hits);@"
+plant bc-any-host    BC4 's@if (u.origin !== location.origin || !/^https?:\$/.test(u.protocol)) return null;@if (!/^https?:$/.test(u.protocol)) return null;@'
+plant bc-img-markup  BC4 "s@box.textContent = ''; const im = document.createElement('img'); im.alt = alt; im.decoding = 'async';@box.innerHTML = '<img alt=\"' + alt + '\">'; const im = box.querySelector('img'); im.decoding = 'async';@"
+plant bc-no-alt      BC4 "s@const alt = a.alt || card.title || 'Picture for this card', old@const alt = a.alt || '', old@"
+plant bc-no-box      BC5 "s@for (const f of \[\['mc-side', 'mc-box'\], \['mc-stack', 'mc-box'\], \['mc-side', 'mc-lines'\], \['mc-stack', 'mc-lines'\]\]) {@for (const f of [['mc-side', 'mc-lines'], ['mc-stack', 'mc-lines']]) {@"
+plant bc-cut         BC5 's@for (; drop <= facts.length + 1 \&\& !best; drop++) {@for (; drop <= 0 \&\& !best; drop++) {@'
+plant bc-no-pages    BC6 's@^  if (ord.length <= 1) return \[{ card: cover, hits }\];$@  return [{ card: cover, hits }];@'
+plant bc-page-silent BC6 "s@^    tell('topoforge:cardpage'.*\$@@"
+plant bc-page-unsaid BC6 's@^    flSay(`Card ${j + 1} of ${n}: ${t}.`);$@@'
+plant bc-hi-all      BC6 "s@drawHighlight(MAPMODE === 'both' ? (deck ? deck\[PREVIEW.page\].hits : hits) : null);@drawHighlight(MAPMODE === 'both' ? hits : null);@"
+plant bc-no-cap      BC7 's@^  const shown = ord.slice(0, CARD_CAP - 1);$@  const shown = ord;@'
+plant bc-phone-hidden BC8 's@^  body.tf-bigcard #minimap.mm-carded:not(.hidden){display:block}$@@'
+plant bc-msg-always  BC9 's@...(r.pages ? { page: r.page, pages: r.pages, cards: r.cards } : {})@page: r.page, pages: r.pages, cards: r.cards@'
+plant bc-off-stays   BC10 "s@^  if (el \&\& el.classList.contains('mc-big')) { el.remove(); el = null; }   // 1.12: bigcard was turned off\$@@"
+plant cp-implies     CP1 's@^    if (EMBED.cardpad) { EMBED.bigcard = true; EMBED.mappad = true; }.*$@@'
+plant cp-no-turn     CP2 's@^#mmPad.mp-cardmode{transform:translateY(-50%) rotate(45deg);transition:transform .2s ease}$@#mmPad.mp-cardmode{transition:transform .2s ease}@'
+plant cp-same-colour CP2 's@^#mmPad.mp-cardmode .mp-b:not(.mp-grip){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}$@@'
+plant cp-focus-stays CP2 "s@^    if (f === PAD.sl) el.querySelector('.mp-e').focus();.*\$@@"
+plant cp-arms-old    CP3 "s@PAD.el.addEventListener('click', e => {   // the capture phase@PAD.el.addEventListener('noclick', e => {   // the capture phase@"
+plant cp-centre-mute CP3 "s@^    if (b.classList.contains('mp-c')) { cardSay(); return; }\$@    if (b.classList.contains('mp-c')) { return; }@"
+plant cp-no-titles   CP4 "s@b.setAttribute('aria-label', label); b.title = label; b.disabled = false;@b.setAttribute('aria-label', label); b.disabled = false;@"
+plant cp-unsaid      CP5 's@^    flSay(`Map pad turned.*$@@'
+plant cp-stays-turned CP6 "s@^  el.classList.remove('mp-cardmode'); if (!el.classList.length) el.removeAttribute('class');@  if (!el.classList.length) el.removeAttribute('class');@"
+plant cp-title-left  CP6 "s@^  for (const b of el.querySelectorAll('.mp-b')) { b.removeAttribute('title'); b.removeAttribute('aria-disabled'); }\$@@"
+plant cp-focus-lost  CP6 "s@^  if (el.contains(f) \&\& (f.offsetParent === null || f.disabled)) (PADARROWS === 'pan' ? c : PAD.sl).focus();\$@@"
+plant cp-back-unsaid CP6 "s@^  if (!el.hidden) flSay('Map pad back.*\$@@"
+plant cp-snaps-back  CP6 "s@if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('mp-unturn');@if (false) { el.classList.add('mp-unturn');@"
+plant cp-no-keys     CP7 "s@PAD.el.addEventListener('keydown', e => {   // and on the arms@PAD.el.addEventListener('nokey', e => {   // and on the arms@"
+plant cp-glides-reduced CP8 's|^@media (prefers-reduced-motion:reduce){#mmPad.mp-cardmode,#mmPad.mp-unturn{transition:none}}$||'
+plant cp-unasked     CP9 's@const on = !!want \&\& EMBED.cardpad \&\& EMBED.mappad \&\& !PAD.el.hidden;@const on = !!want \&\& EMBED.mappad \&\& !PAD.el.hidden;@'
+plant cp-no-names    X4  "s@b.setAttribute('aria-label', label); b.title = label;@b.removeAttribute('aria-label');@"
+plant any-origin-112 E11 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
 [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
 exit $bad

@@ -54,7 +54,7 @@ own, see [[file:context/FOR-OTHERS.md][context/FOR-OTHERS.md]].
 * Where things are
 
 | =RECIPE.org=            | the source of =bin/=, =debian/= and =etc/=; tangle it to rebuild them  |
-| =www/=                  | the front door, the app, topology forge (formerly TopoForge) 1.11      |
+| =www/=                  | the front door, the app, topology forge (formerly TopoForge) 1.12      |
 | =topoforge/=            | topology forge's own kits: tests, story and embedding specs, project files, recipe, patches from 1.5 |
 | =paint/=                | topology paint: the C painting program, its build scripts, mods, tests and guides |
 | =www/css/egad.css=      | egad's colours and type, the default palette (see below)               |

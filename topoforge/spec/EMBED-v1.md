@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10 and 1.11)
+# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11 and 1.12)
 
 topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
 This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
@@ -340,6 +340,84 @@ undo it returns `false` (RS3). The calls work whenever called. With the `reset` 
 in `commands()`), and each reset and undo sends `topoforge:reset`: `{ parts, undo: true }` for a reset,
 `{ parts, undone: true, undo: false }` for an undo, so the page can reset its own frames too (RS3). Without
 the switch the menus are as in 1.10 (RS4).
+
+## Added in 1.12 (still v1): the card that fills the map, and the pad that pages it
+
+From Corwin's words of 2026-11-03 ("the feature is way upstream from obsmage"): the words in the map's card
+should be larger, "fill as much space as that gives"; "Why no images? This is supposed to be the baseball or
+flashcard or scoreboard or boxscore highlights, or several of these paginated"; and the pad could page them,
+"changing the color and maybe even rotating the dpad 45deg so it's clear something happened".
+
+Two new switch words, `bigcard` and `cardpad`, off unless a page asks and in neither `all` nor `bare` (W1).
+Nothing 1.11 promised changes: a page opened on its own draws the same pixels as 1.11 (S1), and so does a page
+with every 1.11 switch on and 1.10's card shown, as long as it has not asked for the new ones (S6).
+
+### The card that fills the map: `bigcard`
+
+`bigcard` turns `preview` on too. While a card shows (in the `cards` and `both` modes):
+
+- **Its words are as large as fit**, found by measuring. The app tries sizes from 1.10's (the floor: a
+  12.5-pixel title, 11-pixel facts and statement) up to four times them (the ceiling: a 50-pixel title) and
+  draws the largest at which nothing is cut. It fits again whenever the map's box changes size (its handles,
+  Position, the window, the pages box) and whenever the map is redrawn (the map's scale, the theme, the
+  drawing) (BC1, BC2).
+- **The art is large**: a panel beside the words (42% of the card's width, as far as its height allows) or
+  above them (42% of its height, as far as its width allows), whichever lets the words be larger; in the map's
+  first size, 190 by 130 pixels, it is a third of the card. It is the shape's own picture, the one `shapes()`
+  gives; for several matches, their pictures side by side (up to four), which is what `art: 'matches'` means
+  with `bigcard`. A card with no picture at all (`art: 'none'`, or nothing on this page) gives the words the
+  whole card (BC3).
+- **A picture from the page**: `card.art` may be `{ src, alt }`. It is shown only when `src` resolves to a URL
+  of the app's own origin over http or https; never another host, a `//host/` path, `data:`, `blob:`,
+  `javascript:` or `file:`, and nothing at all when the app is opened from `file://`. It is an `<img>` whose
+  `alt` is the page's words (the card's title when it gives none), never markup. Nothing is asked of another
+  host, so the app stays within its own content security policy and an embedding page's. A picture that fails
+  to load gives way to the shape's own. Without `bigcard`, `{ src }` is ignored, as in 1.10 (BC4).
+- **A box score, or lines**: the facts are cells, each a label in small capitals over its value, side by side,
+  when they fit at 1.10's size or larger; otherwise they are lines, label and value on one line. In a map too
+  small for every fact at 1.10's size, the last facts (and then the statement) are left out, not cut. When the
+  page gives no facts, the app's are the kind and the shape's own fields: host name, IP address, VLAN, status,
+  vendor, model, subnet (BC5).
+- **Several matches are pages.** The first page is the card 1.10 shows (the page's card, or the app's summary);
+  then comes one card for each match, in drawing order (or in the page's order when it named them by id or
+  ref), each with the match's name, picture, kind and fields, and its tooltip as the statement. The card shows
+  "2 of 5" at its top right. There are 9 pages at most: the house number 9, the first card and eight matches.
+  A person turns them one at a time, so past nine they should narrow the search instead, and "9 of 9" keeps the
+  pad's readout to one digit. The first card then says "As cards: 8 of N". In `both` mode the drawing lights
+  every match on the first page and only that match on its own page (BC6, BC7).
+- `TopoForge.cardPage()` reads `{ page, pages, title }` (`page` counts from 1; `pages` is 0 when no big card
+  shows). `cardPage(n)`, `'next'`, `'previous'`, `'first'` or `'last'` turns to that page and returns the same,
+  or `false` (no card, past either end, any other word). Each turn is said in the live region ("Card 2 of 5:
+  Edge Router.") and sends `topoforge:cardpage` `{ page, pages, title, ids }`. Each `preview()` starts on page 1
+  (BC6).
+- With `bigcard`, `topoforge:preview` (and the value `preview()` returns) also carries `page`, `pages` and
+  `cards`, every page's card, text only; without it the message is 1.10's, field for field (BC9).
+- On a screen 860 pixels wide or less, where the map is hidden, the map shows while a card does: a sheet along
+  the drawing's foot, 8 pixels in from its sides and foot, 42% of its height (from 150 to 340 pixels). With the
+  card gone it is hidden again. The map's handles are not shown there (BC8).
+- `TopoForge.embed({ bigcard: false })` puts 1.10's card back (BC10).
+
+### The pad that pages the cards: `cardpad`
+
+`cardpad` turns `bigcard` and `mappad` on (and so `preview` and `map`). While a big card shows:
+
+- the pad **turns 45 degrees** (a 0.2-second turn, and back again; at once when reduced motion is asked) and its
+  arms take the accent colour, their glyphs at least 4.5 to 1 against it (CP2, CP8);
+- its slider is put away, and its arms page the cards: **the upper arms go back, the lower arms forward**. Left
+  (‹) is the previous card and up («) the first; right (›) is the next and down (») the last. The centre shows
+  "2 of 5" and, pressed, says the card again. On those arms ← and → also turn one card, and Home and End go to
+  the first and the last. An arm with nowhere to go says so and does nothing. The map's mode and scale are not
+  touched; the map's Mode menu still sets them (CP3, CP7);
+- every cell's tooltip (`title`) and accessible name say its job ("First card: 1 of 5", "Next card: 3 of 5",
+  "Card 2 of 5: Edge Router. Press to hear it again"; the grip keeps "Move the overview map ..."), and the pad's
+  own name says it is turned (CP4);
+- the turn is said in the live region ("Map pad turned: it pages the cards, 1 of 5. ..."), and a focus that was
+  on the slider goes to the next-card arm (CP2, CP5).
+
+When the card goes (cleared, or the mode set to `rings`), the pad is exactly its 1.11 self again: the same
+markup 1.11 draws, no tooltip or colour left behind, the focus back on the slider if it was on an arm that is
+put away; that is said too ("Map pad back: ...") (CP1, CP6). Without `cardpad` the pad never turns (CP9).
+`topoforge:cardpage`, like every message, reaches a parent page of the app's own origin only (E11).
 
 ## Page tabs that do not fit (1.9, everywhere)
 

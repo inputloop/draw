@@ -1,3 +1,42 @@
+2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
+	topology forge (formerly TopoForge) 1.12: the card that fills the map,
+	and the pad that pages it (Corwin, 2026-11-03, corrected at 13:44 to
+	topology: "the feature is way upstream from obsmage"; "fill as much
+	space as that gives"; "Why no images?"; "baseball or flashcard or
+	scoreboard or boxscore highlights, or several of these paginated";
+	"rotating the dpad 45deg so it's clear something happened").
+	* index.html (TF_VERSION): 1.12.  (header comment): the 1.12 lines.
+	(1.12 CSS): the big card's forms (art beside or above; box score or
+	lines), its sheet on a narrow screen, and the turned pad.
+	(EMBED_WORDS): bigcard, cardpad.
+	(embed): cardpad turns bigcard and mappad on; bigcard turns preview on;
+	the body class tf-bigcard.
+	(drawPreview): the pages (deckOf); the highlight follows the page; the
+	result carries page, pages and cards with bigcard; the pad follows.
+	(cleanCard): with bigcard, art may be a picture of this origin.
+	(drawCard): draws the big card with bigcard, and 1.10's card again
+	when it is turned off.
+	(tellPreview): page, pages and cards with bigcard.
+	(embed111): calls embed112.
+	(padSync): while a card shows, the arms page it.
+	(CARD_KMAX, CARD_CAP, embed112, shapeFacts, matchCard, deckOf)
+	(drawBigCard, cardHasArt, mosaicSVG, cardArt, cardImage, fitCard)
+	(cardForm, cardFits, cardLargest, refitCard, cardPage, cardSay)
+	(padCard, padCardSync, wirePadCard): New.
+	(window.TopoForge): cardPage.
+	* spec/EMBED-v1.md: "Added in 1.12 (still v1)".
+	* tests/browser/embed.browser.mjs: compared with 1.11; a fixture with
+	shapes' fields, ten servers and a picture; a log of every request;
+	S6 (every 1.11 switch on, 1.10's card shown, the same pixels as
+	1.11), BC1-BC10, CP1-CP9, E11, X4; W1 and S3 know the new words.
+	* tests/browser/embed-prove-red.sh: 40 more plants (135); both-no-hi
+	and both-no-clear follow the lines 1.12 changed.
+	* NEWS: 1.12; the headers of 1.10 and 1.9, which the 1.11 and 1.10
+	entries had cut off, are put back.
+	* AUTHORS, README.org, RECIPE.org: 1.12.
+	* patches/topoforge-1.11-to-1.12.patch: New.
+
 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
 	topology forge (formerly TopoForge) 1.11: the map's pad and Reset

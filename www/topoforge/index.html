@@ -19,6 +19,10 @@
   Nothing changes for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
   1.11: the map's pad (mappad: a drawn slider for the mode, an arm for the scale, a grip; padArrows('pan') to pan
   instead) and Reset layout (reset; resetLayout, undoReset). Off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+  1.12: the card that fills the map (bigcard: its words as large as fit, measured; the shape's own picture large, or a
+  picture of this page's own origin; a box score of cells, or lines; several matches as pages, at most 9) and the pad
+  that pages it (cardpad: while a card shows the pad turns 45 degrees and changes colour). Off for a page opened on its
+  own. By Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -357,6 +361,54 @@ body.tf-pages #mmwrap{display:none}
 #mmPad .mp-c{grid-area:2/2;font-size:11px}
 #mmPad .mp-e{grid-area:2/3}
 @media (prefers-reduced-motion:reduce){#mmPad .mp-thumb{transition:none}}
+/* 1.12: the card that fills the map (bigcard), and the pad that pages it (cardpad); each rule hangs on a class only that
+   code adds (mc-big on the card, tf-bigcard on the body, mp-cardmode and mp-unturn on the pad). --mck is the size the
+   card's words are drawn at, 1 (1.10's sizes, the floor) to 4 (the ceiling), found by measuring */
+#minimap .mm-card.mc-big{gap:8px;padding:8px;--mck:1}
+#minimap .mm-card.mc-big.mc-side{grid-template-columns:var(--mcaw,40%) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+#minimap .mm-card.mc-big.mc-stack{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--mcah,40%) minmax(0,1fr)}
+#minimap .mm-card.mc-big .mc-a{grid-area:1/1;width:auto;height:auto;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;padding:5%;border:1px solid var(--border-2);border-radius:8px;background:var(--panel-2);overflow:hidden}
+#minimap .mm-card.mc-big .mc-a svg,#minimap .mm-card.mc-big .mc-a img{width:100%;height:100%;object-fit:contain;display:block}
+#minimap .mm-card.mc-big .mc-x{display:flex;flex-direction:column;justify-content:safe center;gap:calc(4px * var(--mck));min-width:0;min-height:0;overflow:hidden}
+#minimap .mm-card.mc-big.mc-side .mc-x{grid-area:1/2}
+#minimap .mm-card.mc-big.mc-stack .mc-x{grid-area:2/1}
+#minimap .mm-card.mc-big .mc-h{display:flex;align-items:baseline;gap:8px;min-width:0;flex:none}
+#minimap .mm-card.mc-big .mc-t{flex:1;min-width:0;margin:0;font-size:calc(12.5px * var(--mck));font-weight:700;line-height:1.2;white-space:normal;overflow:hidden;text-overflow:clip}
+#minimap .mm-card.mc-big .mc-n{flex:none;margin:0;font-size:calc(11px * var(--mck));line-height:1.2;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+#minimap .mm-card.mc-big .mc-n[hidden]{display:none}
+#minimap .mm-card.mc-big .mc-f{grid-area:auto;margin:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:calc(4px * var(--mck)) 0;font-size:calc(11px * var(--mck));line-height:1.25;overflow:hidden;min-width:0;flex:none}
+#minimap .mm-card.mc-big .mc-f dt{color:var(--text-2);white-space:nowrap;overflow:hidden}
+#minimap .mm-card.mc-big .mc-f dd{margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:clip}
+#minimap .mm-card.mc-big.mc-box .mc-f div{flex:1 0 auto;display:flex;flex-direction:column;gap:1px;min-width:0;padding:0 .8em 0 .5em;border-left:2px solid var(--accent)}
+#minimap .mm-card.mc-big.mc-box .mc-f dt{text-transform:uppercase;letter-spacing:.04em}
+#minimap .mm-card.mc-big.mc-box .mc-f dd{font-size:1.4em;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
+#minimap .mm-card.mc-big.mc-lines .mc-f{flex-direction:column;flex-wrap:nowrap;gap:calc(2px * var(--mck))}
+#minimap .mm-card.mc-big.mc-lines .mc-f div{display:flex;gap:.4em;min-width:0}
+#minimap .mm-card.mc-big .mc-s{grid-area:auto;display:block;-webkit-line-clamp:none;margin:0;font-size:calc(11px * var(--mck));line-height:1.3;color:var(--text-2);overflow:hidden;flex:none}
+#minimap .mm-card.mc-big .mc-f>div[hidden],#minimap .mm-card.mc-big .mc-s[hidden]{display:none}
+#minimap .mm-card.mc-big.mc-noart.mc-side,#minimap .mm-card.mc-big.mc-noart.mc-stack{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+#minimap .mm-card.mc-big.mc-noart .mc-a{display:none}
+#minimap .mm-card.mc-big.mc-noart .mc-x{grid-area:1/1}
+@media (max-width:860px){
+  body.tf-bigcard #minimap.mm-carded:not(.hidden){display:block}
+  body.tf-bigcard #stage>#minimap.mm-carded{left:8px;right:8px;bottom:8px;width:auto;height:clamp(150px,42%,340px)}
+  body.tf-bigcard #mmwrap:has(#minimap.mm-carded:not(.hidden)){display:block;left:8px;right:8px;bottom:8px;width:auto;height:clamp(150px,42%,340px)}
+  body.tf-bigcard #mmwrap .mm-handles{display:none}
+  body.tf-bigcard #mmwrap #mmPad{top:auto;right:auto;left:8px;bottom:calc(100% + 12px);transform:none}
+  body.tf-bigcard #mmwrap #mmPad.mp-cardmode{transform:rotate(45deg)}
+}
+#mmPad.mp-cardmode{transform:translateY(-50%) rotate(45deg);transition:transform .2s ease}
+#mmPad.mp-unturn{transition:transform .2s ease}
+#mmPad.mp-cardmode .mp-sl{display:none}
+#mmPad.mp-cardmode .mp-pan{display:flex}
+#mmPad.mp-cardmode .mp-b:not(.mp-grip){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+#mmPad.mp-cardmode .mp-b:not(.mp-grip):hover{background:color-mix(in srgb,var(--accent) 86%,var(--text))}
+#mmPad.mp-cardmode .mp-b[aria-disabled="true"]{opacity:.45;cursor:default}
+#mmPad.mp-cardmode .mp-b:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+#mmPad.mp-cardmode .mp-b .mp-cn{display:block;rotate:-45deg;font-size:22px;font-weight:700;line-height:1;white-space:nowrap}
+#mmPad.mp-cardmode .mp-c .mp-cn{font-size:11px}
+#mmPad.mp-cardmode .mp-grip span{display:inline-block;rotate:-45deg}
+@media (prefers-reduced-motion:reduce){#mmPad.mp-cardmode,#mmPad.mp-unturn{transition:none}}
 @media print{body *{visibility:hidden}}
 
 </style>
@@ -438,7 +490,7 @@ body.tf-pages #mmwrap{display:none}
 
 <script>
 'use strict';
-const TF_VERSION = '1.11';
+const TF_VERSION = '1.12';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -4164,7 +4216,7 @@ async function loadFromQuery() {
    for any other, and nothing is posted from file://).
    ============================================================ */
 const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
-  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; never turned on by 'all' or 'bare'
+  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; 1.12: bigcard, cardpad; never turned on by 'all' or 'bare'
 const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
 const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
 const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
@@ -4182,8 +4234,11 @@ function embed(opts) {
   if (opts && typeof opts === 'object') {
     if ('chrome' in opts && !('frameless' in opts)) opts = { ...opts, frameless: !opts.chrome };
     for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
+    if (EMBED.cardpad) { EMBED.bigcard = true; EMBED.mappad = true; }   // 1.12: the pad pages the big card's pages
+    if (EMBED.bigcard) EMBED.preview = true;   // 1.12: the card is the preview's
     if (EMBED.mappad) EMBED.map = true;   // 1.11: the pad hangs on the map's own frame
   }
+  document.body.classList.toggle('tf-bigcard', EMBED.bigcard);   // 1.12
   document.body.classList.toggle('tf-frameless', EMBED.frameless);
   for (const k of EMBED_WORDS) if (k.startsWith('hide-')) document.body.classList.toggle('tf-' + k, EMBED[k]);
   document.body.classList.toggle('tf-hide-top', EMBED['hide-menus'] && EMBED['hide-tools']);
@@ -4623,15 +4678,17 @@ function drawPreview() {
   const svg = $('#mmSvg'), mm = $('#minimap'); let cap = mm.querySelector('.mm-cap');
   const old = svg.querySelector('#mmPrev'); if (old) old.remove();
   svg.classList.remove('mm-dim'); $$('.mm-rest', svg).forEach(g => g.replaceWith(...g.childNodes));
-  if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }
+  if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); padCard(false); return true; }
   const hits = P().nodes.filter(n => visible(n) && PREVIEW.m(n));
   const other = DOC.pages.reduce((a, pg, i) => a + (i === DOC.cur ? 0 : pg.nodes.filter(PREVIEW.m).length), 0);
   const text = previewCaption(hits, other);
   const rings = MAPMODE === 'rings', card = rings ? null : cardOf(hits, other, text);
   if (!cap) { cap = document.createElement('div'); cap.className = 'mm-cap'; mm.appendChild(cap); }
   cap.textContent = text; cap.hidden = !(rings && MAPCAP);   // 1.10: the caption goes to the page (topoforge:preview); in the map only when asked
-  drawCard(card, hits);
-  drawHighlight(MAPMODE === 'both' ? hits : null);
+  const deck = card && EMBED.bigcard ? deckOf(card, hits) : null;   // 1.12: the card's pages (bigcard)
+  PREVIEW.deck = deck; if (deck) PREVIEW.page = clamp(PREVIEW.page | 0, 0, deck.length - 1);
+  drawCard(card, hits, deck);
+  drawHighlight(MAPMODE === 'both' ? (deck ? deck[PREVIEW.page].hits : hits) : null);
   if (rings && MM && hits.length) {
     const kids = [...svg.childNodes].filter(n => n.id !== 'mmView' && n !== svg.firstChild), rest = document.createElementNS(SVGNS, 'g');
     rest.setAttribute('class', 'mm-rest'); kids.forEach(k => rest.appendChild(k)); svg.insertBefore(rest, svg.querySelector('#mmView'));
@@ -4640,7 +4697,10 @@ function drawPreview() {
     g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2)}" rx="${rnd(pad)}" fill="${c}" fill-opacity=".28" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
     svg.insertBefore(g, svg.querySelector('#mmView'));
   }
-  return { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
+  const r = { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
+  if (deck) Object.assign(r, { card: deck[0].card, page: PREVIEW.page + 1, pages: deck.length, cards: deck.map(d => d.card) });   // 1.12: the first card as shown
+  padCard(!!deck);
+  return r;
 }
 /* ---- 1.10: the map's modes, its own scale, and the wheel over it ----
    mapMode('cards' | 'both' | 'rings'): what a preview shows. cards: a card about what the page points at, in the
@@ -4708,7 +4768,15 @@ function cleanCard(c) {
   const t = v => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 200) : null;
   const facts = Array.isArray(c.facts) ? c.facts.filter(f => Array.isArray(f) && f.length >= 2).slice(0, 8).map(f => [String(f[0]).slice(0, 40), String(f[1]).slice(0, 60)]) : null;
   const art = c.art === 'matches' || c.art === 'none' ? c.art : c.art && typeof c.art === 'object' && typeof c.art.shape === 'string' && SHAPES[c.art.shape] ? { shape: c.art.shape } : null;
-  return { title: t(c.title), facts, statement: t(c.statement), art };
+  return { title: t(c.title), facts, statement: t(c.statement), art: art || (EMBED.bigcard ? cardImage(c.art) : null) };   // 1.12: or a picture of this origin
+}
+// 1.12 (bigcard): a picture the page gives its card: only a URL of the app's own origin (http or https; never data:, blob:,
+// file: or another host), shown in an <img> with its alt text (the card's title when the page gives none)
+function cardImage(a) {
+  if (!a || typeof a !== 'object' || typeof a.src !== 'string' || !/^https?:$/.test(location.protocol)) return null;
+  let u; try { u = new URL(a.src, location.href); } catch (e) { return null; }
+  if (u.origin !== location.origin || !/^https?:$/.test(u.protocol)) return null;
+  return { src: u.href, alt: typeof a.alt === 'string' ? a.alt.slice(0, 200) : '' };
 }
 function cardOf(hits, other, text) {
   const w = PREVIEW.what, pc = PREVIEW.card || {}, one = hits.length === 1 ? hits[0] : null;
@@ -4730,9 +4798,11 @@ function artSVG(art, hits) {
   }
   return '';
 }
-function drawCard(card, hits) {
+function drawCard(card, hits, deck) {
   const mm = $('#minimap'); let el = mm.querySelector('.mm-card');
   if (!card) { if (el) el.hidden = true; mm.classList.remove('mm-carded'); return; }
+  if (deck) return drawBigCard(deck, PREVIEW.page);   // 1.12: bigcard
+  if (el && el.classList.contains('mc-big')) { el.remove(); el = null; }   // 1.12: bigcard was turned off
   if (!el) { el = document.createElement('div'); el.className = 'mm-card'; el.innerHTML = '<p class="mc-t"></p><div class="mc-a" aria-hidden="true"></div><dl class="mc-f"></dl><p class="mc-s"></p>'; mm.appendChild(el); }
   el.querySelector('.mc-t').textContent = card.title || '';
   el.querySelector('.mc-a').innerHTML = artSVG(card.art, hits);   // the app's own pictures only
@@ -4749,7 +4819,7 @@ function drawHighlight(hits) {
   g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2 + (isDevice(n) ? 18 : 0))}" rx="10" fill="${c}" fill-opacity=".10" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
 }
 function tellPreview(r) {
-  tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card }
+  tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card, ...(r.pages ? { page: r.page, pages: r.pages, cards: r.cards } : {}) }
     : { mode: MAPMODE, caption: '', count: 0, other: 0, ids: [], card: null });
 }
 /* ---- 1.11: the map's pad (mappad) and Reset layout (reset) ----
@@ -4764,6 +4834,7 @@ let PAD = null, PADARROWS = 'mode-scale', _resetUndo = null;
 function embed111(was) {
   if (EMBED.mappad && MMW && !PAD) buildPad();
   if (PAD) { PAD.el.hidden = !EMBED.mappad; padSide(); padSync(); }
+  embed112(was);
 }
 function buildPad() {
   const el = document.createElement('div'); el.id = 'mmPad'; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Overview map pad');
@@ -4825,6 +4896,7 @@ function padSync() {
   PAD.up.textContent = '▲'; PAD.dn.textContent = '▼';
   PAD.up.setAttribute('aria-label', pan ? 'Pan north' : 'Overview map closer'); PAD.dn.setAttribute('aria-label', pan ? 'Pan south' : 'Overview map farther');
   PAD.dn.disabled = !pan && MAPSCALE <= 1; PAD.up.disabled = !pan && MAPSCALE >= 8;
+  if (_padCard) padCardSync();   // 1.12: while a card shows (cardpad) the arms page the cards
 }
 function padArrows(mode) {
   if (mode === undefined) return PADARROWS;
@@ -4857,6 +4929,203 @@ function undoReset() {
   return true;
 }
 function resetItems() { return EMBED.reset ? ['-', { label: 'Reset layout', action: resetLayout }, ...(_resetUndo ? [{ label: 'Undo reset', action: undoReset }] : [])] : []; }
+/* ---- 1.12: the card that fills the map (bigcard), and the pad that pages it (cardpad) ----
+   bigcard (it turns preview on): the card's words are drawn as large as fit in the map, found by measuring: --mck from 1
+   (1.10's sizes, the floor) to CARD_KMAX (the ceiling), fitted again whenever the map's box changes size or the map is
+   redrawn. The art is the shape's own picture (previewSVG) given a real share of the card, or a picture the page gives,
+   of this page's own origin only. The facts are a box score (label over value, in cells) when one fits at the floor or
+   larger, else lines. Several matches make pages: first the card 1.10 shows (the page's, or the app's own summary), then
+   a card for each match, CARD_CAP pages in all; cardPage() turns them. On a narrow screen, where the map is otherwise
+   hidden, the map shows while a card does, along the drawing's foot.
+   cardpad (it turns bigcard and mappad on): while a card shows, the pad turns 45 degrees and takes the accent colour. Its
+   upper arms go back (left: the previous card; up: the first), its lower arms forward (right: the next; down: the last);
+   its centre says the card again. When the card goes, the pad is its 1.11 self again. */
+const CARD_KMAX = 4, CARD_CAP = 9;   // house numbers: the ceiling 4 (4 times 1.10's sizes: a 50-pixel title); 9 pages at most
+let _cardRO = null, _padCard = false, _padUnturnT = null;
+const _cardImgBad = new Set();
+function embed112(was) {
+  if (EMBED.bigcard && !_cardRO && typeof ResizeObserver === 'function') { _cardRO = new ResizeObserver(() => refitCard()); _cardRO.observe($('#minimap')); }
+  if (PAD && !PAD.cardWired) wirePadCard();
+  if (EMBED.bigcard !== !!was.bigcard || EMBED.cardpad !== !!was.cardpad || EMBED.mappad !== !!was.mappad) { if (PREVIEW) drawPreview(); else padCard(false); }
+}
+// the shape's own fields (hostname, address, VLAN ...), for the back of its card
+function shapeFacts(n) {
+  const pr = n.props || {};
+  return NET_PROPS.filter(k => k !== 'notes' && pr[k] !== undefined && pr[k] !== null && String(pr[k]).trim() !== '').map(k => [NET_LABELS[k], String(pr[k]).slice(0, 60)]);
+}
+function matchCard(n) {
+  const kind = (SHAPES[n.type] || {}).name || n.type, d = n.data || {}, tip = String(d.tooltip || d.what || (n.props || {}).notes || '');
+  return { title: nodeName(n).slice(0, 200), facts: [['Kind', kind], ...shapeFacts(n)].slice(0, 8), statement: tip.slice(0, 200) || kind, art: { shape: n.type } };
+}
+// the pages: one match (or none) is one card, the cover; several are the cover and then a card for each, CARD_CAP in all
+function deckOf(cover, hits) {
+  let ord = hits;
+  if (Array.isArray(PREVIEW.what)) {   // the page named them: its order
+    const at = new Map(PREVIEW.what.map((x, i) => [String(x), i])), pos = n => Math.min(at.get(n.id) ?? 1e9, at.get(String((n.data || {}).tf_ref || '')) ?? 1e9);
+    ord = [...hits].sort((a, b) => pos(a) - pos(b));
+  }
+  if (ord.length === 1 && !(PREVIEW.card && PREVIEW.card.facts)) cover = { ...cover, facts: [...cover.facts.filter(f => f[0] !== 'On this page'), ...shapeFacts(ord[0])].slice(0, 8) };
+  if (ord.length <= 1) return [{ card: cover, hits }];
+  const shown = ord.slice(0, CARD_CAP - 1);
+  if (ord.length > shown.length) cover = { ...cover, facts: [...cover.facts.slice(0, 7), ['As cards', `${shown.length} of ${ord.length}`]] };
+  return [{ card: cover, hits }, ...shown.map(n => ({ card: matchCard(n), hits: [n] }))];
+}
+function drawBigCard(deck, i) {
+  const mm = $('#minimap'); let el = mm.querySelector('.mm-card');
+  if (el && !el.classList.contains('mc-big')) { el.remove(); el = null; }
+  if (!el) {
+    el = document.createElement('div'); el.className = 'mm-card mc-big';
+    el.innerHTML = '<div class="mc-a"></div><div class="mc-x"><div class="mc-h"><p class="mc-t"></p><p class="mc-n"></p></div><dl class="mc-f"></dl><p class="mc-s"></p></div>';
+    mm.appendChild(el);
+  }
+  const { card, hits } = deck[i], n = deck.length;
+  // the map is redrawn often (every pan): the same card in a box of the same size keeps its fit, unmeasured
+  const key = JSON.stringify([card, i, n, hits.map(h => h.type)]);
+  if (el._key === key && !el.hidden && el._size === el.clientWidth + 'x' + el.clientHeight && mm.classList.contains('mm-carded')) { el._deck = deck[i]; return; }
+  el.querySelector('.mc-t').textContent = card.title || '';
+  const pn = el.querySelector('.mc-n'); pn.textContent = n > 1 ? `${i + 1} of ${n}` : ''; pn.hidden = n <= 1;
+  el._deck = deck[i]; el.classList.toggle('mc-noart', !cardHasArt(card, hits));
+  const dl = el.querySelector('.mc-f'); dl.textContent = '';
+  for (const [k, v] of card.facts || []) { const d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; d.append(dt, dd); dl.appendChild(d); }
+  el.querySelector('.mc-s').textContent = card.statement || '';
+  el.hidden = false; mm.classList.add('mm-carded');
+  fitCard(el); cardArt(el.querySelector('.mc-a'), card, hits);
+  el._key = key; el._size = el.clientWidth + 'x' + el.clientHeight;
+}
+// the art: the page's picture (an <img> with alt text; this origin only, see cardImage), else the app's own pictures:
+// the shape's, or for several matches theirs side by side (up to 4), laid out for the room the art was given
+function cardHasArt(card, hits) { const a = card.art; return !!(a && (a.src || a.shape) || (a === 'matches' && hits.length)); }
+function mosaicSVG(hits, aspect) {
+  const ks = hits.slice(0, 4).map(n => n.type), n = ks.length, g = 6;
+  const cols = n === 1 ? 1 : n === 2 ? (aspect >= 1 ? 2 : 1) : aspect >= 2.2 ? n : aspect <= 0.45 ? 1 : 2, rows = Math.ceil(n / cols);
+  return `<svg viewBox="0 0 ${cols * 48 + (cols - 1) * g} ${rows * 48 + (rows - 1) * g}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">` +
+    ks.map((k, i) => previewSVG(k).replace('<svg ', `<svg x="${(i % cols) * (48 + g)}" y="${Math.floor(i / cols) * (48 + g)}" width="48" height="48" `)).join('') + '</svg>';
+}
+function cardArt(box, card, hits) {
+  const b = box.getBoundingClientRect(), aspect = b.height ? b.width / b.height : 1;
+  const ownOf = a => a === 'matches' && hits.length ? mosaicSVG(hits, aspect) : artSVG(a, hits);
+  const a = card.art, own = () => ownOf(hits.length === 1 ? { shape: hits[0].type } : 'matches');
+  if (a && a.src && !_cardImgBad.has(a.src)) {
+    const alt = a.alt || card.title || 'Picture for this card', old = box.querySelector('img');
+    box.removeAttribute('aria-hidden');
+    if (old && old.getAttribute('src') === a.src) { old.alt = alt; return; }
+    box.textContent = ''; const im = document.createElement('img'); im.alt = alt; im.decoding = 'async';
+    im.addEventListener('error', () => { _cardImgBad.add(a.src); if (im.parentNode === box) { box.innerHTML = own(); box.setAttribute('aria-hidden', 'true'); } });
+    im.src = a.src; box.appendChild(im); return;
+  }
+  box.setAttribute('aria-hidden', 'true'); box.innerHTML = a && a.src ? own() : ownOf(a);
+}
+// the size the words are drawn at: the largest that fits, measured, for each of four forms (the art beside or above the
+// words; a box score or lines); a box score that fits at the floor or larger wins, else the lines that fit largest
+function fitCard(el) {
+  const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return null;   // not drawn: a narrow screen, or the map is off
+  const pad = 8, gap = 8;
+  el.style.setProperty('--mcaw', Math.round(Math.max(24, Math.min(H - 2 * pad, (W - 2 * pad - gap) * 0.42))) + 'px');
+  el.style.setProperty('--mcah', Math.round(Math.max(24, Math.min(W - 2 * pad, (H - 2 * pad - gap) * 0.42))) + 'px');
+  const facts = [...el.querySelectorAll('.mc-f>div')], st = el.querySelector('.mc-s');
+  let best = null, drop = 0;
+  for (; drop <= facts.length + 1 && !best; drop++) {   // too small for all of it at the floor: the last facts, then the statement, are left out, not cut
+    facts.forEach((d, i) => { d.hidden = i >= facts.length - drop; }); st.hidden = !st.textContent || drop > facts.length;
+    for (const f of [['mc-side', 'mc-box'], ['mc-stack', 'mc-box'], ['mc-side', 'mc-lines'], ['mc-stack', 'mc-lines']]) {
+      if (best && best.f[1] === 'mc-box' && f[1] === 'mc-lines') break;
+      cardForm(el, f); const k = cardLargest(el);
+      if (k !== null && (!best || k > best.k)) best = { f, k };
+    }
+  }
+  if (!best) { facts.forEach(d => { d.hidden = false; }); st.hidden = !st.textContent; best = { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 }; }   // nothing fits at all: lines, clipped
+  cardForm(el, best.f); el.style.setProperty('--mck', String(best.k));
+  return { ...best, left: facts.filter(d => d.hidden).length };
+}
+function cardForm(el, f) { el.classList.remove('mc-side', 'mc-stack', 'mc-box', 'mc-lines'); el.classList.add(...f); }
+function cardFits(el) {
+  const x = el.querySelector('.mc-x');
+  if (x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1) return false;
+  for (const e of el.querySelectorAll('.mc-t, .mc-n, .mc-f, .mc-f dt, .mc-f dd, .mc-s')) if (!e.hidden && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)) return false;
+  return true;
+}
+function cardLargest(el) {
+  const at = k => { el.style.setProperty('--mck', String(k)); return cardFits(el); };
+  if (!at(1)) return null;
+  if (at(CARD_KMAX)) return CARD_KMAX;
+  let lo = 1, hi = CARD_KMAX;
+  for (let i = 0; i < 9; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
+  return Math.floor(lo * 100) / 100;
+}
+function refitCard() { const el = $('#minimap .mm-card.mc-big'); if (el && !el.hidden && el._deck) { fitCard(el); cardArt(el.querySelector('.mc-a'), el._deck.card, el._deck.hits); el._size = el.clientWidth + 'x' + el.clientHeight; } }
+// cardPage(): { page, pages, title } (page counts from 1; pages 0 when no big card shows); cardPage(n), or 'next',
+// 'previous', 'first', 'last', turns to that page and returns the same, or false
+function cardPage(x) {
+  const d = EMBED.bigcard && PREVIEW && PREVIEW.deck;
+  if (!d) return x === undefined ? { page: 0, pages: 0, title: '' } : false;
+  const n = d.length, i = PREVIEW.page;
+  if (x === undefined) return { page: i + 1, pages: n, title: d[i].card.title || '' };
+  const j = x === 'next' ? i + 1 : x === 'previous' ? i - 1 : x === 'first' ? 0 : x === 'last' ? n - 1 : Number.isInteger(x) ? x - 1 : NaN;
+  if (!(j >= 0 && j < n)) return false;
+  if (j !== i) {
+    PREVIEW.page = j; drawPreview();
+    const c = PREVIEW.deck[PREVIEW.page], t = c.card.title || '';
+    flSay(`Card ${j + 1} of ${n}: ${t}.`);
+    tell('topoforge:cardpage', { page: j + 1, pages: n, title: t, ids: c.hits.map(h => h.id) });
+  }
+  return { page: j + 1, pages: n, title: PREVIEW.deck[j].card.title || '' };
+}
+function cardSay() {
+  const d = PREVIEW && PREVIEW.deck; if (!d) return;
+  const c = d[PREVIEW.page].card, facts = (c.facts || []).map(([k, v]) => `${k} ${v}`).join(', ');
+  flSay(`Card ${PREVIEW.page + 1} of ${d.length}: ${c.title || ''}.${facts ? ' ' + facts + '.' : ''}${c.statement ? ' ' + c.statement : ''}`);
+}
+// the pad while a card shows (cardpad): turned, in the accent colour, its arms paging the cards; afterwards, its 1.11 self
+function padCard(want) {
+  if (!PAD) return;
+  const on = !!want && EMBED.cardpad && EMBED.mappad && !PAD.el.hidden;
+  if (on === _padCard) { if (on) padCardSync(); return; }
+  _padCard = on; clearTimeout(_padUnturnT);
+  const el = PAD.el, f = document.activeElement;
+  if (on) {
+    el.classList.remove('mp-unturn'); el.classList.add('mp-cardmode'); padCardSync();
+    if (f === PAD.sl) el.querySelector('.mp-e').focus();   // the slider is put away while the card shows: the focus goes to Next
+    flSay(`Map pad turned: it pages the cards, ${PREVIEW.page + 1} of ${PREVIEW.deck.length}. Left and right go one card, up to the first, down to the last.`);
+    return;
+  }
+  el.classList.remove('mp-cardmode'); if (!el.classList.length) el.removeAttribute('class');   // 1.11's pad has no class at all
+  el.setAttribute('aria-label', 'Overview map pad');
+  for (const b of el.querySelectorAll('.mp-b')) { b.removeAttribute('title'); b.removeAttribute('aria-disabled'); }
+  const [w, c, e] = ['.mp-w', '.mp-c', '.mp-e'].map(s => el.querySelector(s));
+  w.textContent = '◀'; w.setAttribute('aria-label', 'Pan west'); c.textContent = 'Fit'; c.setAttribute('aria-label', 'Fit the drawing'); e.textContent = '▶'; e.setAttribute('aria-label', 'Pan east');
+  padSync();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('mp-unturn'); _padUnturnT = setTimeout(() => { el.classList.remove('mp-unturn'); if (!el.classList.length) el.removeAttribute('class'); }, 260); }   // it turns back, briefly
+  if (el.contains(f) && (f.offsetParent === null || f.disabled)) (PADARROWS === 'pan' ? c : PAD.sl).focus();
+  if (!el.hidden) flSay('Map pad back: its slider sets the map\'s mode and its arms the map\'s scale.');
+}
+function padCardSync() {
+  const d = PREVIEW && PREVIEW.deck; if (!PAD || !d) return;
+  const n = d.length, i = PREVIEW.page, el = PAD.el, t = d[i].card.title || '';
+  const set = (b, glyph, label, off) => {   // the glyph stands upright in the turned pad (CSS turns it back)
+    const s = document.createElement('span'); s.className = 'mp-cn'; s.setAttribute('aria-hidden', 'true'); s.textContent = glyph; b.replaceChildren(s);
+    b.setAttribute('aria-label', label); b.title = label; b.disabled = false; if (off) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled'); };
+  el.setAttribute('aria-label', `Overview map pad, turned: it pages the cards (${i + 1} of ${n})`);
+  set(PAD.up, '«', `First card: 1 of ${n}`, i === 0);
+  set(PAD.dn, '»', `Last card: ${n} of ${n}`, i === n - 1);
+  set(el.querySelector('.mp-w'), '‹', i > 0 ? `Previous card: ${i} of ${n}` : `Previous card: none, this is the first of ${n}`, i === 0);
+  set(el.querySelector('.mp-e'), '›', i < n - 1 ? `Next card: ${i + 2} of ${n}` : `Next card: none, this is the last of ${n}`, i === n - 1);
+  set(el.querySelector('.mp-c'), `${i + 1} of ${n}`, `Card ${i + 1} of ${n}: ${t}. Press to hear it again`, false);
+  const g = el.querySelector('.mp-grip'); g.title = g.getAttribute('aria-label');
+}
+function wirePadCard() {
+  PAD.cardWired = true;
+  PAD.el.addEventListener('click', e => {   // the capture phase: while a card shows, the arms page it and do not do their 1.11 jobs
+    if (!_padCard) return; const b = e.target.closest('.mp-b'); if (!b || b.classList.contains('mp-grip')) return;
+    e.stopPropagation(); e.preventDefault();
+    if (b.getAttribute('aria-disabled') === 'true') { flSay(b.getAttribute('aria-label') + '.'); return; }
+    if (b.classList.contains('mp-c')) { cardSay(); return; }
+    cardPage(b === PAD.up ? 'first' : b === PAD.dn ? 'last' : b.classList.contains('mp-w') ? 'previous' : 'next');
+  }, true);
+  PAD.el.addEventListener('keydown', e => {   // and on the arms, left and right, Home and End, page too
+    if (!_padCard || !e.target.closest('.mp-up, .mp-dn, .mp-pan')) return;
+    const x = { ArrowLeft: 'previous', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key]; if (!x) return;
+    e.preventDefault(); cardPage(x);
+  }, true);
+}
 /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
    tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
@@ -4986,7 +5255,9 @@ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(
   // 1.10
   mapMode, mapScale,
   // 1.11
-  padArrows, resetLayout, undoReset };
+  padArrows, resetLayout, undoReset,
+  // 1.12
+  cardPage };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>

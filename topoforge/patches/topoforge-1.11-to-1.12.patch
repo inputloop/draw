@@ -1,0 +1,1037 @@
+--- topoforge-1.11/AUTHORS
++++ topoforge-1.12/AUTHORS
+@@ -15,7 +15,9 @@
+                                           the overview map's handles and
+                                           preview, page tabs that fit;
+                                           1.10, the map's modes and wheel;
+-                                          1.11, the map's pad and Reset layout
++                                          1.11, the map's pad and Reset layout;
++                                          1.12, the card that fills the map
++                                          and the pad that pages it
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.11/ChangeLog
++++ topoforge-1.12/ChangeLog
+@@ -1,3 +1,42 @@
++2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
++	topology forge (formerly TopoForge) 1.12: the card that fills the map,
++	and the pad that pages it (Corwin, 2026-11-03, corrected at 13:44 to
++	topology: "the feature is way upstream from obsmage"; "fill as much
++	space as that gives"; "Why no images?"; "baseball or flashcard or
++	scoreboard or boxscore highlights, or several of these paginated";
++	"rotating the dpad 45deg so it's clear something happened").
++	* index.html (TF_VERSION): 1.12.  (header comment): the 1.12 lines.
++	(1.12 CSS): the big card's forms (art beside or above; box score or
++	lines), its sheet on a narrow screen, and the turned pad.
++	(EMBED_WORDS): bigcard, cardpad.
++	(embed): cardpad turns bigcard and mappad on; bigcard turns preview on;
++	the body class tf-bigcard.
++	(drawPreview): the pages (deckOf); the highlight follows the page; the
++	result carries page, pages and cards with bigcard; the pad follows.
++	(cleanCard): with bigcard, art may be a picture of this origin.
++	(drawCard): draws the big card with bigcard, and 1.10's card again
++	when it is turned off.
++	(tellPreview): page, pages and cards with bigcard.
++	(embed111): calls embed112.
++	(padSync): while a card shows, the arms page it.
++	(CARD_KMAX, CARD_CAP, embed112, shapeFacts, matchCard, deckOf)
++	(drawBigCard, cardHasArt, mosaicSVG, cardArt, cardImage, fitCard)
++	(cardForm, cardFits, cardLargest, refitCard, cardPage, cardSay)
++	(padCard, padCardSync, wirePadCard): New.
++	(window.TopoForge): cardPage.
++	* spec/EMBED-v1.md: "Added in 1.12 (still v1)".
++	* tests/browser/embed.browser.mjs: compared with 1.11; a fixture with
++	shapes' fields, ten servers and a picture; a log of every request;
++	S6 (every 1.11 switch on, 1.10's card shown, the same pixels as
++	1.11), BC1-BC10, CP1-CP9, E11, X4; W1 and S3 know the new words.
++	* tests/browser/embed-prove-red.sh: 40 more plants (135); both-no-hi
++	and both-no-clear follow the lines 1.12 changed.
++	* NEWS: 1.12; the headers of 1.10 and 1.9, which the 1.11 and 1.10
++	entries had cut off, are put back.
++	* AUTHORS, README.org, RECIPE.org: 1.12.
++	* patches/topoforge-1.11-to-1.12.patch: New.
++
+ 2026-11-02  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
+ 	topology forge (formerly TopoForge) 1.11: the map's pad and Reset
+--- topoforge-1.11/NEWS
++++ topoforge-1.12/NEWS
+@@ -4,6 +4,34 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.12 (2026-11-03; checked: tests/run.sh, the project-files check, the
++browser kit and the embedding kit green, with their planted faults; see
++RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
++yet)
++
++- The card that fills the map, for a page that asks (switch bigcard; Corwin,
++  2026-11-03: "needs to have the text in the mini-map when we show info be
++  LARGER: fill as much space as that gives"; "Why no images? This is supposed
++  to be the baseball or flashcard or scoreboard or boxscore highlights, or
++  several of these paginated").  The card's words are as large as fit in the
++  map, found by measuring, from 1.10's sizes up to four times them, and fitted
++  again when the map changes size.  Its art is large: the shape's own
++  picture, or for several matches their pictures side by side, or a picture
++  the page gives from its own origin (art: { src, alt }, an <img> with alt
++  text; never another host).  Its facts are a box score, label over value in
++  cells, when there is room, else lines; facts that do not fit are left out,
++  not cut.  Several matches are pages, one card each after the first, at most
++  9 (the house number 9: a person turns them one at a time, and "9 of 9" stays
++  one digit); TopoForge.cardPage() turns them, and a new message,
++  topoforge:cardpage, tells the page.  On a phone-wide screen, where the map
++  is hidden, it shows while a card does, along the drawing's foot.
++- The pad that pages the cards (switch cardpad; it turns bigcard and mappad
++  on): while a card shows the pad turns 45 degrees and takes the accent
++  colour, so it is clear something happened.  Its upper arms go back (left the
++  previous card, up the first), its lower arms forward (right the next, down
++  the last); every cell's tooltip and name say so, and the turn is said.  When
++  the card goes, the pad is its 1.11 self again.
++
+ Version 1.11 (2026-11-02; checked: tests/run.sh, the project-files check, the
+ browser kit and the embedding kit green, with their planted faults; see
+ RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+@@ -24,7 +52,7 @@
+   they started, the drawing untouched; Undo reset puts them back.  In the
+   map's Mode menu and the View menu; the page gets topoforge:reset.
+ 
+- checked: tests/run.sh, the project-files check, the
++Version 1.10 (2026-11-02; checked: tests/run.sh, the project-files check, the
+ browser kit and the embedding kit green, with their planted faults; see
+ RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+ yet)
+@@ -46,7 +74,7 @@
+ - New messages, to a parent page of the same origin only: topoforge:preview
+   (the caption and card of each preview) and topoforge:mapmode.
+ 
+- built in stages on the corwin branch; checked: tests/run.sh,
++Version 1.9 (2026-11-02; built in stages on the corwin branch; checked: tests/run.sh,
+ the project-files check, the browser kit and the embedding kit green, with their
+ planted faults; see RESULT.txt and RESULT-embed.txt in tests/browser/; no release
+ packed or signed yet)
+--- topoforge-1.11/README.org
++++ topoforge-1.12/README.org
+@@ -68,6 +68,10 @@
+ - New in 1.11: the map's pad (=mappad=: a drawn slider for the mode, an arm
+   for the scale, a grip; =padArrows('pan')= to pan instead) and Reset layout
+   (=reset=, =resetLayout()=, =undoReset()=).
++- New in 1.12: the card that fills the map (=bigcard=: its words as large as
++  fit, large art or a picture of the page's own origin, a box score or lines,
++  several matches as pages, =cardPage()=) and the pad that pages it
++  (=cardpad=: it turns 45 degrees and changes colour while a card shows).
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+--- topoforge-1.11/RECIPE.org
++++ topoforge-1.12/RECIPE.org
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.11: Bryant's v1.5 plus our changes (1.6 to 1.11) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, then =1.10-to-1.11= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
++| =index.html=                  | v1.12: Bryant's v1.5 plus our changes (1.6 to 1.12) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, then =1.11-to-1.12= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+--- topoforge-1.11/spec/EMBED-v1.md
++++ topoforge-1.12/spec/EMBED-v1.md
+@@ -2,7 +2,7 @@
+ SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ -->
+-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10 and 1.11)
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11 and 1.12)
+ 
+ topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
+ This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
+@@ -341,6 +341,84 @@
+ `{ parts, undone: true, undo: false }` for an undo, so the page can reset its own frames too (RS3). Without
+ the switch the menus are as in 1.10 (RS4).
+ 
++## Added in 1.12 (still v1): the card that fills the map, and the pad that pages it
++
++From Corwin's words of 2026-11-03 ("the feature is way upstream from obsmage"): the words in the map's card
++should be larger, "fill as much space as that gives"; "Why no images? This is supposed to be the baseball or
++flashcard or scoreboard or boxscore highlights, or several of these paginated"; and the pad could page them,
++"changing the color and maybe even rotating the dpad 45deg so it's clear something happened".
++
++Two new switch words, `bigcard` and `cardpad`, off unless a page asks and in neither `all` nor `bare` (W1).
++Nothing 1.11 promised changes: a page opened on its own draws the same pixels as 1.11 (S1), and so does a page
++with every 1.11 switch on and 1.10's card shown, as long as it has not asked for the new ones (S6).
++
++### The card that fills the map: `bigcard`
++
++`bigcard` turns `preview` on too. While a card shows (in the `cards` and `both` modes):
++
++- **Its words are as large as fit**, found by measuring. The app tries sizes from 1.10's (the floor: a
++  12.5-pixel title, 11-pixel facts and statement) up to four times them (the ceiling: a 50-pixel title) and
++  draws the largest at which nothing is cut. It fits again whenever the map's box changes size (its handles,
++  Position, the window, the pages box) and whenever the map is redrawn (the map's scale, the theme, the
++  drawing) (BC1, BC2).
++- **The art is large**: a panel beside the words (42% of the card's width, as far as its height allows) or
++  above them (42% of its height, as far as its width allows), whichever lets the words be larger; in the map's
++  first size, 190 by 130 pixels, it is a third of the card. It is the shape's own picture, the one `shapes()`
++  gives; for several matches, their pictures side by side (up to four), which is what `art: 'matches'` means
++  with `bigcard`. A card with no picture at all (`art: 'none'`, or nothing on this page) gives the words the
++  whole card (BC3).
++- **A picture from the page**: `card.art` may be `{ src, alt }`. It is shown only when `src` resolves to a URL
++  of the app's own origin over http or https; never another host, a `//host/` path, `data:`, `blob:`,
++  `javascript:` or `file:`, and nothing at all when the app is opened from `file://`. It is an `<img>` whose
++  `alt` is the page's words (the card's title when it gives none), never markup. Nothing is asked of another
++  host, so the app stays within its own content security policy and an embedding page's. A picture that fails
++  to load gives way to the shape's own. Without `bigcard`, `{ src }` is ignored, as in 1.10 (BC4).
++- **A box score, or lines**: the facts are cells, each a label in small capitals over its value, side by side,
++  when they fit at 1.10's size or larger; otherwise they are lines, label and value on one line. In a map too
++  small for every fact at 1.10's size, the last facts (and then the statement) are left out, not cut. When the
++  page gives no facts, the app's are the kind and the shape's own fields: host name, IP address, VLAN, status,
++  vendor, model, subnet (BC5).
++- **Several matches are pages.** The first page is the card 1.10 shows (the page's card, or the app's summary);
++  then comes one card for each match, in drawing order (or in the page's order when it named them by id or
++  ref), each with the match's name, picture, kind and fields, and its tooltip as the statement. The card shows
++  "2 of 5" at its top right. There are 9 pages at most: the house number 9, the first card and eight matches.
++  A person turns them one at a time, so past nine they should narrow the search instead, and "9 of 9" keeps the
++  pad's readout to one digit. The first card then says "As cards: 8 of N". In `both` mode the drawing lights
++  every match on the first page and only that match on its own page (BC6, BC7).
++- `TopoForge.cardPage()` reads `{ page, pages, title }` (`page` counts from 1; `pages` is 0 when no big card
++  shows). `cardPage(n)`, `'next'`, `'previous'`, `'first'` or `'last'` turns to that page and returns the same,
++  or `false` (no card, past either end, any other word). Each turn is said in the live region ("Card 2 of 5:
++  Edge Router.") and sends `topoforge:cardpage` `{ page, pages, title, ids }`. Each `preview()` starts on page 1
++  (BC6).
++- With `bigcard`, `topoforge:preview` (and the value `preview()` returns) also carries `page`, `pages` and
++  `cards`, every page's card, text only; without it the message is 1.10's, field for field (BC9).
++- On a screen 860 pixels wide or less, where the map is hidden, the map shows while a card does: a sheet along
++  the drawing's foot, 8 pixels in from its sides and foot, 42% of its height (from 150 to 340 pixels). With the
++  card gone it is hidden again. The map's handles are not shown there (BC8).
++- `TopoForge.embed({ bigcard: false })` puts 1.10's card back (BC10).
++
++### The pad that pages the cards: `cardpad`
++
++`cardpad` turns `bigcard` and `mappad` on (and so `preview` and `map`). While a big card shows:
++
++- the pad **turns 45 degrees** (a 0.2-second turn, and back again; at once when reduced motion is asked) and its
++  arms take the accent colour, their glyphs at least 4.5 to 1 against it (CP2, CP8);
++- its slider is put away, and its arms page the cards: **the upper arms go back, the lower arms forward**. Left
++  (‹) is the previous card and up («) the first; right (›) is the next and down (») the last. The centre shows
++  "2 of 5" and, pressed, says the card again. On those arms ← and → also turn one card, and Home and End go to
++  the first and the last. An arm with nowhere to go says so and does nothing. The map's mode and scale are not
++  touched; the map's Mode menu still sets them (CP3, CP7);
++- every cell's tooltip (`title`) and accessible name say its job ("First card: 1 of 5", "Next card: 3 of 5",
++  "Card 2 of 5: Edge Router. Press to hear it again"; the grip keeps "Move the overview map ..."), and the pad's
++  own name says it is turned (CP4);
++- the turn is said in the live region ("Map pad turned: it pages the cards, 1 of 5. ..."), and a focus that was
++  on the slider goes to the next-card arm (CP2, CP5).
++
++When the card goes (cleared, or the mode set to `rings`), the pad is exactly its 1.11 self again: the same
++markup 1.11 draws, no tooltip or colour left behind, the focus back on the slider if it was on an arm that is
++put away; that is said too ("Map pad back: ...") (CP1, CP6). Without `cardpad` the pad never turns (CP9).
++`topoforge:cardpage`, like every message, reaches a parent page of the app's own origin only (E11).
++
+ ## Page tabs that do not fit (1.9, everywhere)
+ 
+ This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
+--- topoforge-1.11/tests/browser/embed-prove-red.sh
++++ topoforge-1.12/tests/browser/embed-prove-red.sh
+@@ -4,7 +4,7 @@
+ # Corwin Brust <corwin@bru.st> and Contributors
+ # Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
+ #
+-# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the 1.8 switches.
++# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.12).
+ # A control run on the file as given must be green first. Then each plant changes a COPY of index.html
+ # in one place, the kit runs on the copy, and the check named for that plant must be among those that
+ # fail (a plant may trip others too: the standalone ones watch the whole page).
+@@ -108,6 +108,47 @@
+ #   reset-silent   the page is not told of a reset        -> RS3
+ #   reset-always   Reset layout in the menus with no switch -> RS4
+ #   any-origin-111 postMessage to '*', the new messages   -> E10
++# 1.12:
++#   bc-leak        a big-card rule reaches 1.10's card     -> S6
++#   bc-implies     bigcard leaves preview off             -> BC1
++#   bc-unfitted    the words stay at 1.10's size          -> BC1
++#   bc-overflow    the size chosen is past what fits      -> BC1
++#   bc-below-floor the words may shrink below 1.10's size -> BC1
++#   bc-ceiling     the ceiling is 9, not 4                -> BC2
++#   bc-no-refit    a new size of the map is not fitted    -> BC2
++#   bc-small-art   the art is 40 pixels again             -> BC3
++#   bc-no-mosaic   several matches: no pictures side by side -> BC3
++#   bc-any-host    a picture from another host is taken   -> BC4
++#   bc-img-markup  the picture is written as markup       -> BC4
++#   bc-no-alt      a picture without alt has none         -> BC4
++#   bc-no-box      never a box score                      -> BC5
++#   bc-cut         facts that do not fit are cut, not left out -> BC5
++#   bc-no-pages    several matches make one card          -> BC6
++#   bc-page-silent a turn of the page is not told         -> BC6
++#   bc-page-unsaid a turn of the page is not said         -> BC6
++#   bc-hi-all      a match's card lights every match      -> BC6
++#   bc-no-cap      the pages do not stop at 9             -> BC7
++#   bc-phone-hidden on a phone the card stays hidden       -> BC8
++#   bc-msg-always  pages told without bigcard             -> BC9
++#   bc-off-stays   bigcard turned off keeps the big card  -> BC10
++#   cp-implies     cardpad turns nothing else on          -> CP1
++#   cp-no-turn     the pad does not turn                  -> CP2
++#   cp-same-colour the pad keeps its colour               -> CP2
++#   cp-focus-stays the focus is lost with the slider      -> CP2
++#   cp-arms-old    the arms keep their 1.11 jobs          -> CP3
++#   cp-centre-mute the centre says nothing                -> CP3
++#   cp-no-titles   the cells get no tooltip               -> CP4
++#   cp-unsaid      the turn is not said                   -> CP5
++#   cp-stays-turned the pad stays turned after the card    -> CP6
++#   cp-title-left  the tooltips are left behind           -> CP6
++#   cp-focus-lost  the focus is lost when the card goes   -> CP6
++#   cp-back-unsaid the return is not said                 -> CP6
++#   cp-snaps-back  the pad turns back at once, not briefly -> CP6
++#   cp-no-keys     the keys do not page                   -> CP7
++#   cp-glides-reduced the turn moves with reduced motion  -> CP8
++#   cp-unasked     the pad turns without cardpad          -> CP9
++#   any-origin-112 postMessage to '*', the new messages   -> E11
++#   cp-no-names    the turned arms have no names           -> X4
+ # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
+ #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
+ # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
+@@ -212,8 +253,8 @@
+ plant rings-cap-in   MM2 's@cap.hidden = !(rings \&\& MAPCAP);@cap.hidden = !rings;@'
+ plant card-no-fade   MM3 's@^#minimap.mm-carded #mmSvg{opacity:.14}$@@'
+ plant mode-moves-map MM3 's@^  MAPMODE = mode; MAPCAP = cap;$@  MAPMODE = mode; MAPCAP = cap; if (MMW) { MMW.w = 190; MMW.h = 130; mmApply(); }@'
+-plant both-no-hi     MM4 "s@drawHighlight(MAPMODE === 'both' ? hits : null);@drawHighlight(null);@"
+-plant both-no-clear  MM4 's@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); return true; }@'
++plant both-no-hi     MM4 "s@drawHighlight(MAPMODE === 'both' ? (deck ? deck\[PREVIEW.page\].hits : hits) : null);@drawHighlight(null);@"
++plant both-no-clear  MM4 's@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); padCard(false); return true; }@if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); padCard(false); return true; }@'
+ plant card-markup    MM5 "s@el.querySelector('.mc-t').textContent = card.title || '';@el.querySelector('.mc-t').innerHTML = card.title || '';@"
+ plant menu-dead      MM6 "s@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: set('rings') }@{ label: 'Rings: matches ringed in the map', checked: MAPMODE === 'rings', action: () => {} }@"
+ plant hi-faint       MM7 's@rx="10" fill="${c}" fill-opacity=".10" stroke="${c}"@rx="10" fill="${c}" fill-opacity=".10" stroke="#e5e7eb"@'
+@@ -239,5 +280,46 @@
+ plant reset-silent   RS3 "s@^  if (EMBED.reset) tell('topoforge:reset', { parts: RESET_PARTS, undo: true });\$@@"
+ plant reset-always   RS4 's@function resetItems() { return EMBED.reset ?@function resetItems() { return true ?@'
+ plant any-origin-111 E10 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
++# 1.12
++plant bc-leak        S6  's@^#minimap .mm-card.mc-big{gap:8px;padding:8px;--mck:1}$@#minimap .mm-card{gap:8px;padding:8px;--mck:1}@'
++plant bc-implies     BC1 's@^    if (EMBED.bigcard) EMBED.preview = true;   // 1.12: the card is the preview.s$@@'
++plant bc-unfitted    BC1 "s@cardForm(el, best.f); el.style.setProperty('--mck', String(best.k));@cardForm(el, best.f); el.style.setProperty('--mck', '1');@"
++plant bc-overflow    BC1 's@^  return Math.floor(lo \* 100) / 100;$@  return Math.ceil(hi * 100) / 100 + 0.05;@'
++plant bc-below-floor BC1 's@^  if (!at(1)) return null;$@  if (!at(0.6)) return null;@; s@^  let lo = 1, hi = CARD_KMAX;$@  let lo = 0.6, hi = CARD_KMAX;@'
++plant bc-ceiling     BC2 's@^const CARD_KMAX = 4, CARD_CAP = 9;@const CARD_KMAX = 9, CARD_CAP = 9;@'
++plant bc-no-refit    BC2 "s@_cardRO = new ResizeObserver(() => refitCard()); _cardRO.observe(\$('#minimap'));@_cardRO = {};@"
++plant bc-small-art   BC3 "s@el.style.setProperty('--mcaw', Math.round(Math.max(24, Math.min(H - 2 \* pad, (W - 2 \* pad - gap) \* 0.42))) + 'px');@el.style.setProperty('--mcaw', '40px');@"
++plant bc-no-mosaic   BC3 "s@const ownOf = a => a === 'matches' \&\& hits.length ? mosaicSVG(hits, aspect) : artSVG(a, hits);@const ownOf = a => artSVG(a, hits);@"
++plant bc-any-host    BC4 's@if (u.origin !== location.origin || !/^https?:\$/.test(u.protocol)) return null;@if (!/^https?:$/.test(u.protocol)) return null;@'
++plant bc-img-markup  BC4 "s@box.textContent = ''; const im = document.createElement('img'); im.alt = alt; im.decoding = 'async';@box.innerHTML = '<img alt=\"' + alt + '\">'; const im = box.querySelector('img'); im.decoding = 'async';@"
++plant bc-no-alt      BC4 "s@const alt = a.alt || card.title || 'Picture for this card', old@const alt = a.alt || '', old@"
++plant bc-no-box      BC5 "s@for (const f of \[\['mc-side', 'mc-box'\], \['mc-stack', 'mc-box'\], \['mc-side', 'mc-lines'\], \['mc-stack', 'mc-lines'\]\]) {@for (const f of [['mc-side', 'mc-lines'], ['mc-stack', 'mc-lines']]) {@"
++plant bc-cut         BC5 's@for (; drop <= facts.length + 1 \&\& !best; drop++) {@for (; drop <= 0 \&\& !best; drop++) {@'
++plant bc-no-pages    BC6 's@^  if (ord.length <= 1) return \[{ card: cover, hits }\];$@  return [{ card: cover, hits }];@'
++plant bc-page-silent BC6 "s@^    tell('topoforge:cardpage'.*\$@@"
++plant bc-page-unsaid BC6 's@^    flSay(`Card ${j + 1} of ${n}: ${t}.`);$@@'
++plant bc-hi-all      BC6 "s@drawHighlight(MAPMODE === 'both' ? (deck ? deck\[PREVIEW.page\].hits : hits) : null);@drawHighlight(MAPMODE === 'both' ? hits : null);@"
++plant bc-no-cap      BC7 's@^  const shown = ord.slice(0, CARD_CAP - 1);$@  const shown = ord;@'
++plant bc-phone-hidden BC8 's@^  body.tf-bigcard #minimap.mm-carded:not(.hidden){display:block}$@@'
++plant bc-msg-always  BC9 's@...(r.pages ? { page: r.page, pages: r.pages, cards: r.cards } : {})@page: r.page, pages: r.pages, cards: r.cards@'
++plant bc-off-stays   BC10 "s@^  if (el \&\& el.classList.contains('mc-big')) { el.remove(); el = null; }   // 1.12: bigcard was turned off\$@@"
++plant cp-implies     CP1 's@^    if (EMBED.cardpad) { EMBED.bigcard = true; EMBED.mappad = true; }.*$@@'
++plant cp-no-turn     CP2 's@^#mmPad.mp-cardmode{transform:translateY(-50%) rotate(45deg);transition:transform .2s ease}$@#mmPad.mp-cardmode{transition:transform .2s ease}@'
++plant cp-same-colour CP2 's@^#mmPad.mp-cardmode .mp-b:not(.mp-grip){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}$@@'
++plant cp-focus-stays CP2 "s@^    if (f === PAD.sl) el.querySelector('.mp-e').focus();.*\$@@"
++plant cp-arms-old    CP3 "s@PAD.el.addEventListener('click', e => {   // the capture phase@PAD.el.addEventListener('noclick', e => {   // the capture phase@"
++plant cp-centre-mute CP3 "s@^    if (b.classList.contains('mp-c')) { cardSay(); return; }\$@    if (b.classList.contains('mp-c')) { return; }@"
++plant cp-no-titles   CP4 "s@b.setAttribute('aria-label', label); b.title = label; b.disabled = false;@b.setAttribute('aria-label', label); b.disabled = false;@"
++plant cp-unsaid      CP5 's@^    flSay(`Map pad turned.*$@@'
++plant cp-stays-turned CP6 "s@^  el.classList.remove('mp-cardmode'); if (!el.classList.length) el.removeAttribute('class');@  if (!el.classList.length) el.removeAttribute('class');@"
++plant cp-title-left  CP6 "s@^  for (const b of el.querySelectorAll('.mp-b')) { b.removeAttribute('title'); b.removeAttribute('aria-disabled'); }\$@@"
++plant cp-focus-lost  CP6 "s@^  if (el.contains(f) \&\& (f.offsetParent === null || f.disabled)) (PADARROWS === 'pan' ? c : PAD.sl).focus();\$@@"
++plant cp-back-unsaid CP6 "s@^  if (!el.hidden) flSay('Map pad back.*\$@@"
++plant cp-snaps-back  CP6 "s@if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('mp-unturn');@if (false) { el.classList.add('mp-unturn');@"
++plant cp-no-keys     CP7 "s@PAD.el.addEventListener('keydown', e => {   // and on the arms@PAD.el.addEventListener('nokey', e => {   // and on the arms@"
++plant cp-glides-reduced CP8 's|^@media (prefers-reduced-motion:reduce){#mmPad.mp-cardmode,#mmPad.mp-unturn{transition:none}}$||'
++plant cp-unasked     CP9 's@const on = !!want \&\& EMBED.cardpad \&\& EMBED.mappad \&\& !PAD.el.hidden;@const on = !!want \&\& EMBED.mappad \&\& !PAD.el.hidden;@'
++plant cp-no-names    X4  "s@b.setAttribute('aria-label', label); b.title = label;@b.removeAttribute('aria-label');@"
++plant any-origin-112 E11 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+ [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
+ exit $bad
+--- topoforge-1.11/tests/browser/embed.browser.mjs
++++ topoforge-1.12/tests/browser/embed.browser.mjs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 checks 2026-11-03.
+ //
+-// embed.browser.mjs -- the embedding switches (1.8 to 1.11) in real Chromium, held to spec/EMBED-v1.md.
++// embed.browser.mjs -- the embedding switches (1.8 to 1.12) in real Chromium, held to spec/EMBED-v1.md.
+ //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+ //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+ //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+@@ -34,7 +34,7 @@
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+ // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+-const VER = '1.11', PREV = '1.10';
++const VER = '1.12', PREV = '1.11';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -45,7 +45,7 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+@@ -53,7 +53,7 @@
+   return cur;
+ }
+ let v17, v18;
+-try { v17 = rebuild(5); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
++try { v17 = rebuild(6); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -61,9 +61,10 @@
+ const parentPage = (src) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>parent</title></head><body style="margin:0">
+ <iframe id="f" title="the app" src="${src}" style="border:0;width:1200px;height:800px"></iframe>
+ <script>window.got = []; addEventListener('message', e => window.got.push({ origin: e.origin, data: e.data }));</script></body></html>`;
++const reqLog = [];   // 1.12: every request each server saw, 'port path', so a check can say nothing went to the other host
+ const serve = () => new Promise(ok => {
+   const s = http.createServer((q, r) => {
+-    const u = new URL(q.url, 'http://x'); const f = routes[u.pathname];
++    const u = new URL(q.url, 'http://x'); const f = routes[u.pathname]; reqLog.push(s.address().port + ' ' + u.pathname);
+     if (u.pathname === '/parent.html') { r.setHeader('content-type', 'text/html'); r.end(parentPage(u.searchParams.get('src'))); return; }
+     if (!f) { r.statusCode = 404; r.end('not found'); return; }
+     r.setHeader('content-type', f.type); r.end(f.body);
+@@ -115,6 +116,16 @@
+     routes['/fixture.json'] = { type: 'application/json', body: json };
+     // 1.9: sixty pages, more tabs than fit, for the page-tab checks (S4, T)
+     routes['/many.json'] = { type: 'application/json', body: await p.evaluate(() => { const d = newDoc(); d.name = 'Many pages'; d.pages = Array.from({ length: 60 }, (x, i) => newPage(`Page ${i + 1} ${['of the shop', 'hosts', 'a longer name for a page', 'paths'][i % 4]}`)); d.cur = 0; return JSON.stringify(d); }) };
++    // 1.12: the same two shapes with their own fields (the back of a card), and ten servers (more matches than the 9 pages hold)
++    routes['/rich.json'] = { type: 'application/json', body: await p.evaluate(() => {
++      DOC = newDoc(); DOC.name = 'Rich fixture'; DOC.pages[0].name = 'First page'; S.sel.clear(); reindex(); buildPages();
++      edit(() => { const a = makeNode('router', 0, 0, { text: 'Edge Router' }), b = makeNode('switch', 300, 0, { text: 'Core Switch' }); a.data.what = 'Where the shop meets the internet.';
++        Object.assign(a.props, { hostname: 'gw4', ip: '203.0.113.1', vlan: '1', status: 'up', vendor: 'Ubiquiti' }); Object.assign(b.props, { hostname: 'sw1', vlan: '20' });
++        P().nodes.push(a, b); P().links.push(makeLink({ id: a.id, port: null }, { id: b.id, port: null }));
++        for (let i = 1; i <= 10; i++) P().nodes.push(makeNode('server', (i - 1) % 5 * 160, 260 + Math.floor((i - 1) / 5) * 160, { text: 'Server ' + i })); });
++      return snapshot(); }) };
++    routes['/card.png'] = { type: 'image/png', body: Buffer.from(await p.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d');
++      g.fillStyle = '#0f766e'; g.fillRect(0, 0, 96, 96); g.fillStyle = '#ffffff'; g.fillRect(24, 24, 48, 48); return c.toDataURL('image/png').split(',')[1]; }), 'base64') };
+     await c.close(); }
+ 
+   // ---- S: standalone, no switch: the same as the version before ----
+@@ -130,11 +141,22 @@
+     if (w === 1400 && !dark) {
+       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
+       check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
+-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi', '#mmPad'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
++      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi', '#mmPad', '.mc-big', '.mp-cardmode', '.tf-bigcard'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+       check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
+     }
+     await a.c.close(); await b.c.close();
+   }
++  // 1.12: with every 1.11 switch on and 1.10's card shown (the pad shown beside it), 1.12 draws the same pixels as 1.11
++  for (const dark of [false, true]) {
++    const u = '?embed=map,preview,mappad,reset,mapwheel&load=/rich.json';
++    const a = await open(A + '/v17.html' + u, { dark, settle: 1200 }), b = await open(A + '/index.html' + u, { dark, settle: 1200 });
++    for (const x of [a, b]) { await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++      await x.p.evaluate(() => TopoForge.preview({ category: 'net' })); const m = await boxOf(x.p, '#minimap'); await x.p.mouse.move(m.x - 30, m.y + 20); await x.p.waitForTimeout(500); }
++    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
++    fs.writeFileSync(path.join(outdir, `switches111-${PREV}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `switches111-${VER}-${dark ? 'dark' : 'light'}.png`), ib);
++    check(`S6 every 1.11 switch on (map, preview, mappad, reset, mapwheel), 1.10's card and the pad shown, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV} (the new switches are off)`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
++    await a.c.close(); await b.c.close();
++  }
+ 
+   // ---- F, P, H, M: each switch ----
+   { const { c, p } = await open(A + '/index.html?embed=frameless');
+@@ -375,8 +397,8 @@
+   // W1: 'all' and 'bare' mean what they meant in 1.8
+   { const { c, p } = await open(A + '/index.html?embed=all,bare');
+     const w = await p.evaluate(() => TopoForge.embed());
+-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];
+-    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.11 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
++    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];
++    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.12 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset, bigcard, cardpad); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+     await c.close(); }
+   // E8: the new messages never reach a parent of another origin
+   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
+@@ -687,9 +709,161 @@
+   { const r = await parentRun(B, A + '/index.html?embed=mappad,reset&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.mapScale(2); TopoForge.resetLayout(); }); });
+     check('E10 topoforge:mapscale, topoforge:mapmode and topoforge:reset never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
+ 
++  // ======== 1.12: the card that fills the map (bigcard), and the pad that pages it (cardpad) ========
++  // read in the page with the kit's own code, not the app's: how big the words are, and what of the card is cut or outside it
++  const CARD_READ = `(() => {
++    const m = document.querySelector('#minimap'), el = m.querySelector('.mm-card'), R = e => { const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, r: b.right, b: b.bottom }; };
++    const mb = R(m); if (!el || el.hidden || getComputedStyle(m).display === 'none') return { shown: false, map: mb };
++    const cb = R(el), px = s => { const e = el.querySelector(s); return e ? parseFloat(getComputedStyle(e).fontSize) : 0; };
++    const cut = () => { const out = [];
++      for (const e of el.querySelectorAll('.mc-x, .mc-t, .mc-n, .mc-f, .mc-f dt, .mc-f dd, .mc-s')) { if (e.closest('[hidden]') || !e.getClientRects().length) continue;
++        const b = R(e); if (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1 || b.x < cb.x - 1 || b.r > cb.r + 1 || b.y < cb.y - 1 || b.b > cb.b + 1) out.push(e.className || e.tagName); }
++      return out; };
++    const k = +getComputedStyle(el).getPropertyValue('--mck'), cut0 = cut();
++    el.style.setProperty('--mck', String(k + 0.03)); const cutUp = cut(); el.style.setProperty('--mck', String(k));
++    const a = el.querySelector('.mc-a'), ab = R(a), shownA = getComputedStyle(a).display !== 'none';
++    const facts = [...el.querySelectorAll('.mc-f>div')].map(d => { const t = d.querySelector('dt'), v = d.querySelector('dd'), tb = R(t), vb = R(v); return { t: t.textContent, v: v.textContent, hidden: d.hidden, over: tb.b <= vb.y + 1, line: Math.abs((tb.y + tb.b) / 2 - (vb.y + vb.b) / 2) < 3 }; });
++    return { shown: true, big: el.classList.contains('mc-big'), cls: el.className, map: mb, card: cb, k, cut0, cutUp, title: el.querySelector('.mc-t').textContent, pager: (el.querySelector('.mc-n') || {}).textContent || '', st: el.querySelector('.mc-s').textContent,
++      fonts: { t: px('.mc-t'), dt: px('.mc-f dt'), dd: px('.mc-f dd'), s: px('.mc-s') }, art: shownA ? { w: ab.w, h: ab.h, share: ab.w * ab.h / (cb.w * cb.h), svg: a.querySelector(':scope>svg') ? a.querySelector(':scope>svg').outerHTML : '', inner: a.querySelectorAll(':scope>svg>svg').length, img: a.querySelector('img') ? { src: a.querySelector('img').getAttribute('src'), alt: a.querySelector('img').alt, ok: a.querySelector('img').complete && a.querySelector('img').naturalWidth > 0 } : null, hidden: a.getAttribute('aria-hidden') } : null,
++      facts, hi: document.querySelectorAll('#tfHi rect').length, live: (document.querySelector('#flLive') || {}).textContent || '' };
++  })()`;
++  const cardRead = p => p.evaluate(CARD_READ);
++  const iconOf = (p, kind) => p.evaluate(k => { const t = document.createElement('div'); t.innerHTML = TopoForge.shapes().flatMap(c => c.shapes).find(s => s.id === k).icon; return t.firstElementChild.outerHTML; }, kind);
++  const idOf = (p, name) => p.evaluate(n => P().nodes.find(x => x.text === n).id, name);
++  const fitted = c => c.shown && c.big && c.k >= 1 && c.cut0.length === 0 && (c.k >= 4 || c.cutUp.length > 0) && c.fonts.t >= 12.5 && c.fonts.dt >= 11 && c.fonts.dd >= 11 && (!c.st || c.fonts.s >= 11);
++  { const { c, p } = await open(A + '/index.html?embed=bigcard&load=/rich.json');
++    at = 'BC1'; const sw = await p.evaluate(() => TopoForge.embed());
++    const r0 = await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); const c0 = await cardRead(p);
++    check('BC1 bigcard (it turns preview on): the card fills the map, its words as large as fit, found by measuring: at the size chosen nothing is cut, 3 hundredths larger something is (or it is at the ceiling, 4); never smaller than 1.10\'s (title 12.5 px, facts 11 px)',
++      sw.bigcard && sw.preview && !sw.map && fitted(c0) && Math.abs(c0.card.w - c0.map.w) <= 2 && Math.abs(c0.card.h - c0.map.h) <= 2 && r0.pages === 1, JSON.stringify({ sw: { bigcard: sw.bigcard, preview: sw.preview }, c0: { ...c0, art: c0.art && { ...c0.art, svg: c0.art.svg.length } } }));
++    at = 'BC3'; const icon = await iconOf(p, 'router');
++    const r1 = await p.evaluate(() => TopoForge.preview({ category: 'net' })); const c1 = await cardRead(p);
++    check('BC3 the art is the shape\'s own picture (the same as shapes() gives), a real share of the card: at least a fifth of it, and more than 1.5 times 1.10\'s 40 pixels each way; several matches show their pictures side by side',
++      c0.art && c0.art.svg === icon && c0.art.share >= 0.2 && c0.art.w > 60 && c0.art.h > 60 && c0.art.hidden === 'true' && c1.art && c1.art.inner === 2 && r1.pages === 3, JSON.stringify({ a0: { ...c0.art, svg: c0.art && c0.art.svg.slice(0, 40) }, same: c0.art && c0.art.svg === icon, a1: c1.art && { inner: c1.art.inner, share: c1.art.share } }));
++    at = 'BC8'; await p.evaluate(() => TopoForge.preview(null)); await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(250);
++    const n0 = await cardRead(p), hid0 = await p.evaluate(() => getComputedStyle(document.querySelector('#minimap')).display);
++    await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); await p.waitForTimeout(250); const n1 = await cardRead(p);
++    const st = await boxOf(p, '#stage'); await p.evaluate(() => TopoForge.preview(null)); const hid1 = await p.evaluate(() => getComputedStyle(document.querySelector('#minimap')).display);
++    check('BC8 on a phone-wide screen (390 pixels), where the map is hidden, the map shows while a card does, as a sheet along the drawing\'s foot (8 pixels in), the card fitted in it; with the card gone it is hidden again',
++      hid0 === 'none' && fitted(n1) && Math.abs(n1.map.x - (st.x + 8)) <= 1 && Math.abs(n1.map.r - (st.x + st.w - 8)) <= 1 && Math.abs(n1.map.b - (st.y + st.h - 8)) <= 1 && n1.map.h >= 150 && hid1 === 'none',
++      JSON.stringify({ hid0, n1: { map: n1.map, k: n1.k, cut0: n1.cut0 }, st, hid1 }));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json');
++    at = 'BC2'; await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); const a0 = await cardRead(p);
++    const sz = await boxOf(p, '#mmwrap .mm-size'); await p.mouse.move(sz.x + sz.w / 2, sz.y + sz.h / 2); await p.mouse.down(); await p.mouse.move(sz.x - 240, sz.y - 150, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(250);
++    const a1 = await cardRead(p);
++    await p.click('#mmwrap .mm-pos'); await p.click('.menu .mi:has-text("Smaller")'); await p.waitForTimeout(300); const a2 = await cardRead(p);
++    await p.evaluate(() => TopoForge.mapScale(2)); await p.waitForTimeout(250); const a3 = await cardRead(p);
++    await p.evaluate(i => TopoForge.preview([i], { card: { title: 'Up', facts: [['N', '1']], statement: 'Short.', art: 'none' } }), await idOf(p, 'Edge Router')); await p.evaluate(() => TopoForge.mapScale(1));
++    for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); }
++    await p.waitForTimeout(300); const a4 = await cardRead(p);
++    check('BC2 it fits again when the map changes size: dragging the resize handle larger makes the words larger, Position, Smaller smaller, and the map\'s own scale changes nothing it needs; a short card in a large map stops at the ceiling, 4 times 1.10\'s sizes (a 50-pixel title)',
++      [a0, a1, a2, a3].every(fitted) && a1.map.w > a0.map.w + 100 && a1.k > a0.k && a2.k < a1.k && a3.k === a2.k && a4.k === 4 && a4.fonts.t === 50 && a4.cut0.length === 0,
++      JSON.stringify([a0, a1, a2, a3, a4].map(x => ({ map: [Math.round(x.map.w), Math.round(x.map.h)], k: x.k, cls: x.cls, cut0: x.cut0, cutUp: (x.cutUp || []).length, t: (x.fonts || {}).t }))));
++    at = 'BC5'; await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); await p.waitForTimeout(200); const big = await cardRead(p);
++    await p.click('#mmwrap .mm-pos'); await p.click('.menu .mi:has-text("Back to its starting place")'); await p.waitForTimeout(350); const small = await cardRead(p);
++    const shownF = x => x.facts.filter(f => !f.hidden), hidF = x => x.facts.map(f => f.hidden);
++    check('BC5 with room the facts are a box score (each a cell, its label over its value; cells side by side); in the small map they are lines (label and value on one line); nothing shown is cut, and facts that do not fit at 1.10\'s size are left out from the end, not cut',
++      /mc-box/.test(big.cls) && shownF(big).length === 6 && shownF(big).every(f => f.over) && fitted(big) && /mc-lines/.test(small.cls) && shownF(small).length >= 1 && shownF(small).every(f => f.line) && fitted(small) &&
++      hidF(small).indexOf(true) !== -1 && hidF(small).slice(hidF(small).indexOf(true)).every(Boolean) && shownF(big)[2].t === 'IP address' && shownF(big)[2].v === '203.0.113.1',
++      JSON.stringify({ big: { cls: big.cls, k: big.k, facts: big.facts }, small: { cls: small.cls, k: small.k, facts: small.facts, cut0: small.cut0 } }));
++    at = 'BC10'; const off = await p.evaluate(() => { TopoForge.embed({ bigcard: false }); const el = document.querySelector('#minimap .mm-card'), a = el.querySelector('.mc-a').getBoundingClientRect(); return { big: el.classList.contains('mc-big'), body: document.body.classList.contains('tf-bigcard'), art: [Math.round(a.width), Math.round(a.height)], preview: TopoForge.embed().preview }; });
++    const on = await p.evaluate(() => { TopoForge.embed({ bigcard: true }); return document.querySelector('#minimap .mm-card').classList.contains('mc-big'); });
++    check('BC10 TopoForge.embed({ bigcard: false }) puts 1.10\'s card back (its 40-pixel picture), and { bigcard: true } the big one again', !off.big && !off.body && off.art.join() === '40,40' && off.preview && on, JSON.stringify({ off, on }));
++    await c.close(); }
++  // BC4: a picture the page gives: this origin only, an <img> with alt text; nothing asked of another host
++  { const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json'); const asked = []; p.on('request', q => asked.push(q.url()));
++    at = 'BC4'; const id = await idOf(p, 'Edge Router'), Bp = new URL(B).port;
++    for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); }
++    const show = async art => { await p.evaluate(([i, a]) => TopoForge.preview([i], { card: { title: 'The edge "<b>x</b>"', art: a } }), [id, art]); await p.waitForTimeout(400); return cardRead(p); };
++    const own = await show({ src: '/card.png', alt: 'Green square "><b>bold</b>' }), noAlt = await show({ src: A + '/card.png?2' });
++    const refused = []; for (const src of [B + '/card.png', '//127.0.0.1:' + Bp + '/card.png', 'data:image/png;base64,iVBORw0KGgo=', 'javascript:alert(1)', 'file:///etc/hosts']) { const x = await show({ src, alt: 'no' }); refused.push(!x.art.img && x.art.svg.length > 0); }
++    const gone = await show({ src: '/missing.png', alt: 'Not there' }); await p.waitForTimeout(300); const gone2 = await cardRead(p);
++    const marks = await p.evaluate(() => document.querySelectorAll('#minimap .mm-card b').length);
++    const off = await p.evaluate(i => { TopoForge.embed({ bigcard: false }); TopoForge.preview([i], { card: { art: { src: '/card.png', alt: 'x' } } }); const r = !!document.querySelector('#minimap .mm-card img'); TopoForge.embed({ bigcard: true }); return r; }, id);
++    const other = asked.filter(u => u.includes(':' + Bp + '/')).concat(reqLog.filter(l => l.startsWith(Bp + ' /card')));
++    check('BC4 a picture the page gives (art: { src, alt }) is shown in an <img> only from this page\'s own origin, with its alt text (the title when it gives none), and loads; another host, a host-relative //, data:, javascript: and file: are refused (the shape\'s own picture instead) and nothing is asked of another host; a picture that fails gives way to the shape\'s; markup stays text; without bigcard there is no <img>',
++      own.art.img && own.art.img.src === A + '/card.png' && own.art.img.alt === 'Green square "><b>bold</b>' && own.art.img.ok && own.art.hidden === null && noAlt.art.img && noAlt.art.img.alt === 'The edge "<b>x</b>"' &&
++      refused.every(Boolean) && !gone2.art.img && gone2.art.svg.length > 0 && marks === 0 && other.length === 0 && !off,
++      JSON.stringify({ own: own.art.img, noAlt: noAlt.art.img && noAlt.art.img.alt, refused, gone: { img: gone2.art.img, svg: gone2.art.svg.length > 0 }, marks, other, off }));
++    await c.close(); }
++  // BC6, BC7, BC9: pages, and what the page is told
++  { const BX = {}; const r = await parentRun(A, A + '/index.html?embed=bigcard,map&load=/rich.json', async (p, fr) => {
++      for (let i = 0; i < 3; i++) { await fr.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); }
++      BX.r = await fr.evaluate(() => TopoForge.preview({ category: 'net' })); BX.c1 = await cardRead(fr); BX.q1 = await fr.evaluate(() => TopoForge.cardPage());
++      BX.n2 = await fr.evaluate(() => TopoForge.cardPage('next')); await p.waitForTimeout(150); BX.c2 = await cardRead(fr); BX.icon = await iconOf(fr, 'router');
++      BX.n3 = await fr.evaluate(() => [TopoForge.cardPage('last'), TopoForge.cardPage('next'), TopoForge.cardPage(0), TopoForge.cardPage('sideways'), TopoForge.cardPage('first')]); BX.c3 = await cardRead(fr);
++      const sw = await idOf(fr, 'Core Switch'), rt = await idOf(fr, 'Edge Router');
++      BX.ord = await fr.evaluate(([a, b]) => { TopoForge.preview([a, b]); TopoForge.cardPage(2); return TopoForge.cardPage().title; }, [sw, rt]);
++      BX.cap = await fr.evaluate(() => { const x = TopoForge.preview({ kind: 'server' }); return { pages: x.pages, cover: x.cards[0].facts, last: x.cards[8] && x.cards[8].title }; });
++    }, { after: async () => BX });
++    const x = r.extra, cp = msgs(r.got, 'cardpage'), pv = msgs(r.got, 'preview');
++    check('BC6 several matches are pages: the card 1.10 shows first, then one card for each match (its name, its picture, its own fields), "1 of 3" shown in the card; cardPage(\'next\'), \'previous\', \'first\', \'last\' or a number turn them (anything else, or past the ends, is false); each turn is said in the live region and told to the page (topoforge:cardpage); in both mode the drawing lights all the matches on the first card and only that match on its own; matches named by id keep the page\'s order',
++      x.r.pages === 3 && x.c1.pager === '1 of 3' && x.c1.title === 'Network' && x.c1.hi === 2 && x.q1.page === 1 && x.q1.pages === 3 &&
++      x.n2.page === 2 && x.c2.title === 'Edge Router' && x.c2.pager === '2 of 3' && x.c2.art.svg === x.icon && x.c2.facts.some(f => f.t === 'Hostname' && f.v === 'gw4') && x.c2.hi === 1 && /^Card 2 of 3: Edge Router\./.test(x.c2.live) &&
++      x.n3[0].page === 3 && x.n3[1] === false && x.n3[2] === false && x.n3[3] === false && x.n3[4].page === 1 && x.c3.hi === 2 && x.ord === 'Core Switch' &&
++      cp.length >= 4 && cp[0].page === 2 && cp[0].pages === 3 && cp[0].title === 'Edge Router' && cp[0].ids.length === 1,
++      JSON.stringify({ pages: x.r.pages, c1: [x.c1.title, x.c1.pager, x.c1.hi], q1: x.q1, n2: x.n2, c2: [x.c2.title, x.c2.pager, x.c2.hi, x.c2.live, x.c2.art.svg === x.icon], n3: x.n3, c3hi: x.c3.hi, ord: x.ord, cp: cp.slice(0, 2) }));
++    check('BC7 the pages stop at 9 (house number GREAT): ten servers make the first card and 8 of theirs, and the first card says "As cards: 8 of 10"',
++      x.cap.pages === 9 && x.cap.cover.some(f => f[0] === 'As cards' && f[1] === '8 of 10') && x.cap.last === 'Server 8', JSON.stringify(x.cap));
++    const pv0 = pv[0] || {};
++    const off = await parentRun(A, A + '/index.html?embed=preview,map&load=/rich.json', async (p, fr) => { await fr.evaluate(() => TopoForge.preview({ category: 'net' })); });
++    const pvOff = msgs(off.got, 'preview')[0] || {};
++    check('BC9 with bigcard, topoforge:preview also carries the page shown, how many, and every card (text only); without it the message is 1.10\'s, field for field',
++      pv0.page === 1 && pv0.pages === 3 && Array.isArray(pv0.cards) && pv0.cards.length === 3 && pv0.cards[1].title === 'Edge Router' && Object.keys(pvOff).join() === 'mode,caption,count,other,ids,card',
++      JSON.stringify({ with: { page: pv0.page, pages: pv0.pages, n: (pv0.cards || []).length }, without: Object.keys(pvOff) })); }
++  // CP: the pad while a card shows
++  { const { c: c11, p: p11 } = await open(A + '/v17.html?embed=mappad&load=/rich.json'); const pad11 = await p11.evaluate(() => ({ html: document.querySelector('#mmPad').outerHTML, tf: getComputedStyle(document.querySelector('#mmPad')).transform })); await c11.close();
++    const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json');
++    const padRead = () => p.evaluate(() => { const g = document.querySelector('#mmPad'), cs = getComputedStyle(g), e = g.querySelector('.mp-e'), es = getComputedStyle(e);
++      const L = h => { const m = h.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
++      const ratio = (a, b) => { const x = L(a), y = L(b); return Math.round((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) * 100) / 100; };
++      const cells = [...g.querySelectorAll('.mp-b, .mp-sl')].filter(b => getComputedStyle(b).display !== 'none').map(b => ({ cls: b.className.replace('mp-b ', ''), name: b.getAttribute('aria-label'), title: b.getAttribute('title'), off: b.getAttribute('aria-disabled') === 'true' }));
++      return { html: g.outerHTML, cls: g.className, label: g.getAttribute('aria-label'), tf: cs.transform, tr: cs.transitionDuration, trp: cs.transitionProperty, bg: es.backgroundColor, ink: ratio(es.color, es.backgroundColor), cells, focus: document.activeElement.className, mode: TopoForge.mapMode().mode, scale: TopoForge.mapScale(), page: TopoForge.cardPage(), live: (document.querySelector('#flLive') || {}).textContent || '' }; });
++    at = 'CP1'; const sw = await p.evaluate(() => TopoForge.embed()); const p0 = await padRead();
++    check('CP1 cardpad turns on bigcard, mappad, map and preview; with no card shown the pad is 1.11\'s pad, the same markup as 1.11 draws',
++      sw.cardpad && sw.bigcard && sw.mappad && sw.map && sw.preview && p0.html === pad11.html && p0.tf === pad11.tf, JSON.stringify({ sw: [sw.cardpad, sw.bigcard, sw.mappad, sw.map, sw.preview], same: p0.html === pad11.html, tf: [p0.tf, pad11.tf] }));
++    at = 'CP2'; await p.focus('#mmPad .mp-sl'); await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.waitForTimeout(400); const p1 = await padRead();
++    const m = (p1.tf.match(/matrix\(([^)]+)\)/) || [, ''])[1].split(',').map(Number), deg = Math.round(Math.atan2(m[1], m[0]) * 180 / Math.PI);
++    check('CP2 while a card shows the pad turns 45 degrees (a brief turn: 0.2 s) and takes the accent colour, its glyphs at least 4.5 to 1 against it; the slider is put away and the focus that was on it goes to Next',
++      /mp-cardmode/.test(p1.cls) && deg === 45 && p1.tr === '0.2s' && /transform/.test(p1.trp) && p1.bg !== 'rgb(255, 255, 255)' && p1.ink >= 4.5 && !p1.cells.some(x => /mp-sl/.test(x.cls)) && /mp-e/.test(p1.focus),
++      JSON.stringify({ cls: p1.cls, deg, tr: p1.tr, trp: p1.trp, bg: p1.bg, ink: p1.ink, focus: p1.focus }));
++    at = 'CP4'; const names = p1.cells.map(x => [x.cls, x.name, x.title === x.name, x.off]);
++    check('CP4 every cell of the turned pad says its new job, in its tooltip (title) and its accessible name alike: up the first card, down the last, left the previous, right the next, the centre the card shown (with "1 of 3"); the grip keeps its own; the pad\'s name says it is turned',
++      p1.cells.length === 6 && p1.cells.every(x => x.title === x.name && x.name) && /^Overview map pad, turned/.test(p1.label) &&
++      /^First card: 1 of 3/.test(p1.cells.find(x => /mp-up/.test(x.cls)).name) && /^Last card: 3 of 3/.test(p1.cells.find(x => /mp-dn/.test(x.cls)).name) && /^Previous card/.test(p1.cells.find(x => /mp-w/.test(x.cls)).name) &&
++      /^Next card: 2 of 3/.test(p1.cells.find(x => /mp-e/.test(x.cls)).name) && /^Card 1 of 3: Network/.test(p1.cells.find(x => /mp-c/.test(x.cls)).name) && /^Move the overview map/.test(p1.cells.find(x => /mp-grip/.test(x.cls)).name),
++      JSON.stringify({ label: p1.label, names }));
++    check('CP5 the turn is said in the app\'s live region', /^Map pad turned: it pages the cards, 1 of 3/.test(p1.live), p1.live);
++    at = 'CP3'; const pg = async sel => { await p.mouse.move(900, 700); await p.click('#mmPad ' + sel, { force: true }); await p.waitForTimeout(120); const r = await padRead(); return { page: r.page.page, mode: r.mode, scale: r.scale, live: r.live }; };
++    const t1 = await pg('.mp-e'), t2 = await pg('.mp-dn'), t3 = await pg('.mp-up'), t4 = await pg('.mp-w'), t5 = await pg('.mp-e'), t6 = await pg('.mp-w'), t7 = await pg('.mp-c');
++    check('CP3 the turned pad\'s arms page the cards: right the next, down the last, up the first, left the previous; an arm with nowhere to go says so and does nothing; the centre says the card again (its facts too); the map\'s mode and scale are not touched',
++      [t1, t2, t3, t4, t5, t6, t7].map(t => t.page).join() === '2,3,1,1,2,1,1' && /^Previous card: none/.test(t4.live) && /^Card 1 of 3: Network\. On this page 2/.test(t7.live) && [t1, t2, t3, t4, t5, t6, t7].every(t => t.mode === 'both' && t.scale === 1), JSON.stringify([t1, t2, t3, t4, t5, t6, t7]));
++    at = 'CP7'; await p.focus('#mmPad .mp-e'); const kp = [];
++    for (const k of ['ArrowRight', 'End', 'Home', 'ArrowLeft', 'ArrowRight']) { await p.keyboard.press(k); kp.push(await p.evaluate(() => TopoForge.cardPage().page)); }
++    check('CP7 on the turned pad\'s arms, the keys page too: right and left one card, Home the first, End the last', kp.join() === '2,3,1,1,2', kp.join());
++    at = 'CP6'; await p.focus('#mmPad .mp-e'); const un = await p.evaluate(() => { TopoForge.preview(null); const g = document.querySelector('#mmPad'); return { cls: g.className, tr: getComputedStyle(g).transitionDuration }; }); await p.waitForTimeout(450); const p2 = await padRead();
++    await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.waitForTimeout(150); await p.evaluate(() => TopoForge.mapMode('rings')); await p.waitForTimeout(450); const p3 = await padRead();
++    await p.focus('#mmPad .mp-sl'); await p.keyboard.press('Home'); const p4 = await padRead();
++    check('CP6 when the card goes (cleared, or the mode turned to rings) the pad turns back (a brief turn: 0.2 s) and is then exactly its 1.11 self again: the same markup as 1.11\'s pad (no title, no turn, no colour left behind), the focus back on the slider, and the slider sets the mode again; that is said too',
++      un.cls === 'mp-unturn' && un.tr === '0.2s' && p2.html === pad11.html && p2.tf === pad11.tf && /mp-sl/.test(p2.focus) && /^Map pad back/.test(p2.live) && p3.html.replace(/aria-valuenow="2" aria-valuetext="[^"]*"/, '') === pad11.html.replace(/aria-valuenow="1" aria-valuetext="[^"]*"/, '').replace('--tx: 66px', '--tx: 110px') && p4.mode === 'cards',
++      JSON.stringify({ un, same: p2.html === pad11.html, tf: p2.tf, focus: p2.focus, live: p2.live, rings: p3.cls, p4: p4.mode }));
++    await c.close(); }
++  for (const dark of [false, true]) {
++    const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json', { dark, reduce: true });
++    const k = await p.evaluate(async () => { TopoForge.preview({ category: 'net' }); await new Promise(r => setTimeout(r, 50)); const g = document.querySelector('#mmPad'); const a = getComputedStyle(g).transitionDuration; TopoForge.preview(null); return { on: a, off: getComputedStyle(g).transitionDuration, unturn: g.classList.contains('mp-unturn') }; });
++    check(`CP8 with reduced motion asked the pad turns at once, both ways (no transition), ${dark ? 'dark' : 'light'}`, k.on === '0s' && k.off === '0s' && !k.unturn, JSON.stringify(k));
++    await c.close();
++  }
++  { const { c, p } = await open(A + '/index.html?embed=bigcard,mappad&load=/rich.json');
++    const r = await p.evaluate(() => { TopoForge.preview({ category: 'net' }); const g = document.querySelector('#mmPad'); document.querySelector('#mmPad .mp-up').click(); return { cls: g.className, pages: TopoForge.cardPage().pages, scale: TopoForge.mapScale(), sl: getComputedStyle(g.querySelector('.mp-sl')).display, title: g.querySelector('.mp-up').getAttribute('title') }; });
++    check('CP9 without cardpad (bigcard and mappad on) the pad does not turn while a card shows: it keeps its 1.11 jobs (up is Closer)', r.cls === '' && r.pages === 3 && r.scale === 1.5 && r.sl !== 'none' && r.title === null, JSON.stringify(r)); await c.close(); }
++  { const r = await parentRun(B, A + '/index.html?embed=cardpad&load=/rich.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); });
++    check('E11 topoforge:cardpage, and topoforge:preview with its pages, never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
++
+   // ---- X: axe with every switch on; reduced motion ----
+   for (const dark of [false, true]) {
+-    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset&load=/fixture.json', { dark, reduce: true });
++    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset,bigcard,cardpad&load=/fixture.json', { dark, reduce: true });
+     await p.evaluate(() => TopoForge.preview({ category: 'net' }));
+     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
+     await p.addScriptTag({ content: axeSrc });
+@@ -715,6 +889,18 @@
+     await p.screenshot({ path: path.join(outdir, `map-preview-${dark ? 'dark' : 'light'}.png`) });
+     await c.close();
+   }
++  for (const dark of [false, true]) {   // 1.12: the big card on its second page, and the pad turned beside it, its handles shown
++    const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json', { dark, reduce: true });
++    await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++    for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); }
++    await p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); await p.focus('#mmPad .mp-e'); await p.waitForTimeout(300);
++    await p.addScriptTag({ content: axeSrc });
++    const v = await p.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations.map(x => ({ id: x.id, impact: x.impact, n: x.nodes.length, t: x.nodes.slice(0, 4).map(y => y.target.join(' ')) })));
++    const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
++    check(`X4 axe, the big card on its second page and the pad turned, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
++    await p.screenshot({ path: path.join(outdir, `bigcard-${dark ? 'dark' : 'light'}.png`) });
++    await c.close();
++  }
+   check('C1 no console errors', consoleErrors.length === 0, consoleErrors.join(' | ').slice(0, 600));
+ } catch (e) { const m = String(e && e.message || e).split('\n')[0].slice(0, 300); if (at && !results.some(r => r.startsWith('PASS ' + at + ' ') || r.startsWith('FAIL ' + at + ' '))) check(at + ' did not finish: one of its steps threw', false, m); check('C0 the kit ran to its end (a check that throws is a failure, and the checks before it still count)', false, m); }
+ finally { await browser.close(); for (const s of [sA, sB]) { s.close(); if (s.closeAllConnections) s.closeAllConnections(); } }
+--- topoforge-1.11/index.html
++++ topoforge-1.12/index.html
+@@ -19,6 +19,10 @@
+   Nothing changes for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+   1.11: the map's pad (mappad: a drawn slider for the mode, an arm for the scale, a grip; padArrows('pan') to pan
+   instead) and Reset layout (reset; resetLayout, undoReset). Off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
++  1.12: the card that fills the map (bigcard: its words as large as fit, measured; the shape's own picture large, or a
++  picture of this page's own origin; a box score of cells, or lines; several matches as pages, at most 9) and the pad
++  that pages it (cardpad: while a card shows the pad turns 45 degrees and changes colour). Off for a page opened on its
++  own. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -357,6 +361,54 @@
+ #mmPad .mp-c{grid-area:2/2;font-size:11px}
+ #mmPad .mp-e{grid-area:2/3}
+ @media (prefers-reduced-motion:reduce){#mmPad .mp-thumb{transition:none}}
++/* 1.12: the card that fills the map (bigcard), and the pad that pages it (cardpad); each rule hangs on a class only that
++   code adds (mc-big on the card, tf-bigcard on the body, mp-cardmode and mp-unturn on the pad). --mck is the size the
++   card's words are drawn at, 1 (1.10's sizes, the floor) to 4 (the ceiling), found by measuring */
++#minimap .mm-card.mc-big{gap:8px;padding:8px;--mck:1}
++#minimap .mm-card.mc-big.mc-side{grid-template-columns:var(--mcaw,40%) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
++#minimap .mm-card.mc-big.mc-stack{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--mcah,40%) minmax(0,1fr)}
++#minimap .mm-card.mc-big .mc-a{grid-area:1/1;width:auto;height:auto;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;padding:5%;border:1px solid var(--border-2);border-radius:8px;background:var(--panel-2);overflow:hidden}
++#minimap .mm-card.mc-big .mc-a svg,#minimap .mm-card.mc-big .mc-a img{width:100%;height:100%;object-fit:contain;display:block}
++#minimap .mm-card.mc-big .mc-x{display:flex;flex-direction:column;justify-content:safe center;gap:calc(4px * var(--mck));min-width:0;min-height:0;overflow:hidden}
++#minimap .mm-card.mc-big.mc-side .mc-x{grid-area:1/2}
++#minimap .mm-card.mc-big.mc-stack .mc-x{grid-area:2/1}
++#minimap .mm-card.mc-big .mc-h{display:flex;align-items:baseline;gap:8px;min-width:0;flex:none}
++#minimap .mm-card.mc-big .mc-t{flex:1;min-width:0;margin:0;font-size:calc(12.5px * var(--mck));font-weight:700;line-height:1.2;white-space:normal;overflow:hidden;text-overflow:clip}
++#minimap .mm-card.mc-big .mc-n{flex:none;margin:0;font-size:calc(11px * var(--mck));line-height:1.2;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
++#minimap .mm-card.mc-big .mc-n[hidden]{display:none}
++#minimap .mm-card.mc-big .mc-f{grid-area:auto;margin:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:calc(4px * var(--mck)) 0;font-size:calc(11px * var(--mck));line-height:1.25;overflow:hidden;min-width:0;flex:none}
++#minimap .mm-card.mc-big .mc-f dt{color:var(--text-2);white-space:nowrap;overflow:hidden}
++#minimap .mm-card.mc-big .mc-f dd{margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:clip}
++#minimap .mm-card.mc-big.mc-box .mc-f div{flex:1 0 auto;display:flex;flex-direction:column;gap:1px;min-width:0;padding:0 .8em 0 .5em;border-left:2px solid var(--accent)}
++#minimap .mm-card.mc-big.mc-box .mc-f dt{text-transform:uppercase;letter-spacing:.04em}
++#minimap .mm-card.mc-big.mc-box .mc-f dd{font-size:1.4em;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
++#minimap .mm-card.mc-big.mc-lines .mc-f{flex-direction:column;flex-wrap:nowrap;gap:calc(2px * var(--mck))}
++#minimap .mm-card.mc-big.mc-lines .mc-f div{display:flex;gap:.4em;min-width:0}
++#minimap .mm-card.mc-big .mc-s{grid-area:auto;display:block;-webkit-line-clamp:none;margin:0;font-size:calc(11px * var(--mck));line-height:1.3;color:var(--text-2);overflow:hidden;flex:none}
++#minimap .mm-card.mc-big .mc-f>div[hidden],#minimap .mm-card.mc-big .mc-s[hidden]{display:none}
++#minimap .mm-card.mc-big.mc-noart.mc-side,#minimap .mm-card.mc-big.mc-noart.mc-stack{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
++#minimap .mm-card.mc-big.mc-noart .mc-a{display:none}
++#minimap .mm-card.mc-big.mc-noart .mc-x{grid-area:1/1}
++@media (max-width:860px){
++  body.tf-bigcard #minimap.mm-carded:not(.hidden){display:block}
++  body.tf-bigcard #stage>#minimap.mm-carded{left:8px;right:8px;bottom:8px;width:auto;height:clamp(150px,42%,340px)}
++  body.tf-bigcard #mmwrap:has(#minimap.mm-carded:not(.hidden)){display:block;left:8px;right:8px;bottom:8px;width:auto;height:clamp(150px,42%,340px)}
++  body.tf-bigcard #mmwrap .mm-handles{display:none}
++  body.tf-bigcard #mmwrap #mmPad{top:auto;right:auto;left:8px;bottom:calc(100% + 12px);transform:none}
++  body.tf-bigcard #mmwrap #mmPad.mp-cardmode{transform:rotate(45deg)}
++}
++#mmPad.mp-cardmode{transform:translateY(-50%) rotate(45deg);transition:transform .2s ease}
++#mmPad.mp-unturn{transition:transform .2s ease}
++#mmPad.mp-cardmode .mp-sl{display:none}
++#mmPad.mp-cardmode .mp-pan{display:flex}
++#mmPad.mp-cardmode .mp-b:not(.mp-grip){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
++#mmPad.mp-cardmode .mp-b:not(.mp-grip):hover{background:color-mix(in srgb,var(--accent) 86%,var(--text))}
++#mmPad.mp-cardmode .mp-b[aria-disabled="true"]{opacity:.45;cursor:default}
++#mmPad.mp-cardmode .mp-b:focus-visible{outline:2px solid var(--text);outline-offset:2px}
++#mmPad.mp-cardmode .mp-b .mp-cn{display:block;rotate:-45deg;font-size:22px;font-weight:700;line-height:1;white-space:nowrap}
++#mmPad.mp-cardmode .mp-c .mp-cn{font-size:11px}
++#mmPad.mp-cardmode .mp-grip span{display:inline-block;rotate:-45deg}
++@media (prefers-reduced-motion:reduce){#mmPad.mp-cardmode,#mmPad.mp-unturn{transition:none}}
+ @media print{body *{visibility:hidden}}
+ 
+ </style>
+@@ -438,7 +490,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.11';
++const TF_VERSION = '1.12';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -4164,7 +4216,7 @@
+    for any other, and nothing is posted from file://).
+    ============================================================ */
+ const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
+-  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; never turned on by 'all' or 'bare'
++  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; 1.12: bigcard, cardpad; never turned on by 'all' or 'bare'
+ const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
+ const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+ const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
+@@ -4182,8 +4234,11 @@
+   if (opts && typeof opts === 'object') {
+     if ('chrome' in opts && !('frameless' in opts)) opts = { ...opts, frameless: !opts.chrome };
+     for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
++    if (EMBED.cardpad) { EMBED.bigcard = true; EMBED.mappad = true; }   // 1.12: the pad pages the big card's pages
++    if (EMBED.bigcard) EMBED.preview = true;   // 1.12: the card is the preview's
+     if (EMBED.mappad) EMBED.map = true;   // 1.11: the pad hangs on the map's own frame
+   }
++  document.body.classList.toggle('tf-bigcard', EMBED.bigcard);   // 1.12
+   document.body.classList.toggle('tf-frameless', EMBED.frameless);
+   for (const k of EMBED_WORDS) if (k.startsWith('hide-')) document.body.classList.toggle('tf-' + k, EMBED[k]);
+   document.body.classList.toggle('tf-hide-top', EMBED['hide-menus'] && EMBED['hide-tools']);
+@@ -4623,15 +4678,17 @@
+   const svg = $('#mmSvg'), mm = $('#minimap'); let cap = mm.querySelector('.mm-cap');
+   const old = svg.querySelector('#mmPrev'); if (old) old.remove();
+   svg.classList.remove('mm-dim'); $$('.mm-rest', svg).forEach(g => g.replaceWith(...g.childNodes));
+-  if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); return true; }
++  if (!PREVIEW) { if (cap) cap.hidden = true; drawCard(null); drawHighlight(null); padCard(false); return true; }
+   const hits = P().nodes.filter(n => visible(n) && PREVIEW.m(n));
+   const other = DOC.pages.reduce((a, pg, i) => a + (i === DOC.cur ? 0 : pg.nodes.filter(PREVIEW.m).length), 0);
+   const text = previewCaption(hits, other);
+   const rings = MAPMODE === 'rings', card = rings ? null : cardOf(hits, other, text);
+   if (!cap) { cap = document.createElement('div'); cap.className = 'mm-cap'; mm.appendChild(cap); }
+   cap.textContent = text; cap.hidden = !(rings && MAPCAP);   // 1.10: the caption goes to the page (topoforge:preview); in the map only when asked
+-  drawCard(card, hits);
+-  drawHighlight(MAPMODE === 'both' ? hits : null);
++  const deck = card && EMBED.bigcard ? deckOf(card, hits) : null;   // 1.12: the card's pages (bigcard)
++  PREVIEW.deck = deck; if (deck) PREVIEW.page = clamp(PREVIEW.page | 0, 0, deck.length - 1);
++  drawCard(card, hits, deck);
++  drawHighlight(MAPMODE === 'both' ? (deck ? deck[PREVIEW.page].hits : hits) : null);
+   if (rings && MM && hits.length) {
+     const kids = [...svg.childNodes].filter(n => n.id !== 'mmView' && n !== svg.firstChild), rest = document.createElementNS(SVGNS, 'g');
+     rest.setAttribute('class', 'mm-rest'); kids.forEach(k => rest.appendChild(k)); svg.insertBefore(rest, svg.querySelector('#mmView'));
+@@ -4640,7 +4697,10 @@
+     g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2)}" rx="${rnd(pad)}" fill="${c}" fill-opacity=".28" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
+     svg.insertBefore(g, svg.querySelector('#mmView'));
+   }
+-  return { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
++  const r = { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
++  if (deck) Object.assign(r, { card: deck[0].card, page: PREVIEW.page + 1, pages: deck.length, cards: deck.map(d => d.card) });   // 1.12: the first card as shown
++  padCard(!!deck);
++  return r;
+ }
+ /* ---- 1.10: the map's modes, its own scale, and the wheel over it ----
+    mapMode('cards' | 'both' | 'rings'): what a preview shows. cards: a card about what the page points at, in the
+@@ -4708,7 +4768,15 @@
+   const t = v => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 200) : null;
+   const facts = Array.isArray(c.facts) ? c.facts.filter(f => Array.isArray(f) && f.length >= 2).slice(0, 8).map(f => [String(f[0]).slice(0, 40), String(f[1]).slice(0, 60)]) : null;
+   const art = c.art === 'matches' || c.art === 'none' ? c.art : c.art && typeof c.art === 'object' && typeof c.art.shape === 'string' && SHAPES[c.art.shape] ? { shape: c.art.shape } : null;
+-  return { title: t(c.title), facts, statement: t(c.statement), art };
++  return { title: t(c.title), facts, statement: t(c.statement), art: art || (EMBED.bigcard ? cardImage(c.art) : null) };   // 1.12: or a picture of this origin
++}
++// 1.12 (bigcard): a picture the page gives its card: only a URL of the app's own origin (http or https; never data:, blob:,
++// file: or another host), shown in an <img> with its alt text (the card's title when the page gives none)
++function cardImage(a) {
++  if (!a || typeof a !== 'object' || typeof a.src !== 'string' || !/^https?:$/.test(location.protocol)) return null;
++  let u; try { u = new URL(a.src, location.href); } catch (e) { return null; }
++  if (u.origin !== location.origin || !/^https?:$/.test(u.protocol)) return null;
++  return { src: u.href, alt: typeof a.alt === 'string' ? a.alt.slice(0, 200) : '' };
+ }
+ function cardOf(hits, other, text) {
+   const w = PREVIEW.what, pc = PREVIEW.card || {}, one = hits.length === 1 ? hits[0] : null;
+@@ -4730,9 +4798,11 @@
+   }
+   return '';
+ }
+-function drawCard(card, hits) {
++function drawCard(card, hits, deck) {
+   const mm = $('#minimap'); let el = mm.querySelector('.mm-card');
+   if (!card) { if (el) el.hidden = true; mm.classList.remove('mm-carded'); return; }
++  if (deck) return drawBigCard(deck, PREVIEW.page);   // 1.12: bigcard
++  if (el && el.classList.contains('mc-big')) { el.remove(); el = null; }   // 1.12: bigcard was turned off
+   if (!el) { el = document.createElement('div'); el.className = 'mm-card'; el.innerHTML = '<p class="mc-t"></p><div class="mc-a" aria-hidden="true"></div><dl class="mc-f"></dl><p class="mc-s"></p>'; mm.appendChild(el); }
+   el.querySelector('.mc-t').textContent = card.title || '';
+   el.querySelector('.mc-a').innerHTML = artSVG(card.art, hits);   // the app's own pictures only
+@@ -4749,7 +4819,7 @@
+   g.innerHTML = hits.map(n => `<rect x="${rnd(n.x - pad)}" y="${rnd(n.y - pad)}" width="${rnd(n.w + pad * 2)}" height="${rnd(n.h + pad * 2 + (isDevice(n) ? 18 : 0))}" rx="10" fill="${c}" fill-opacity=".10" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`).join('');
+ }
+ function tellPreview(r) {
+-  tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card }
++  tell('topoforge:preview', r && typeof r === 'object' ? { mode: MAPMODE, caption: r.caption, count: r.count, other: r.other, ids: r.ids, card: r.card, ...(r.pages ? { page: r.page, pages: r.pages, cards: r.cards } : {}) }
+     : { mode: MAPMODE, caption: '', count: 0, other: 0, ids: [], card: null });
+ }
+ /* ---- 1.11: the map's pad (mappad) and Reset layout (reset) ----
+@@ -4764,6 +4834,7 @@
+ function embed111(was) {
+   if (EMBED.mappad && MMW && !PAD) buildPad();
+   if (PAD) { PAD.el.hidden = !EMBED.mappad; padSide(); padSync(); }
++  embed112(was);
+ }
+ function buildPad() {
+   const el = document.createElement('div'); el.id = 'mmPad'; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Overview map pad');
+@@ -4825,6 +4896,7 @@
+   PAD.up.textContent = '▲'; PAD.dn.textContent = '▼';
+   PAD.up.setAttribute('aria-label', pan ? 'Pan north' : 'Overview map closer'); PAD.dn.setAttribute('aria-label', pan ? 'Pan south' : 'Overview map farther');
+   PAD.dn.disabled = !pan && MAPSCALE <= 1; PAD.up.disabled = !pan && MAPSCALE >= 8;
++  if (_padCard) padCardSync();   // 1.12: while a card shows (cardpad) the arms page the cards
+ }
+ function padArrows(mode) {
+   if (mode === undefined) return PADARROWS;
+@@ -4857,6 +4929,203 @@
+   return true;
+ }
+ function resetItems() { return EMBED.reset ? ['-', { label: 'Reset layout', action: resetLayout }, ...(_resetUndo ? [{ label: 'Undo reset', action: undoReset }] : [])] : []; }
++/* ---- 1.12: the card that fills the map (bigcard), and the pad that pages it (cardpad) ----
++   bigcard (it turns preview on): the card's words are drawn as large as fit in the map, found by measuring: --mck from 1
++   (1.10's sizes, the floor) to CARD_KMAX (the ceiling), fitted again whenever the map's box changes size or the map is
++   redrawn. The art is the shape's own picture (previewSVG) given a real share of the card, or a picture the page gives,
++   of this page's own origin only. The facts are a box score (label over value, in cells) when one fits at the floor or
++   larger, else lines. Several matches make pages: first the card 1.10 shows (the page's, or the app's own summary), then
++   a card for each match, CARD_CAP pages in all; cardPage() turns them. On a narrow screen, where the map is otherwise
++   hidden, the map shows while a card does, along the drawing's foot.
++   cardpad (it turns bigcard and mappad on): while a card shows, the pad turns 45 degrees and takes the accent colour. Its
++   upper arms go back (left: the previous card; up: the first), its lower arms forward (right: the next; down: the last);
++   its centre says the card again. When the card goes, the pad is its 1.11 self again. */
++const CARD_KMAX = 4, CARD_CAP = 9;   // house numbers: the ceiling 4 (4 times 1.10's sizes: a 50-pixel title); 9 pages at most
++let _cardRO = null, _padCard = false, _padUnturnT = null;
++const _cardImgBad = new Set();
++function embed112(was) {
++  if (EMBED.bigcard && !_cardRO && typeof ResizeObserver === 'function') { _cardRO = new ResizeObserver(() => refitCard()); _cardRO.observe($('#minimap')); }
++  if (PAD && !PAD.cardWired) wirePadCard();
++  if (EMBED.bigcard !== !!was.bigcard || EMBED.cardpad !== !!was.cardpad || EMBED.mappad !== !!was.mappad) { if (PREVIEW) drawPreview(); else padCard(false); }
++}
++// the shape's own fields (hostname, address, VLAN ...), for the back of its card
++function shapeFacts(n) {
++  const pr = n.props || {};
++  return NET_PROPS.filter(k => k !== 'notes' && pr[k] !== undefined && pr[k] !== null && String(pr[k]).trim() !== '').map(k => [NET_LABELS[k], String(pr[k]).slice(0, 60)]);
++}
++function matchCard(n) {
++  const kind = (SHAPES[n.type] || {}).name || n.type, d = n.data || {}, tip = String(d.tooltip || d.what || (n.props || {}).notes || '');
++  return { title: nodeName(n).slice(0, 200), facts: [['Kind', kind], ...shapeFacts(n)].slice(0, 8), statement: tip.slice(0, 200) || kind, art: { shape: n.type } };
++}
++// the pages: one match (or none) is one card, the cover; several are the cover and then a card for each, CARD_CAP in all
++function deckOf(cover, hits) {
++  let ord = hits;
++  if (Array.isArray(PREVIEW.what)) {   // the page named them: its order
++    const at = new Map(PREVIEW.what.map((x, i) => [String(x), i])), pos = n => Math.min(at.get(n.id) ?? 1e9, at.get(String((n.data || {}).tf_ref || '')) ?? 1e9);
++    ord = [...hits].sort((a, b) => pos(a) - pos(b));
++  }
++  if (ord.length === 1 && !(PREVIEW.card && PREVIEW.card.facts)) cover = { ...cover, facts: [...cover.facts.filter(f => f[0] !== 'On this page'), ...shapeFacts(ord[0])].slice(0, 8) };
++  if (ord.length <= 1) return [{ card: cover, hits }];
++  const shown = ord.slice(0, CARD_CAP - 1);
++  if (ord.length > shown.length) cover = { ...cover, facts: [...cover.facts.slice(0, 7), ['As cards', `${shown.length} of ${ord.length}`]] };
++  return [{ card: cover, hits }, ...shown.map(n => ({ card: matchCard(n), hits: [n] }))];
++}
++function drawBigCard(deck, i) {
++  const mm = $('#minimap'); let el = mm.querySelector('.mm-card');
++  if (el && !el.classList.contains('mc-big')) { el.remove(); el = null; }
++  if (!el) {
++    el = document.createElement('div'); el.className = 'mm-card mc-big';
++    el.innerHTML = '<div class="mc-a"></div><div class="mc-x"><div class="mc-h"><p class="mc-t"></p><p class="mc-n"></p></div><dl class="mc-f"></dl><p class="mc-s"></p></div>';
++    mm.appendChild(el);
++  }
++  const { card, hits } = deck[i], n = deck.length;
++  // the map is redrawn often (every pan): the same card in a box of the same size keeps its fit, unmeasured
++  const key = JSON.stringify([card, i, n, hits.map(h => h.type)]);
++  if (el._key === key && !el.hidden && el._size === el.clientWidth + 'x' + el.clientHeight && mm.classList.contains('mm-carded')) { el._deck = deck[i]; return; }
++  el.querySelector('.mc-t').textContent = card.title || '';
++  const pn = el.querySelector('.mc-n'); pn.textContent = n > 1 ? `${i + 1} of ${n}` : ''; pn.hidden = n <= 1;
++  el._deck = deck[i]; el.classList.toggle('mc-noart', !cardHasArt(card, hits));
++  const dl = el.querySelector('.mc-f'); dl.textContent = '';
++  for (const [k, v] of card.facts || []) { const d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; d.append(dt, dd); dl.appendChild(d); }
++  el.querySelector('.mc-s').textContent = card.statement || '';
++  el.hidden = false; mm.classList.add('mm-carded');
++  fitCard(el); cardArt(el.querySelector('.mc-a'), card, hits);
++  el._key = key; el._size = el.clientWidth + 'x' + el.clientHeight;
++}
++// the art: the page's picture (an <img> with alt text; this origin only, see cardImage), else the app's own pictures:
++// the shape's, or for several matches theirs side by side (up to 4), laid out for the room the art was given
++function cardHasArt(card, hits) { const a = card.art; return !!(a && (a.src || a.shape) || (a === 'matches' && hits.length)); }
++function mosaicSVG(hits, aspect) {
++  const ks = hits.slice(0, 4).map(n => n.type), n = ks.length, g = 6;
++  const cols = n === 1 ? 1 : n === 2 ? (aspect >= 1 ? 2 : 1) : aspect >= 2.2 ? n : aspect <= 0.45 ? 1 : 2, rows = Math.ceil(n / cols);
++  return `<svg viewBox="0 0 ${cols * 48 + (cols - 1) * g} ${rows * 48 + (rows - 1) * g}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">` +
++    ks.map((k, i) => previewSVG(k).replace('<svg ', `<svg x="${(i % cols) * (48 + g)}" y="${Math.floor(i / cols) * (48 + g)}" width="48" height="48" `)).join('') + '</svg>';
++}
++function cardArt(box, card, hits) {
++  const b = box.getBoundingClientRect(), aspect = b.height ? b.width / b.height : 1;
++  const ownOf = a => a === 'matches' && hits.length ? mosaicSVG(hits, aspect) : artSVG(a, hits);
++  const a = card.art, own = () => ownOf(hits.length === 1 ? { shape: hits[0].type } : 'matches');
++  if (a && a.src && !_cardImgBad.has(a.src)) {
++    const alt = a.alt || card.title || 'Picture for this card', old = box.querySelector('img');
++    box.removeAttribute('aria-hidden');
++    if (old && old.getAttribute('src') === a.src) { old.alt = alt; return; }
++    box.textContent = ''; const im = document.createElement('img'); im.alt = alt; im.decoding = 'async';
++    im.addEventListener('error', () => { _cardImgBad.add(a.src); if (im.parentNode === box) { box.innerHTML = own(); box.setAttribute('aria-hidden', 'true'); } });
++    im.src = a.src; box.appendChild(im); return;
++  }
++  box.setAttribute('aria-hidden', 'true'); box.innerHTML = a && a.src ? own() : ownOf(a);
++}
++// the size the words are drawn at: the largest that fits, measured, for each of four forms (the art beside or above the
++// words; a box score or lines); a box score that fits at the floor or larger wins, else the lines that fit largest
++function fitCard(el) {
++  const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return null;   // not drawn: a narrow screen, or the map is off
++  const pad = 8, gap = 8;
++  el.style.setProperty('--mcaw', Math.round(Math.max(24, Math.min(H - 2 * pad, (W - 2 * pad - gap) * 0.42))) + 'px');
++  el.style.setProperty('--mcah', Math.round(Math.max(24, Math.min(W - 2 * pad, (H - 2 * pad - gap) * 0.42))) + 'px');
++  const facts = [...el.querySelectorAll('.mc-f>div')], st = el.querySelector('.mc-s');
++  let best = null, drop = 0;
++  for (; drop <= facts.length + 1 && !best; drop++) {   // too small for all of it at the floor: the last facts, then the statement, are left out, not cut
++    facts.forEach((d, i) => { d.hidden = i >= facts.length - drop; }); st.hidden = !st.textContent || drop > facts.length;
++    for (const f of [['mc-side', 'mc-box'], ['mc-stack', 'mc-box'], ['mc-side', 'mc-lines'], ['mc-stack', 'mc-lines']]) {
++      if (best && best.f[1] === 'mc-box' && f[1] === 'mc-lines') break;
++      cardForm(el, f); const k = cardLargest(el);
++      if (k !== null && (!best || k > best.k)) best = { f, k };
++    }
++  }
++  if (!best) { facts.forEach(d => { d.hidden = false; }); st.hidden = !st.textContent; best = { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 }; }   // nothing fits at all: lines, clipped
++  cardForm(el, best.f); el.style.setProperty('--mck', String(best.k));
++  return { ...best, left: facts.filter(d => d.hidden).length };
++}
++function cardForm(el, f) { el.classList.remove('mc-side', 'mc-stack', 'mc-box', 'mc-lines'); el.classList.add(...f); }
++function cardFits(el) {
++  const x = el.querySelector('.mc-x');
++  if (x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1) return false;
++  for (const e of el.querySelectorAll('.mc-t, .mc-n, .mc-f, .mc-f dt, .mc-f dd, .mc-s')) if (!e.hidden && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)) return false;
++  return true;
++}
++function cardLargest(el) {
++  const at = k => { el.style.setProperty('--mck', String(k)); return cardFits(el); };
++  if (!at(1)) return null;
++  if (at(CARD_KMAX)) return CARD_KMAX;
++  let lo = 1, hi = CARD_KMAX;
++  for (let i = 0; i < 9; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
++  return Math.floor(lo * 100) / 100;
++}
++function refitCard() { const el = $('#minimap .mm-card.mc-big'); if (el && !el.hidden && el._deck) { fitCard(el); cardArt(el.querySelector('.mc-a'), el._deck.card, el._deck.hits); el._size = el.clientWidth + 'x' + el.clientHeight; } }
++// cardPage(): { page, pages, title } (page counts from 1; pages 0 when no big card shows); cardPage(n), or 'next',
++// 'previous', 'first', 'last', turns to that page and returns the same, or false
++function cardPage(x) {
++  const d = EMBED.bigcard && PREVIEW && PREVIEW.deck;
++  if (!d) return x === undefined ? { page: 0, pages: 0, title: '' } : false;
++  const n = d.length, i = PREVIEW.page;
++  if (x === undefined) return { page: i + 1, pages: n, title: d[i].card.title || '' };
++  const j = x === 'next' ? i + 1 : x === 'previous' ? i - 1 : x === 'first' ? 0 : x === 'last' ? n - 1 : Number.isInteger(x) ? x - 1 : NaN;
++  if (!(j >= 0 && j < n)) return false;
++  if (j !== i) {
++    PREVIEW.page = j; drawPreview();
++    const c = PREVIEW.deck[PREVIEW.page], t = c.card.title || '';
++    flSay(`Card ${j + 1} of ${n}: ${t}.`);
++    tell('topoforge:cardpage', { page: j + 1, pages: n, title: t, ids: c.hits.map(h => h.id) });
++  }
++  return { page: j + 1, pages: n, title: PREVIEW.deck[j].card.title || '' };
++}
++function cardSay() {
++  const d = PREVIEW && PREVIEW.deck; if (!d) return;
++  const c = d[PREVIEW.page].card, facts = (c.facts || []).map(([k, v]) => `${k} ${v}`).join(', ');
++  flSay(`Card ${PREVIEW.page + 1} of ${d.length}: ${c.title || ''}.${facts ? ' ' + facts + '.' : ''}${c.statement ? ' ' + c.statement : ''}`);
++}
++// the pad while a card shows (cardpad): turned, in the accent colour, its arms paging the cards; afterwards, its 1.11 self
++function padCard(want) {
++  if (!PAD) return;
++  const on = !!want && EMBED.cardpad && EMBED.mappad && !PAD.el.hidden;
++  if (on === _padCard) { if (on) padCardSync(); return; }
++  _padCard = on; clearTimeout(_padUnturnT);
++  const el = PAD.el, f = document.activeElement;
++  if (on) {
++    el.classList.remove('mp-unturn'); el.classList.add('mp-cardmode'); padCardSync();
++    if (f === PAD.sl) el.querySelector('.mp-e').focus();   // the slider is put away while the card shows: the focus goes to Next
++    flSay(`Map pad turned: it pages the cards, ${PREVIEW.page + 1} of ${PREVIEW.deck.length}. Left and right go one card, up to the first, down to the last.`);
++    return;
++  }
++  el.classList.remove('mp-cardmode'); if (!el.classList.length) el.removeAttribute('class');   // 1.11's pad has no class at all
++  el.setAttribute('aria-label', 'Overview map pad');
++  for (const b of el.querySelectorAll('.mp-b')) { b.removeAttribute('title'); b.removeAttribute('aria-disabled'); }
++  const [w, c, e] = ['.mp-w', '.mp-c', '.mp-e'].map(s => el.querySelector(s));
++  w.textContent = '◀'; w.setAttribute('aria-label', 'Pan west'); c.textContent = 'Fit'; c.setAttribute('aria-label', 'Fit the drawing'); e.textContent = '▶'; e.setAttribute('aria-label', 'Pan east');
++  padSync();
++  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('mp-unturn'); _padUnturnT = setTimeout(() => { el.classList.remove('mp-unturn'); if (!el.classList.length) el.removeAttribute('class'); }, 260); }   // it turns back, briefly
++  if (el.contains(f) && (f.offsetParent === null || f.disabled)) (PADARROWS === 'pan' ? c : PAD.sl).focus();
++  if (!el.hidden) flSay('Map pad back: its slider sets the map\'s mode and its arms the map\'s scale.');
++}
++function padCardSync() {
++  const d = PREVIEW && PREVIEW.deck; if (!PAD || !d) return;
++  const n = d.length, i = PREVIEW.page, el = PAD.el, t = d[i].card.title || '';
++  const set = (b, glyph, label, off) => {   // the glyph stands upright in the turned pad (CSS turns it back)
++    const s = document.createElement('span'); s.className = 'mp-cn'; s.setAttribute('aria-hidden', 'true'); s.textContent = glyph; b.replaceChildren(s);
++    b.setAttribute('aria-label', label); b.title = label; b.disabled = false; if (off) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled'); };
++  el.setAttribute('aria-label', `Overview map pad, turned: it pages the cards (${i + 1} of ${n})`);
++  set(PAD.up, '«', `First card: 1 of ${n}`, i === 0);
++  set(PAD.dn, '»', `Last card: ${n} of ${n}`, i === n - 1);
++  set(el.querySelector('.mp-w'), '‹', i > 0 ? `Previous card: ${i} of ${n}` : `Previous card: none, this is the first of ${n}`, i === 0);
++  set(el.querySelector('.mp-e'), '›', i < n - 1 ? `Next card: ${i + 2} of ${n}` : `Next card: none, this is the last of ${n}`, i === n - 1);
++  set(el.querySelector('.mp-c'), `${i + 1} of ${n}`, `Card ${i + 1} of ${n}: ${t}. Press to hear it again`, false);
++  const g = el.querySelector('.mp-grip'); g.title = g.getAttribute('aria-label');
++}
++function wirePadCard() {
++  PAD.cardWired = true;
++  PAD.el.addEventListener('click', e => {   // the capture phase: while a card shows, the arms page it and do not do their 1.11 jobs
++    if (!_padCard) return; const b = e.target.closest('.mp-b'); if (!b || b.classList.contains('mp-grip')) return;
++    e.stopPropagation(); e.preventDefault();
++    if (b.getAttribute('aria-disabled') === 'true') { flSay(b.getAttribute('aria-label') + '.'); return; }
++    if (b.classList.contains('mp-c')) { cardSay(); return; }
++    cardPage(b === PAD.up ? 'first' : b === PAD.dn ? 'last' : b.classList.contains('mp-w') ? 'previous' : 'next');
++  }, true);
++  PAD.el.addEventListener('keydown', e => {   // and on the arms, left and right, Home and End, page too
++    if (!_padCard || !e.target.closest('.mp-up, .mp-dn, .mp-pan')) return;
++    const x = { ArrowLeft: 'previous', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key]; if (!x) return;
++    e.preventDefault(); cardPage(x);
++  }, true);
++}
+ /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
+    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
+    tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
+@@ -4986,7 +5255,9 @@
+   // 1.10
+   mapMode, mapScale,
+   // 1.11
+-  padArrows, resetLayout, undoReset };
++  padArrows, resetLayout, undoReset,
++  // 1.12
++  cardPage };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

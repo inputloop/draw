@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
 // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02.
+// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 checks 2026-11-03.
 //
-// embed.browser.mjs -- the embedding switches (1.8 to 1.11) in real Chromium, held to spec/EMBED-v1.md.
+// embed.browser.mjs -- the embedding switches (1.8 to 1.12) in real Chromium, held to spec/EMBED-v1.md.
 //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
 //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
 //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
@@ -34,7 +34,7 @@ const results = []; let red = 0, at = '';   // at: the check whose steps are run
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
 
 // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
-const VER = '1.11', PREV = '1.10';
+const VER = '1.12', PREV = '1.11';
 function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
   const out = []; let on = false;
   for (const l of patchText.split('\n')) {
@@ -45,7 +45,7 @@ function indexPart(patchText) { // the hunks of one multi-file patch that touch 
 }
 function rebuild(upto) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11'].slice(0, upto)) {
+  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12'].slice(0, upto)) {
     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
@@ -53,7 +53,7 @@ function rebuild(upto) {
   return cur;
 }
 let v17, v18;
-try { v17 = rebuild(5); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+try { v17 = rebuild(6); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
 
 // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
 const html = fs.readFileSync(file);
@@ -61,9 +61,10 @@ const routes = { '/index.html': { type: 'text/html', body: html } };
 const parentPage = (src) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>parent</title></head><body style="margin:0">
 <iframe id="f" title="the app" src="${src}" style="border:0;width:1200px;height:800px"></iframe>
 <script>window.got = []; addEventListener('message', e => window.got.push({ origin: e.origin, data: e.data }));</script></body></html>`;
+const reqLog = [];   // 1.12: every request each server saw, 'port path', so a check can say nothing went to the other host
 const serve = () => new Promise(ok => {
   const s = http.createServer((q, r) => {
-    const u = new URL(q.url, 'http://x'); const f = routes[u.pathname];
+    const u = new URL(q.url, 'http://x'); const f = routes[u.pathname]; reqLog.push(s.address().port + ' ' + u.pathname);
     if (u.pathname === '/parent.html') { r.setHeader('content-type', 'text/html'); r.end(parentPage(u.searchParams.get('src'))); return; }
     if (!f) { r.statusCode = 404; r.end('not found'); return; }
     r.setHeader('content-type', f.type); r.end(f.body);
@@ -115,6 +116,16 @@ try {
     routes['/fixture.json'] = { type: 'application/json', body: json };
     // 1.9: sixty pages, more tabs than fit, for the page-tab checks (S4, T)
     routes['/many.json'] = { type: 'application/json', body: await p.evaluate(() => { const d = newDoc(); d.name = 'Many pages'; d.pages = Array.from({ length: 60 }, (x, i) => newPage(`Page ${i + 1} ${['of the shop', 'hosts', 'a longer name for a page', 'paths'][i % 4]}`)); d.cur = 0; return JSON.stringify(d); }) };
+    // 1.12: the same two shapes with their own fields (the back of a card), and ten servers (more matches than the 9 pages hold)
+    routes['/rich.json'] = { type: 'application/json', body: await p.evaluate(() => {
+      DOC = newDoc(); DOC.name = 'Rich fixture'; DOC.pages[0].name = 'First page'; S.sel.clear(); reindex(); buildPages();
+      edit(() => { const a = makeNode('router', 0, 0, { text: 'Edge Router' }), b = makeNode('switch', 300, 0, { text: 'Core Switch' }); a.data.what = 'Where the shop meets the internet.';
+        Object.assign(a.props, { hostname: 'gw4', ip: '203.0.113.1', vlan: '1', status: 'up', vendor: 'Ubiquiti' }); Object.assign(b.props, { hostname: 'sw1', vlan: '20' });
+        P().nodes.push(a, b); P().links.push(makeLink({ id: a.id, port: null }, { id: b.id, port: null }));
+        for (let i = 1; i <= 10; i++) P().nodes.push(makeNode('server', (i - 1) % 5 * 160, 260 + Math.floor((i - 1) / 5) * 160, { text: 'Server ' + i })); });
+      return snapshot(); }) };
+    routes['/card.png'] = { type: 'image/png', body: Buffer.from(await p.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d');
+      g.fillStyle = '#0f766e'; g.fillRect(0, 0, 96, 96); g.fillStyle = '#ffffff'; g.fillRect(24, 24, 48, 48); return c.toDataURL('image/png').split(',')[1]; }), 'base64') };
     await c.close(); }
 
   // ---- S: standalone, no switch: the same as the version before ----
@@ -130,9 +141,20 @@ try {
     if (w === 1400 && !dark) {
       const [ta, tb] = [await tabs(a.p), await tabs(b.p)];
       check('S2 standalone: the first 30 Tab stops are the same as ' + PREV, ta === tb, ta === tb ? '' : 'differ at ' + ta.split('|').findIndex((x, i) => x !== tb.split('|')[i]));
-      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi', '#mmPad'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
+      const st = await b.p.evaluate(() => ({ cls: document.body.className, added: ['#mapbox', '.fl-bar', '#flLive', '#mmwrap', '.mm-h', '.mm-cap', '.pt-ctl', '#ptFly', '.mm-card', '#tfHi', '#mmPad', '.mc-big', '.mp-cardmode', '.tf-bigcard'].filter(s => document.querySelector(s)), ui: localStorage.getItem('topoforge.ui.v1'), sw: { ...TopoForge.embed() } }));
       check('S3 standalone: no switch is on, no element of 1.8 or 1.9 is in the page, nothing new is kept', st.cls === '' && st.added.length === 0 && st.ui === null && Object.values(st.sw).every(v => !v), JSON.stringify(st));
     }
+    await a.c.close(); await b.c.close();
+  }
+  // 1.12: with every 1.11 switch on and 1.10's card shown (the pad shown beside it), 1.12 draws the same pixels as 1.11
+  for (const dark of [false, true]) {
+    const u = '?embed=map,preview,mappad,reset,mapwheel&load=/rich.json';
+    const a = await open(A + '/v17.html' + u, { dark, settle: 1200 }), b = await open(A + '/index.html' + u, { dark, settle: 1200 });
+    for (const x of [a, b]) { await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
+      await x.p.evaluate(() => TopoForge.preview({ category: 'net' })); const m = await boxOf(x.p, '#minimap'); await x.p.mouse.move(m.x - 30, m.y + 20); await x.p.waitForTimeout(500); }
+    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
+    fs.writeFileSync(path.join(outdir, `switches111-${PREV}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `switches111-${VER}-${dark ? 'dark' : 'light'}.png`), ib);
+    check(`S6 every 1.11 switch on (map, preview, mappad, reset, mapwheel), 1.10's card and the pad shown, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV} (the new switches are off)`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
     await a.c.close(); await b.c.close();
   }
 
@@ -375,8 +397,8 @@ try {
   // W1: 'all' and 'bare' mean what they meant in 1.8
   { const { c, p } = await open(A + '/index.html?embed=all,bare');
     const w = await p.evaluate(() => TopoForge.embed());
-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset'];
-    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.11 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];
+    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.12 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset, bigcard, cardpad); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
     await c.close(); }
   // E8: the new messages never reach a parent of another origin
   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
@@ -687,9 +709,161 @@ try {
   { const r = await parentRun(B, A + '/index.html?embed=mappad,reset&load=/fixture.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.mapMode('cards'); TopoForge.mapScale(2); TopoForge.resetLayout(); }); });
     check('E10 topoforge:mapscale, topoforge:mapmode and topoforge:reset never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
 
+  // ======== 1.12: the card that fills the map (bigcard), and the pad that pages it (cardpad) ========
+  // read in the page with the kit's own code, not the app's: how big the words are, and what of the card is cut or outside it
+  const CARD_READ = `(() => {
+    const m = document.querySelector('#minimap'), el = m.querySelector('.mm-card'), R = e => { const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, r: b.right, b: b.bottom }; };
+    const mb = R(m); if (!el || el.hidden || getComputedStyle(m).display === 'none') return { shown: false, map: mb };
+    const cb = R(el), px = s => { const e = el.querySelector(s); return e ? parseFloat(getComputedStyle(e).fontSize) : 0; };
+    const cut = () => { const out = [];
+      for (const e of el.querySelectorAll('.mc-x, .mc-t, .mc-n, .mc-f, .mc-f dt, .mc-f dd, .mc-s')) { if (e.closest('[hidden]') || !e.getClientRects().length) continue;
+        const b = R(e); if (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1 || b.x < cb.x - 1 || b.r > cb.r + 1 || b.y < cb.y - 1 || b.b > cb.b + 1) out.push(e.className || e.tagName); }
+      return out; };
+    const k = +getComputedStyle(el).getPropertyValue('--mck'), cut0 = cut();
+    el.style.setProperty('--mck', String(k + 0.03)); const cutUp = cut(); el.style.setProperty('--mck', String(k));
+    const a = el.querySelector('.mc-a'), ab = R(a), shownA = getComputedStyle(a).display !== 'none';
+    const facts = [...el.querySelectorAll('.mc-f>div')].map(d => { const t = d.querySelector('dt'), v = d.querySelector('dd'), tb = R(t), vb = R(v); return { t: t.textContent, v: v.textContent, hidden: d.hidden, over: tb.b <= vb.y + 1, line: Math.abs((tb.y + tb.b) / 2 - (vb.y + vb.b) / 2) < 3 }; });
+    return { shown: true, big: el.classList.contains('mc-big'), cls: el.className, map: mb, card: cb, k, cut0, cutUp, title: el.querySelector('.mc-t').textContent, pager: (el.querySelector('.mc-n') || {}).textContent || '', st: el.querySelector('.mc-s').textContent,
+      fonts: { t: px('.mc-t'), dt: px('.mc-f dt'), dd: px('.mc-f dd'), s: px('.mc-s') }, art: shownA ? { w: ab.w, h: ab.h, share: ab.w * ab.h / (cb.w * cb.h), svg: a.querySelector(':scope>svg') ? a.querySelector(':scope>svg').outerHTML : '', inner: a.querySelectorAll(':scope>svg>svg').length, img: a.querySelector('img') ? { src: a.querySelector('img').getAttribute('src'), alt: a.querySelector('img').alt, ok: a.querySelector('img').complete && a.querySelector('img').naturalWidth > 0 } : null, hidden: a.getAttribute('aria-hidden') } : null,
+      facts, hi: document.querySelectorAll('#tfHi rect').length, live: (document.querySelector('#flLive') || {}).textContent || '' };
+  })()`;
+  const cardRead = p => p.evaluate(CARD_READ);
+  const iconOf = (p, kind) => p.evaluate(k => { const t = document.createElement('div'); t.innerHTML = TopoForge.shapes().flatMap(c => c.shapes).find(s => s.id === k).icon; return t.firstElementChild.outerHTML; }, kind);
+  const idOf = (p, name) => p.evaluate(n => P().nodes.find(x => x.text === n).id, name);
+  const fitted = c => c.shown && c.big && c.k >= 1 && c.cut0.length === 0 && (c.k >= 4 || c.cutUp.length > 0) && c.fonts.t >= 12.5 && c.fonts.dt >= 11 && c.fonts.dd >= 11 && (!c.st || c.fonts.s >= 11);
+  { const { c, p } = await open(A + '/index.html?embed=bigcard&load=/rich.json');
+    at = 'BC1'; const sw = await p.evaluate(() => TopoForge.embed());
+    const r0 = await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); const c0 = await cardRead(p);
+    check('BC1 bigcard (it turns preview on): the card fills the map, its words as large as fit, found by measuring: at the size chosen nothing is cut, 3 hundredths larger something is (or it is at the ceiling, 4); never smaller than 1.10\'s (title 12.5 px, facts 11 px)',
+      sw.bigcard && sw.preview && !sw.map && fitted(c0) && Math.abs(c0.card.w - c0.map.w) <= 2 && Math.abs(c0.card.h - c0.map.h) <= 2 && r0.pages === 1, JSON.stringify({ sw: { bigcard: sw.bigcard, preview: sw.preview }, c0: { ...c0, art: c0.art && { ...c0.art, svg: c0.art.svg.length } } }));
+    at = 'BC3'; const icon = await iconOf(p, 'router');
+    const r1 = await p.evaluate(() => TopoForge.preview({ category: 'net' })); const c1 = await cardRead(p);
+    check('BC3 the art is the shape\'s own picture (the same as shapes() gives), a real share of the card: at least a fifth of it, and more than 1.5 times 1.10\'s 40 pixels each way; several matches show their pictures side by side',
+      c0.art && c0.art.svg === icon && c0.art.share >= 0.2 && c0.art.w > 60 && c0.art.h > 60 && c0.art.hidden === 'true' && c1.art && c1.art.inner === 2 && r1.pages === 3, JSON.stringify({ a0: { ...c0.art, svg: c0.art && c0.art.svg.slice(0, 40) }, same: c0.art && c0.art.svg === icon, a1: c1.art && { inner: c1.art.inner, share: c1.art.share } }));
+    at = 'BC8'; await p.evaluate(() => TopoForge.preview(null)); await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(250);
+    const n0 = await cardRead(p), hid0 = await p.evaluate(() => getComputedStyle(document.querySelector('#minimap')).display);
+    await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); await p.waitForTimeout(250); const n1 = await cardRead(p);
+    const st = await boxOf(p, '#stage'); await p.evaluate(() => TopoForge.preview(null)); const hid1 = await p.evaluate(() => getComputedStyle(document.querySelector('#minimap')).display);
+    check('BC8 on a phone-wide screen (390 pixels), where the map is hidden, the map shows while a card does, as a sheet along the drawing\'s foot (8 pixels in), the card fitted in it; with the card gone it is hidden again',
+      hid0 === 'none' && fitted(n1) && Math.abs(n1.map.x - (st.x + 8)) <= 1 && Math.abs(n1.map.r - (st.x + st.w - 8)) <= 1 && Math.abs(n1.map.b - (st.y + st.h - 8)) <= 1 && n1.map.h >= 150 && hid1 === 'none',
+      JSON.stringify({ hid0, n1: { map: n1.map, k: n1.k, cut0: n1.cut0 }, st, hid1 }));
+    await c.close(); }
+  { const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json');
+    at = 'BC2'; await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); const a0 = await cardRead(p);
+    const sz = await boxOf(p, '#mmwrap .mm-size'); await p.mouse.move(sz.x + sz.w / 2, sz.y + sz.h / 2); await p.mouse.down(); await p.mouse.move(sz.x - 240, sz.y - 150, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(250);
+    const a1 = await cardRead(p);
+    await p.click('#mmwrap .mm-pos'); await p.click('.menu .mi:has-text("Smaller")'); await p.waitForTimeout(300); const a2 = await cardRead(p);
+    await p.evaluate(() => TopoForge.mapScale(2)); await p.waitForTimeout(250); const a3 = await cardRead(p);
+    await p.evaluate(i => TopoForge.preview([i], { card: { title: 'Up', facts: [['N', '1']], statement: 'Short.', art: 'none' } }), await idOf(p, 'Edge Router')); await p.evaluate(() => TopoForge.mapScale(1));
+    for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); }
+    await p.waitForTimeout(300); const a4 = await cardRead(p);
+    check('BC2 it fits again when the map changes size: dragging the resize handle larger makes the words larger, Position, Smaller smaller, and the map\'s own scale changes nothing it needs; a short card in a large map stops at the ceiling, 4 times 1.10\'s sizes (a 50-pixel title)',
+      [a0, a1, a2, a3].every(fitted) && a1.map.w > a0.map.w + 100 && a1.k > a0.k && a2.k < a1.k && a3.k === a2.k && a4.k === 4 && a4.fonts.t === 50 && a4.cut0.length === 0,
+      JSON.stringify([a0, a1, a2, a3, a4].map(x => ({ map: [Math.round(x.map.w), Math.round(x.map.h)], k: x.k, cls: x.cls, cut0: x.cut0, cutUp: (x.cutUp || []).length, t: (x.fonts || {}).t }))));
+    at = 'BC5'; await p.evaluate(i => TopoForge.preview([i]), await idOf(p, 'Edge Router')); await p.waitForTimeout(200); const big = await cardRead(p);
+    await p.click('#mmwrap .mm-pos'); await p.click('.menu .mi:has-text("Back to its starting place")'); await p.waitForTimeout(350); const small = await cardRead(p);
+    const shownF = x => x.facts.filter(f => !f.hidden), hidF = x => x.facts.map(f => f.hidden);
+    check('BC5 with room the facts are a box score (each a cell, its label over its value; cells side by side); in the small map they are lines (label and value on one line); nothing shown is cut, and facts that do not fit at 1.10\'s size are left out from the end, not cut',
+      /mc-box/.test(big.cls) && shownF(big).length === 6 && shownF(big).every(f => f.over) && fitted(big) && /mc-lines/.test(small.cls) && shownF(small).length >= 1 && shownF(small).every(f => f.line) && fitted(small) &&
+      hidF(small).indexOf(true) !== -1 && hidF(small).slice(hidF(small).indexOf(true)).every(Boolean) && shownF(big)[2].t === 'IP address' && shownF(big)[2].v === '203.0.113.1',
+      JSON.stringify({ big: { cls: big.cls, k: big.k, facts: big.facts }, small: { cls: small.cls, k: small.k, facts: small.facts, cut0: small.cut0 } }));
+    at = 'BC10'; const off = await p.evaluate(() => { TopoForge.embed({ bigcard: false }); const el = document.querySelector('#minimap .mm-card'), a = el.querySelector('.mc-a').getBoundingClientRect(); return { big: el.classList.contains('mc-big'), body: document.body.classList.contains('tf-bigcard'), art: [Math.round(a.width), Math.round(a.height)], preview: TopoForge.embed().preview }; });
+    const on = await p.evaluate(() => { TopoForge.embed({ bigcard: true }); return document.querySelector('#minimap .mm-card').classList.contains('mc-big'); });
+    check('BC10 TopoForge.embed({ bigcard: false }) puts 1.10\'s card back (its 40-pixel picture), and { bigcard: true } the big one again', !off.big && !off.body && off.art.join() === '40,40' && off.preview && on, JSON.stringify({ off, on }));
+    await c.close(); }
+  // BC4: a picture the page gives: this origin only, an <img> with alt text; nothing asked of another host
+  { const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json'); const asked = []; p.on('request', q => asked.push(q.url()));
+    at = 'BC4'; const id = await idOf(p, 'Edge Router'), Bp = new URL(B).port;
+    for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); }
+    const show = async art => { await p.evaluate(([i, a]) => TopoForge.preview([i], { card: { title: 'The edge "<b>x</b>"', art: a } }), [id, art]); await p.waitForTimeout(400); return cardRead(p); };
+    const own = await show({ src: '/card.png', alt: 'Green square "><b>bold</b>' }), noAlt = await show({ src: A + '/card.png?2' });
+    const refused = []; for (const src of [B + '/card.png', '//127.0.0.1:' + Bp + '/card.png', 'data:image/png;base64,iVBORw0KGgo=', 'javascript:alert(1)', 'file:///etc/hosts']) { const x = await show({ src, alt: 'no' }); refused.push(!x.art.img && x.art.svg.length > 0); }
+    const gone = await show({ src: '/missing.png', alt: 'Not there' }); await p.waitForTimeout(300); const gone2 = await cardRead(p);
+    const marks = await p.evaluate(() => document.querySelectorAll('#minimap .mm-card b').length);
+    const off = await p.evaluate(i => { TopoForge.embed({ bigcard: false }); TopoForge.preview([i], { card: { art: { src: '/card.png', alt: 'x' } } }); const r = !!document.querySelector('#minimap .mm-card img'); TopoForge.embed({ bigcard: true }); return r; }, id);
+    const other = asked.filter(u => u.includes(':' + Bp + '/')).concat(reqLog.filter(l => l.startsWith(Bp + ' /card')));
+    check('BC4 a picture the page gives (art: { src, alt }) is shown in an <img> only from this page\'s own origin, with its alt text (the title when it gives none), and loads; another host, a host-relative //, data:, javascript: and file: are refused (the shape\'s own picture instead) and nothing is asked of another host; a picture that fails gives way to the shape\'s; markup stays text; without bigcard there is no <img>',
+      own.art.img && own.art.img.src === A + '/card.png' && own.art.img.alt === 'Green square "><b>bold</b>' && own.art.img.ok && own.art.hidden === null && noAlt.art.img && noAlt.art.img.alt === 'The edge "<b>x</b>"' &&
+      refused.every(Boolean) && !gone2.art.img && gone2.art.svg.length > 0 && marks === 0 && other.length === 0 && !off,
+      JSON.stringify({ own: own.art.img, noAlt: noAlt.art.img && noAlt.art.img.alt, refused, gone: { img: gone2.art.img, svg: gone2.art.svg.length > 0 }, marks, other, off }));
+    await c.close(); }
+  // BC6, BC7, BC9: pages, and what the page is told
+  { const BX = {}; const r = await parentRun(A, A + '/index.html?embed=bigcard,map&load=/rich.json', async (p, fr) => {
+      for (let i = 0; i < 3; i++) { await fr.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); }
+      BX.r = await fr.evaluate(() => TopoForge.preview({ category: 'net' })); BX.c1 = await cardRead(fr); BX.q1 = await fr.evaluate(() => TopoForge.cardPage());
+      BX.n2 = await fr.evaluate(() => TopoForge.cardPage('next')); await p.waitForTimeout(150); BX.c2 = await cardRead(fr); BX.icon = await iconOf(fr, 'router');
+      BX.n3 = await fr.evaluate(() => [TopoForge.cardPage('last'), TopoForge.cardPage('next'), TopoForge.cardPage(0), TopoForge.cardPage('sideways'), TopoForge.cardPage('first')]); BX.c3 = await cardRead(fr);
+      const sw = await idOf(fr, 'Core Switch'), rt = await idOf(fr, 'Edge Router');
+      BX.ord = await fr.evaluate(([a, b]) => { TopoForge.preview([a, b]); TopoForge.cardPage(2); return TopoForge.cardPage().title; }, [sw, rt]);
+      BX.cap = await fr.evaluate(() => { const x = TopoForge.preview({ kind: 'server' }); return { pages: x.pages, cover: x.cards[0].facts, last: x.cards[8] && x.cards[8].title }; });
+    }, { after: async () => BX });
+    const x = r.extra, cp = msgs(r.got, 'cardpage'), pv = msgs(r.got, 'preview');
+    check('BC6 several matches are pages: the card 1.10 shows first, then one card for each match (its name, its picture, its own fields), "1 of 3" shown in the card; cardPage(\'next\'), \'previous\', \'first\', \'last\' or a number turn them (anything else, or past the ends, is false); each turn is said in the live region and told to the page (topoforge:cardpage); in both mode the drawing lights all the matches on the first card and only that match on its own; matches named by id keep the page\'s order',
+      x.r.pages === 3 && x.c1.pager === '1 of 3' && x.c1.title === 'Network' && x.c1.hi === 2 && x.q1.page === 1 && x.q1.pages === 3 &&
+      x.n2.page === 2 && x.c2.title === 'Edge Router' && x.c2.pager === '2 of 3' && x.c2.art.svg === x.icon && x.c2.facts.some(f => f.t === 'Hostname' && f.v === 'gw4') && x.c2.hi === 1 && /^Card 2 of 3: Edge Router\./.test(x.c2.live) &&
+      x.n3[0].page === 3 && x.n3[1] === false && x.n3[2] === false && x.n3[3] === false && x.n3[4].page === 1 && x.c3.hi === 2 && x.ord === 'Core Switch' &&
+      cp.length >= 4 && cp[0].page === 2 && cp[0].pages === 3 && cp[0].title === 'Edge Router' && cp[0].ids.length === 1,
+      JSON.stringify({ pages: x.r.pages, c1: [x.c1.title, x.c1.pager, x.c1.hi], q1: x.q1, n2: x.n2, c2: [x.c2.title, x.c2.pager, x.c2.hi, x.c2.live, x.c2.art.svg === x.icon], n3: x.n3, c3hi: x.c3.hi, ord: x.ord, cp: cp.slice(0, 2) }));
+    check('BC7 the pages stop at 9 (house number GREAT): ten servers make the first card and 8 of theirs, and the first card says "As cards: 8 of 10"',
+      x.cap.pages === 9 && x.cap.cover.some(f => f[0] === 'As cards' && f[1] === '8 of 10') && x.cap.last === 'Server 8', JSON.stringify(x.cap));
+    const pv0 = pv[0] || {};
+    const off = await parentRun(A, A + '/index.html?embed=preview,map&load=/rich.json', async (p, fr) => { await fr.evaluate(() => TopoForge.preview({ category: 'net' })); });
+    const pvOff = msgs(off.got, 'preview')[0] || {};
+    check('BC9 with bigcard, topoforge:preview also carries the page shown, how many, and every card (text only); without it the message is 1.10\'s, field for field',
+      pv0.page === 1 && pv0.pages === 3 && Array.isArray(pv0.cards) && pv0.cards.length === 3 && pv0.cards[1].title === 'Edge Router' && Object.keys(pvOff).join() === 'mode,caption,count,other,ids,card',
+      JSON.stringify({ with: { page: pv0.page, pages: pv0.pages, n: (pv0.cards || []).length }, without: Object.keys(pvOff) })); }
+  // CP: the pad while a card shows
+  { const { c: c11, p: p11 } = await open(A + '/v17.html?embed=mappad&load=/rich.json'); const pad11 = await p11.evaluate(() => ({ html: document.querySelector('#mmPad').outerHTML, tf: getComputedStyle(document.querySelector('#mmPad')).transform })); await c11.close();
+    const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json');
+    const padRead = () => p.evaluate(() => { const g = document.querySelector('#mmPad'), cs = getComputedStyle(g), e = g.querySelector('.mp-e'), es = getComputedStyle(e);
+      const L = h => { const m = h.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+      const ratio = (a, b) => { const x = L(a), y = L(b); return Math.round((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) * 100) / 100; };
+      const cells = [...g.querySelectorAll('.mp-b, .mp-sl')].filter(b => getComputedStyle(b).display !== 'none').map(b => ({ cls: b.className.replace('mp-b ', ''), name: b.getAttribute('aria-label'), title: b.getAttribute('title'), off: b.getAttribute('aria-disabled') === 'true' }));
+      return { html: g.outerHTML, cls: g.className, label: g.getAttribute('aria-label'), tf: cs.transform, tr: cs.transitionDuration, trp: cs.transitionProperty, bg: es.backgroundColor, ink: ratio(es.color, es.backgroundColor), cells, focus: document.activeElement.className, mode: TopoForge.mapMode().mode, scale: TopoForge.mapScale(), page: TopoForge.cardPage(), live: (document.querySelector('#flLive') || {}).textContent || '' }; });
+    at = 'CP1'; const sw = await p.evaluate(() => TopoForge.embed()); const p0 = await padRead();
+    check('CP1 cardpad turns on bigcard, mappad, map and preview; with no card shown the pad is 1.11\'s pad, the same markup as 1.11 draws',
+      sw.cardpad && sw.bigcard && sw.mappad && sw.map && sw.preview && p0.html === pad11.html && p0.tf === pad11.tf, JSON.stringify({ sw: [sw.cardpad, sw.bigcard, sw.mappad, sw.map, sw.preview], same: p0.html === pad11.html, tf: [p0.tf, pad11.tf] }));
+    at = 'CP2'; await p.focus('#mmPad .mp-sl'); await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.waitForTimeout(400); const p1 = await padRead();
+    const m = (p1.tf.match(/matrix\(([^)]+)\)/) || [, ''])[1].split(',').map(Number), deg = Math.round(Math.atan2(m[1], m[0]) * 180 / Math.PI);
+    check('CP2 while a card shows the pad turns 45 degrees (a brief turn: 0.2 s) and takes the accent colour, its glyphs at least 4.5 to 1 against it; the slider is put away and the focus that was on it goes to Next',
+      /mp-cardmode/.test(p1.cls) && deg === 45 && p1.tr === '0.2s' && /transform/.test(p1.trp) && p1.bg !== 'rgb(255, 255, 255)' && p1.ink >= 4.5 && !p1.cells.some(x => /mp-sl/.test(x.cls)) && /mp-e/.test(p1.focus),
+      JSON.stringify({ cls: p1.cls, deg, tr: p1.tr, trp: p1.trp, bg: p1.bg, ink: p1.ink, focus: p1.focus }));
+    at = 'CP4'; const names = p1.cells.map(x => [x.cls, x.name, x.title === x.name, x.off]);
+    check('CP4 every cell of the turned pad says its new job, in its tooltip (title) and its accessible name alike: up the first card, down the last, left the previous, right the next, the centre the card shown (with "1 of 3"); the grip keeps its own; the pad\'s name says it is turned',
+      p1.cells.length === 6 && p1.cells.every(x => x.title === x.name && x.name) && /^Overview map pad, turned/.test(p1.label) &&
+      /^First card: 1 of 3/.test(p1.cells.find(x => /mp-up/.test(x.cls)).name) && /^Last card: 3 of 3/.test(p1.cells.find(x => /mp-dn/.test(x.cls)).name) && /^Previous card/.test(p1.cells.find(x => /mp-w/.test(x.cls)).name) &&
+      /^Next card: 2 of 3/.test(p1.cells.find(x => /mp-e/.test(x.cls)).name) && /^Card 1 of 3: Network/.test(p1.cells.find(x => /mp-c/.test(x.cls)).name) && /^Move the overview map/.test(p1.cells.find(x => /mp-grip/.test(x.cls)).name),
+      JSON.stringify({ label: p1.label, names }));
+    check('CP5 the turn is said in the app\'s live region', /^Map pad turned: it pages the cards, 1 of 3/.test(p1.live), p1.live);
+    at = 'CP3'; const pg = async sel => { await p.mouse.move(900, 700); await p.click('#mmPad ' + sel, { force: true }); await p.waitForTimeout(120); const r = await padRead(); return { page: r.page.page, mode: r.mode, scale: r.scale, live: r.live }; };
+    const t1 = await pg('.mp-e'), t2 = await pg('.mp-dn'), t3 = await pg('.mp-up'), t4 = await pg('.mp-w'), t5 = await pg('.mp-e'), t6 = await pg('.mp-w'), t7 = await pg('.mp-c');
+    check('CP3 the turned pad\'s arms page the cards: right the next, down the last, up the first, left the previous; an arm with nowhere to go says so and does nothing; the centre says the card again (its facts too); the map\'s mode and scale are not touched',
+      [t1, t2, t3, t4, t5, t6, t7].map(t => t.page).join() === '2,3,1,1,2,1,1' && /^Previous card: none/.test(t4.live) && /^Card 1 of 3: Network\. On this page 2/.test(t7.live) && [t1, t2, t3, t4, t5, t6, t7].every(t => t.mode === 'both' && t.scale === 1), JSON.stringify([t1, t2, t3, t4, t5, t6, t7]));
+    at = 'CP7'; await p.focus('#mmPad .mp-e'); const kp = [];
+    for (const k of ['ArrowRight', 'End', 'Home', 'ArrowLeft', 'ArrowRight']) { await p.keyboard.press(k); kp.push(await p.evaluate(() => TopoForge.cardPage().page)); }
+    check('CP7 on the turned pad\'s arms, the keys page too: right and left one card, Home the first, End the last', kp.join() === '2,3,1,1,2', kp.join());
+    at = 'CP6'; await p.focus('#mmPad .mp-e'); const un = await p.evaluate(() => { TopoForge.preview(null); const g = document.querySelector('#mmPad'); return { cls: g.className, tr: getComputedStyle(g).transitionDuration }; }); await p.waitForTimeout(450); const p2 = await padRead();
+    await p.evaluate(() => TopoForge.preview({ category: 'net' })); await p.waitForTimeout(150); await p.evaluate(() => TopoForge.mapMode('rings')); await p.waitForTimeout(450); const p3 = await padRead();
+    await p.focus('#mmPad .mp-sl'); await p.keyboard.press('Home'); const p4 = await padRead();
+    check('CP6 when the card goes (cleared, or the mode turned to rings) the pad turns back (a brief turn: 0.2 s) and is then exactly its 1.11 self again: the same markup as 1.11\'s pad (no title, no turn, no colour left behind), the focus back on the slider, and the slider sets the mode again; that is said too',
+      un.cls === 'mp-unturn' && un.tr === '0.2s' && p2.html === pad11.html && p2.tf === pad11.tf && /mp-sl/.test(p2.focus) && /^Map pad back/.test(p2.live) && p3.html.replace(/aria-valuenow="2" aria-valuetext="[^"]*"/, '') === pad11.html.replace(/aria-valuenow="1" aria-valuetext="[^"]*"/, '').replace('--tx: 66px', '--tx: 110px') && p4.mode === 'cards',
+      JSON.stringify({ un, same: p2.html === pad11.html, tf: p2.tf, focus: p2.focus, live: p2.live, rings: p3.cls, p4: p4.mode }));
+    await c.close(); }
+  for (const dark of [false, true]) {
+    const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json', { dark, reduce: true });
+    const k = await p.evaluate(async () => { TopoForge.preview({ category: 'net' }); await new Promise(r => setTimeout(r, 50)); const g = document.querySelector('#mmPad'); const a = getComputedStyle(g).transitionDuration; TopoForge.preview(null); return { on: a, off: getComputedStyle(g).transitionDuration, unturn: g.classList.contains('mp-unturn') }; });
+    check(`CP8 with reduced motion asked the pad turns at once, both ways (no transition), ${dark ? 'dark' : 'light'}`, k.on === '0s' && k.off === '0s' && !k.unturn, JSON.stringify(k));
+    await c.close();
+  }
+  { const { c, p } = await open(A + '/index.html?embed=bigcard,mappad&load=/rich.json');
+    const r = await p.evaluate(() => { TopoForge.preview({ category: 'net' }); const g = document.querySelector('#mmPad'); document.querySelector('#mmPad .mp-up').click(); return { cls: g.className, pages: TopoForge.cardPage().pages, scale: TopoForge.mapScale(), sl: getComputedStyle(g.querySelector('.mp-sl')).display, title: g.querySelector('.mp-up').getAttribute('title') }; });
+    check('CP9 without cardpad (bigcard and mappad on) the pad does not turn while a card shows: it keeps its 1.11 jobs (up is Closer)', r.cls === '' && r.pages === 3 && r.scale === 1.5 && r.sl !== 'none' && r.title === null, JSON.stringify(r)); await c.close(); }
+  { const r = await parentRun(B, A + '/index.html?embed=cardpad&load=/rich.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); });
+    check('E11 topoforge:cardpage, and topoforge:preview with its pages, never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
+
   // ---- X: axe with every switch on; reduced motion ----
   for (const dark of [false, true]) {
-    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset&load=/fixture.json', { dark, reduce: true });
+    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset,bigcard,cardpad&load=/fixture.json', { dark, reduce: true });
     await p.evaluate(() => TopoForge.preview({ category: 'net' }));
     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
     await p.addScriptTag({ content: axeSrc });
@@ -713,6 +887,18 @@ try {
     const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
     check(`X3 axe, the map's handles shown and a preview caption, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
     await p.screenshot({ path: path.join(outdir, `map-preview-${dark ? 'dark' : 'light'}.png`) });
+    await c.close();
+  }
+  for (const dark of [false, true]) {   // 1.12: the big card on its second page, and the pad turned beside it, its handles shown
+    const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json', { dark, reduce: true });
+    await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
+    for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); }
+    await p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); await p.focus('#mmPad .mp-e'); await p.waitForTimeout(300);
+    await p.addScriptTag({ content: axeSrc });
+    const v = await p.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations.map(x => ({ id: x.id, impact: x.impact, n: x.nodes.length, t: x.nodes.slice(0, 4).map(y => y.target.join(' ')) })));
+    const bad = v.filter(x => x.impact === 'critical' || x.impact === 'serious');
+    check(`X4 axe, the big card on its second page and the pad turned, ${dark ? 'dark' : 'light'}: no critical or serious finding`, bad.length === 0, v.map(x => `${x.impact} ${x.id} x${x.n} [${x.t.join(' | ')}]`).join(' ;; ') || 'no findings');
+    await p.screenshot({ path: path.join(outdir, `bigcard-${dark ? 'dark' : 'light'}.png`) });
     await c.close();
   }
   check('C1 no console errors', consoleErrors.length === 0, consoleErrors.join(' | ').slice(0, 600));

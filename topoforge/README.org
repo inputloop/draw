@@ -68,6 +68,10 @@ of your work outside the browser.
 - New in 1.11: the map's pad (=mappad=: a drawn slider for the mode, an arm
   for the scale, a grip; =padArrows('pan')= to pan instead) and Reset layout
   (=reset=, =resetLayout()=, =undoReset()=).
+- New in 1.12: the card that fills the map (=bigcard=: its words as large as
+  fit, large art or a picture of the page's own origin, a box score or lines,
+  several matches as pages, =cardPage()=) and the pad that pages it
+  (=cardpad=: it turns 45 degrees and changes colour while a card shows).
 
 * Accessibility
 We want TopoForge usable without a mouse, without colour, and without seeing

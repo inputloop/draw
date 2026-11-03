@@ -4,6 +4,34 @@ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
+Version 1.12 (2026-11-03; checked: tests/run.sh, the project-files check, the
+browser kit and the embedding kit green, with their planted faults; see
+RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+yet)
+
+- The card that fills the map, for a page that asks (switch bigcard; Corwin,
+  2026-11-03: "needs to have the text in the mini-map when we show info be
+  LARGER: fill as much space as that gives"; "Why no images? This is supposed
+  to be the baseball or flashcard or scoreboard or boxscore highlights, or
+  several of these paginated").  The card's words are as large as fit in the
+  map, found by measuring, from 1.10's sizes up to four times them, and fitted
+  again when the map changes size.  Its art is large: the shape's own
+  picture, or for several matches their pictures side by side, or a picture
+  the page gives from its own origin (art: { src, alt }, an <img> with alt
+  text; never another host).  Its facts are a box score, label over value in
+  cells, when there is room, else lines; facts that do not fit are left out,
+  not cut.  Several matches are pages, one card each after the first, at most
+  9 (the house number 9: a person turns them one at a time, and "9 of 9" stays
+  one digit); TopoForge.cardPage() turns them, and a new message,
+  topoforge:cardpage, tells the page.  On a phone-wide screen, where the map
+  is hidden, it shows while a card does, along the drawing's foot.
+- The pad that pages the cards (switch cardpad; it turns bigcard and mappad
+  on): while a card shows the pad turns 45 degrees and takes the accent
+  colour, so it is clear something happened.  Its upper arms go back (left the
+  previous card, up the first), its lower arms forward (right the next, down
+  the last); every cell's tooltip and name say so, and the turn is said.  When
+  the card goes, the pad is its 1.11 self again.
+
 Version 1.11 (2026-11-02; checked: tests/run.sh, the project-files check, the
 browser kit and the embedding kit green, with their planted faults; see
 RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
@@ -24,7 +52,7 @@ yet)
   they started, the drawing untouched; Undo reset puts them back.  In the
   map's Mode menu and the View menu; the page gets topoforge:reset.
 
- checked: tests/run.sh, the project-files check, the
+Version 1.10 (2026-11-02; checked: tests/run.sh, the project-files check, the
 browser kit and the embedding kit green, with their planted faults; see
 RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
 yet)
@@ -46,7 +74,7 @@ yet)
 - New messages, to a parent page of the same origin only: topoforge:preview
   (the caption and card of each preview) and topoforge:mapmode.
 
- built in stages on the corwin branch; checked: tests/run.sh,
+Version 1.9 (2026-11-02; built in stages on the corwin branch; checked: tests/run.sh,
 the project-files check, the browser kit and the embedding kit green, with their
 planted faults; see RESULT.txt and RESULT-embed.txt in tests/browser/; no release
 packed or signed yet)

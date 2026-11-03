@@ -1,5 +1,16 @@
 2026-11-03  Corwin Brust  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.12 in www/topoforge/: the card
+	that fills the overview map and the pad that pages it (Corwin,
+	2026-11-03, 13:44: "the feature is way upstream from obsmage").
+	topoforge/ChangeLog has the detail.
+	* www/topoforge/index.html: 1.12.
+	* topoforge/: the 1.11-to-1.12 patch, the spec, the kit and its plants,
+	NEWS, ChangeLog, AUTHORS, README.org, RECIPE.org.
+	* RECIPE.org: the app's row, 1.12, and its sha256; the 1.11-to-1.12
+	patch's row and sha256.
+	* README.org, NEWS: 1.12.
+
 	topology board: notes in a meeting, on a canvas (Corwin's request,
 	2026-11-03).
 	* www/board/index.html: the board, one file, nothing fetched.
