@@ -1,5 +1,15 @@
 2026-11-03  Corwin Brust  <corwin@bru.st>
 
+	perl/Topology/t/60-repo.t: run git with no GIT_ variable from the
+	environment but the identity it sets.  Pushed from a linked worktree,
+	the pre-push hook runs bin/test.sh with an absolute GIT_DIR, and this
+	test's git init, add and commit acted on the repository being pushed:
+	init set core.bare in its config and add replaced the worktree's index
+	(2026-11-03; the commit-msg hook refused the commit, so nothing was
+	committed, and core.bare and the index were put back by hand).  A new
+	check: a decoy GIT_DIR, as a hook hands it on, comes through untouched;
+	with the filter planted out the test goes red.
+
 	topology forge (formerly TopoForge) 1.13 in www/topoforge/: a peek at
 	a placed shape's card, and fitScale (Corwin, 2026-11-03, 17:01: "when
 	hovering a shape on the main stage area it would be good to have a

@@ -40,13 +40,22 @@ unlike(join(' ', %env), qr/s3cret/, 'and its value is in no environment variable
 ok((grep { $_->name eq 'b' } @$r)[0]->usable, 'credentials.strict = off lets the operator decide');
 
 SKIP: {
-    skip 'git not installed', 3 unless system('git --version >/dev/null 2>&1') == 0;
-    local %ENV = (%ENV, GIT_AUTHOR_NAME => 't', GIT_AUTHOR_EMAIL => 't@t', GIT_COMMITTER_NAME => 't', GIT_COMMITTER_EMAIL => 't@t');
+    skip 'git not installed', 4 unless system('git --version >/dev/null 2>&1') == 0;
+    # A git hook runs this suite (pre-push runs bin/test.sh) with GIT_DIR and its kin set; pushed from a linked worktree,
+    # GIT_DIR is absolute, and the git commands below acted on the repository being pushed (2026-11-03: git init set
+    # core.bare in its config, git add replaced its index). So they run with no GIT_ variable but the identity below,
+    # and a decoy GIT_DIR, as a hook would hand it on, must come through untouched.
+    my %hook = (%ENV, GIT_DIR => "$d/decoy.git", GIT_INDEX_FILE => "$d/decoy.git/index");
+    local %ENV = ((map { $_ => $hook{$_} } grep { !/^GIT_/ } keys %hook), GIT_AUTHOR_NAME => 't', GIT_AUTHOR_EMAIL => 't@t', GIT_COMMITTER_NAME => 't', GIT_COMMITTER_EMAIL => 't@t');
+    system("git init -q --bare $d/decoy.git") == 0 or die;
+    my $decoy = sub { join ',', map { my $f = $_; $f =~ s/^\Q$d\E//; "$f:" . (-s $_ // 0) } sort glob("$d/decoy.git/* $d/decoy.git/refs/heads/*") };
+    my $before = $decoy->();
     system("git init -q -b main $d/work && echo hi > $d/work/TOPOLOGY.md && git -C $d/work add . && git -C $d/work commit -qm one && git clone -q --bare $d/work $d/upstream.git") == 0 or die;
     my ($ok, $what) = $by{a}->update("$d/out");
     ok($ok && $what eq 'cloned' && -f "$d/out/a/TOPOLOGY.md", 'cloned into place');
     ($ok, $what) = $by{a}->update("$d/out");
     is($what, 'updated', 'a second run fetches');
     ok(!glob("$d/out/*.tmp.*"), 'no temporary clone is left behind');
+    is($decoy->(), $before, 'a repository a hook names in GIT_DIR is left alone');
 }
 done_testing;
