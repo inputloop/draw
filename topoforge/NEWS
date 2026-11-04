@@ -4,6 +4,32 @@ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
+Version 1.13 (2026-11-03; checked: tests/run.sh, the project-files check, the
+browser kit and the embedding kit green, with their planted faults; see
+RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+yet)
+
+- A peek at a placed shape's card, for a page that asks (switch peek; it turns
+  preview on; Corwin, 2026-11-03: "when hovering a shape on the main stage
+  area it would be good to have a modifier key that shows the
+  flash-card/trading-card like we get with no modifier").  Hold Shift with the
+  pointer over a shape on the drawing and the overview map shows that shape's
+  card, the same card preview([id]) shows (so the big card fills the map when
+  bigcard is on); move to another shape and the card follows.  Let Shift go,
+  or leave the shape or the drawing, and the map shows again exactly what it
+  showed before: the page's own preview, on the card it was on, or nothing.
+  By keyboard: with the drawing focused and one shape selected, press Shift on
+  its own.  The modifier is Shift because a lone Alt takes the focus to the
+  browser's menu on Windows, and Ctrl zooms with the wheel.  The peek only
+  listens: Shift-click, Shift-drag, Shift+wheel, Shift on a resize handle and
+  Shift with the arrow keys do what they did.  The page is told
+  (topoforge:peek: the shape's id and name, then id null); with the map
+  hidden, nothing is drawn but the page is still told.
+- TopoForge.fitScale(): the zoom Fit to window would set now, read without
+  moving the view, so a page can put "fit" in the middle of its own zoom
+  slider.  Fit to window and fitScale() share one calculation; Fit sets
+  exactly the view it set in 1.12.
+
 Version 1.12 (2026-11-03; checked: tests/run.sh, the project-files check, the
 browser kit and the embedding kit green, with their planted faults; see
 RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed

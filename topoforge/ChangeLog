@@ -1,5 +1,33 @@
 2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
+	topology forge (formerly TopoForge) 1.13: a peek at a placed shape's
+	card, and fitScale (Corwin, 2026-11-03, 17:01: "when hovering a shape
+	on the main stage area it would be good to have a modifier key that
+	shows the flash-card/trading-card like we get with no modifier").
+	* index.html (TF_VERSION): 1.13.  (header comment): the 1.13 lines.
+	(fitView): sets the view fitCalc works out; the same view as 1.12.
+	(fitCalc, fitScale): New.
+	(EMBED_WORDS): peek.
+	(embed): peek turns preview on.
+	(preview): the page's own preview ends a peek; what it draws comes
+	from previewOf.
+	(previewOf): New, shared with the peek.
+	(drawPreview): a peek leaves the pad as it was.
+	(embed112): calls embed113.
+	(PEEK, PK, embed113, wirePeek, peekWant, peekCheck, peekShow)
+	(peekEnd): New.
+	(window.TopoForge): fitScale.
+	* spec/EMBED-v1.md: "Added in 1.13 (still v1)".
+	* tests/browser/embed.browser.mjs: compared with 1.12; 1.11 rebuilt
+	too, for the pad the 1.12 checks compare with; S7 (every 1.12 switch
+	on, the big card on its second page and the pad turned, the same
+	pixels as 1.12), PK1-PK11, E12, FS1, FS2; W1 and X1 know peek.
+	* tests/browser/embed-prove-red.sh: 28 more plants (163).
+	* NEWS, AUTHORS, README.org, RECIPE.org: 1.13.
+	* patches/topoforge-1.12-to-1.13.patch: New.
+
+2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+
 	topology forge (formerly TopoForge) 1.12: the card that fills the map,
 	and the pad that pages it (Corwin, 2026-11-03, corrected at 13:44 to
 	topology: "the feature is way upstream from obsmage"; "fill as much

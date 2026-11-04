@@ -72,6 +72,10 @@ of your work outside the browser.
   fit, large art or a picture of the page's own origin, a box score or lines,
   several matches as pages, =cardPage()=) and the pad that pages it
   (=cardpad=: it turns 45 degrees and changes colour while a card shows).
+- New in 1.13: a peek at a placed shape's card (=peek=: hold Shift with the
+  pointer over a shape, or press Shift alone with one shape selected, and the
+  map shows its card until Shift is let go) and =fitScale()=, the zoom Fit
+  would set, read without moving the view.
 
 * Accessibility
 We want TopoForge usable without a mouse, without colour, and without seeing

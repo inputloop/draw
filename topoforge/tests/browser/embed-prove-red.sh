@@ -4,7 +4,7 @@
 # Corwin Brust <corwin@bru.st> and Contributors
 # Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
 #
-# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.12).
+# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.13).
 # A control run on the file as given must be green first. Then each plant changes a COPY of index.html
 # in one place, the kit runs on the copy, and the check named for that plant must be among those that
 # fail (a plant may trip others too: the standalone ones watch the whole page).
@@ -149,6 +149,35 @@
 #   cp-unasked     the pad turns without cardpad          -> CP9
 #   any-origin-112 postMessage to '*', the new messages   -> E11
 #   cp-no-names    the turned arms have no names           -> X4
+# 1.13:
+#   pk-leak-pad    the peek's guard keeps the pad from turning -> S7
+#   pk-on-default  the peek works without its switch      -> PK1
+#   pk-off-stays   turned off, a peek that shows stays    -> PK1
+#   pk-implies     peek leaves preview off                -> PK2
+#   pk-no-show     the peek draws no card                 -> PK2
+#   pk-button-down the card shows with a button down      -> PK2
+#   pk-no-swap     another shape keeps the first card     -> PK3
+#   pk-restore-none letting go clears the page's preview  -> PK4
+#   pk-page-lost   letting go puts the page's preview on its first card -> PK4
+#   pk-pad-turns   the peek turns the pad to its own card -> PK4
+#   pk-sticks      letting Shift go leaves the card       -> PK5
+#   pk-leave-shape leaving the shape keeps its card       -> PK6
+#   pk-leave-canvas leaving the drawing keeps the card    -> PK6
+#   pk-no-keys     Shift alone shows nothing by keyboard  -> PK7
+#   pk-key-any-focus the keyboard peek with the focus anywhere -> PK7
+#   pk-key-many    the keyboard peek with two selected    -> PK7
+#   pk-eats-click  the peek stops a Shift-press           -> PK8
+#   pk-eats-wheel  the peek stops a Shift+wheel           -> PK8
+#   pk-silent      a card shows and the page is not told  -> PK9
+#   pk-no-null     the card goes and the page is not told -> PK9
+#   pk-tells-preview a peek is told as a preview          -> PK9
+#   pk-draws-hidden the peek draws with the map hidden    -> PK10
+#   pk-hidden-silent the map hidden, the page is not told -> PK10
+#   pk-preview-lost the page's preview() during a peek is lost when it ends -> PK11
+#   fs-moves       fitScale() moves the view              -> FS1
+#   fs-pad         fitScale(pad) ignores the pad          -> FS1
+#   fs-view-changed fitView sets another view than 1.12's -> FS2
+#   any-origin-113 postMessage to '*', the new message    -> E12
 # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
 # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
@@ -321,5 +350,34 @@ plant cp-glides-reduced CP8 's|^@media (prefers-reduced-motion:reduce){#mmPad.mp
 plant cp-unasked     CP9 's@const on = !!want \&\& EMBED.cardpad \&\& EMBED.mappad \&\& !PAD.el.hidden;@const on = !!want \&\& EMBED.mappad \&\& !PAD.el.hidden;@'
 plant cp-no-names    X4  "s@b.setAttribute('aria-label', label); b.title = label;@b.removeAttribute('aria-label');@"
 plant any-origin-112 E11 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+# 1.13
+plant pk-leak-pad    S7  's@^  if (!PREVIEW.peek) padCard(!!deck);@  if (!PREVIEW.peek \&\& false) padCard(!!deck);@'
+plant pk-on-default  PK1 's@if (EMBED.peek && !_peekWired) wirePeek();@if (!_peekWired) wirePeek();@; s@if (!EMBED.peek || !PK.shift || S.mode@if (!PK.shift || S.mode@'
+plant pk-off-stays   PK1 's@^  if (!EMBED.peek && PEEK) peekEnd(true);$@@'
+plant pk-implies     PK2 's@^    if (EMBED.peek) EMBED.preview = true;.*$@@'
+plant pk-no-show     PK2 's@  if (PEEK.draw) { PREVIEW = { ...previewOf(\[n.id\]), peek: true }; drawPreview(); }@  if (false) { }@'
+plant pk-button-down PK2 's@if (PK.at) { if (PK.at.buttons) return null; return@if (PK.at) { return@'
+plant pk-no-swap     PK3 's@if ((n ? n.id : null) === (PEEK ? PEEK.id : null)) return;@if (!!n === !!PEEK) return;@'
+plant pk-restore-none PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw) drawPreview(); }@if (p.draw) { PREVIEW = null; if (draw) drawPreview(); }@'
+plant pk-page-lost   PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw)@if (p.draw) { PREVIEW = p.saved; if (PREVIEW) PREVIEW.page = 0; if (draw)@'
+plant pk-pad-turns   PK4 's@^  if (!PREVIEW.peek) padCard(!!deck);@  padCard(!!deck);@'
+plant pk-sticks      PK5 "s@if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck();@if (e.key === 'Shift') { PK.key = false; } peekCheck();@"
+plant pk-leave-shape PK6 's@return hitTest(toWorld(PK.at)).node || null; }@return hitTest(toWorld(PK.at)).node || (PEEK \&\& N(PEEK.id)) || null; }@'
+plant pk-leave-canvas PK6 "s@svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });@svg.addEventListener('pointerleave', () => { });@"
+plant pk-no-keys     PK7 's@PK.key = !PK.at && !e.ctrlKey@PK.key = false \&\& !e.ctrlKey@'
+plant pk-key-any-focus PK7 's@if (PK.key && document.activeElement === svgEl() && S.sel.size === 1)@if (PK.key \&\& S.sel.size === 1)@'
+plant pk-key-many    PK7 's@&& S.sel.size === 1) return N(@\&\& S.sel.size >= 1) return N(@'
+plant pk-eats-click  PK8 "s@svg.addEventListener('pointerdown', at);   // after@svg.addEventListener('pointerdown', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, true);   // after@"
+plant pk-eats-wheel  PK8 "s@svg.addEventListener('wheel', at, { passive: true });@svg.addEventListener('wheel', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, { capture: true, passive: true });@"
+plant pk-silent      PK9 "s@^  tell('topoforge:peek', { id: n.id, name: nodeName(n) });\$@@"
+plant pk-no-null     PK9 "s@^  tell('topoforge:peek', { id: null });\$@@"
+plant pk-tells-preview PK9 's@peek: true }; drawPreview(); }@peek: true }; tellPreview(drawPreview()); }@'
+plant pk-draws-hidden PK10 "s@draw: .('#minimap').getClientRects().length > 0 }@draw: true }@"
+plant pk-hidden-silent PK10 "s@^  tell('topoforge:peek', { id: n.id, name: nodeName(n) });\$@  if (PEEK.draw) tell('topoforge:peek', { id: n.id, name: nodeName(n) });@"
+plant pk-preview-lost PK11 's@^  if (PEEK && (what === null.*$@@'
+plant fs-moves       FS1 's@function fitScale(pad = 50) { return rnd(fitCalc(pad).k, 5); }@function fitScale(pad = 50) { fitView(pad); return rnd(S.view.k, 5); }@'
+plant fs-pad         FS1 's@return rnd(fitCalc(pad).k, 5); }@return rnd(fitCalc().k, 5); }@'
+plant fs-view-changed FS2 's@y: (r.height - b.h \* k) / 2 - b.y \* k };$@y: (r.height - b.h * k) / 2 - b.y * k + 1 };@'
+plant any-origin-113 E12 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
 [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
 exit $bad

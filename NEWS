@@ -5,6 +5,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- topology forge (formerly TopoForge) 1.13: hold Shift over a shape on the
+  drawing (or press Shift alone with one shape selected) and the overview
+  map shows that shape's card until Shift is let go, for a page that asks;
+  and TopoForge.fitScale(), the zoom Fit to window would set, read without
+  moving the view.  See topoforge/NEWS.
+
 - topology forge (formerly TopoForge) 1.12: the card in the overview map
   fills it (its words as large as fit, a large picture, a box score, several
   matches as pages) and the map's pad turns 45 degrees to page the cards,

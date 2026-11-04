@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11 and 1.12)
+# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11, 1.12 and 1.13)
 
 topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
 This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
@@ -418,6 +418,55 @@ When the card goes (cleared, or the mode set to `rings`), the pad is exactly its
 markup 1.11 draws, no tooltip or colour left behind, the focus back on the slider if it was on an arm that is
 put away; that is said too ("Map pad back: ...") (CP1, CP6). Without `cardpad` the pad never turns (CP9).
 `topoforge:cardpage`, like every message, reaches a parent page of the app's own origin only (E11).
+
+## Added in 1.13 (still v1): a peek at a placed shape's card, and the zoom Fit would set
+
+From Corwin's words of 2026-11-03, 17:01: "when hovering a shape on the main stage area it would be good to have a
+modifier key that shows the flash-card/trading-card like we get with no modifier".
+
+One new switch word, `peek`, off unless a page asks and in neither `all` nor `bare` (W1), and one new call,
+`TopoForge.fitScale()`, which reads and changes nothing. Nothing 1.12 promised changes: a page opened on its own draws
+the same pixels as 1.12 (S1), and so does a page with every 1.12 switch on, the big card on its second page and the pad
+turned (S7).
+
+### A peek at a placed shape's card: `peek`
+
+`peek` turns `preview` on too (the peek shows the preview's card). The modifier is **Shift**: a lone Alt takes the focus
+to the browser's menu on Windows, and Ctrl and Meta zoom the drawing with the wheel.
+
+- **With the pointer.** While Shift is held with the pointer over a shape on the drawing, and no mouse button is down,
+  nothing is being dragged (no move, resize, marquee or connection) and no text is being edited, the map shows that
+  shape's card, drawn by the same path as `preview([id])`: the same card, so with `bigcard` it fills the map and is
+  fitted (PK2), and in `both` mode the shape is lit in the drawing (PK4). Moving to another shape with Shift held
+  swaps the card at once (PK3). Letting Shift go, leaving the shape (Shift still held) or the pointer leaving the
+  drawing puts back exactly what the map showed before the peek: the page's own preview, on the card of its pages it
+  was on, or nothing (PK4, PK5, PK6).
+- **With the keyboard.** With the drawing focused and exactly one shape selected, Shift pressed alone shows the
+  selected shape's card the same way, until Shift is let go (while the pointer is on the drawing, the shape under it is
+  the one shown). With two or more selected, or the focus elsewhere, it shows nothing (PK7).
+- **It never takes an event.** The peek only listens: it prevents and stops nothing. Shift-click still adds a shape
+  to the selection or takes it away, Shift-drag still draws a marquee or moves the selection, Shift+wheel still moves
+  the view east and west, Shift on a resize handle still keeps the shape's proportions, and Shift with the arrow keys
+  still nudges the selection one grid step (PK8). While a button is down there is no card; it comes back when the
+  button is let go, if Shift is still held over a shape (PK2).
+- **The page is told**: `topoforge:peek`, by the same two routes and the same origin rule as every message, `{ id,
+  name }` when a card shows (and again for each shape it swaps to; `name` is the card's title) and `{ id: null }` when
+  it goes (PK9, E12). With the map hidden (in a window 860 pixels wide or less, for one) nothing is drawn and nothing is
+  lit, but the page is still told (PK10).
+- **A peek is not the page's preview.** `topoforge:preview` is not sent for it, and the pad is left as it was (a pad
+  turned for the page's cards stays turned, on the page's card). While a peek shows, `cardPage()` reads the card shown
+  (one page). The page's own `preview()` during a peek ends it (told `{ id: null }`) and is drawn at once; letting
+  Shift go then leaves the page's preview where it is (PK11). `TopoForge.embed({ peek: false })` ends a peek that shows,
+  at once, and tells the page (PK1).
+
+### The zoom Fit would set: `TopoForge.fitScale()`
+
+`TopoForge.fitScale()` returns the zoom `k` that `fitView()` (Fit to window) would set now, with the same room for
+floating panels, the same padding (`fitScale(pad)` takes the same optional padding as `fitView(pad)`, 50 pixels when
+it is left out) and the same limits, rounded as `TopoForge.view` rounds `k` (to 5 places), so that after `fitView()`
+`TopoForge.view.k` equals it. It moves nothing: the view is as it was. On a page with nothing on it, it is 1, the zoom
+`fitView()` sets there. A page may use it to put "fit" in the middle of its own zoom slider (FS1). The two share one
+calculation, and `fitView()` sets exactly the view 1.12 set (FS2). It is not behind a switch: it changes nothing.
 
 ## Page tabs that do not fit (1.9, everywhere)
 

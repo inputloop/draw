@@ -1,0 +1,680 @@
+--- topoforge-1.12/AUTHORS
++++ topoforge-1.13/AUTHORS
+@@ -17,7 +17,9 @@
+                                           1.10, the map's modes and wheel;
+                                           1.11, the map's pad and Reset layout;
+                                           1.12, the card that fills the map
+-                                          and the pad that pages it
++                                          and the pad that pages it;
++                                          1.13, a peek at a shape's card
++                                          and fitScale
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.12/ChangeLog
++++ topoforge-1.13/ChangeLog
+@@ -1,5 +1,33 @@
+ 2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
++	topology forge (formerly TopoForge) 1.13: a peek at a placed shape's
++	card, and fitScale (Corwin, 2026-11-03, 17:01: "when hovering a shape
++	on the main stage area it would be good to have a modifier key that
++	shows the flash-card/trading-card like we get with no modifier").
++	* index.html (TF_VERSION): 1.13.  (header comment): the 1.13 lines.
++	(fitView): sets the view fitCalc works out; the same view as 1.12.
++	(fitCalc, fitScale): New.
++	(EMBED_WORDS): peek.
++	(embed): peek turns preview on.
++	(preview): the page's own preview ends a peek; what it draws comes
++	from previewOf.
++	(previewOf): New, shared with the peek.
++	(drawPreview): a peek leaves the pad as it was.
++	(embed112): calls embed113.
++	(PEEK, PK, embed113, wirePeek, peekWant, peekCheck, peekShow)
++	(peekEnd): New.
++	(window.TopoForge): fitScale.
++	* spec/EMBED-v1.md: "Added in 1.13 (still v1)".
++	* tests/browser/embed.browser.mjs: compared with 1.12; 1.11 rebuilt
++	too, for the pad the 1.12 checks compare with; S7 (every 1.12 switch
++	on, the big card on its second page and the pad turned, the same
++	pixels as 1.12), PK1-PK11, E12, FS1, FS2; W1 and X1 know peek.
++	* tests/browser/embed-prove-red.sh: 28 more plants (163).
++	* NEWS, AUTHORS, README.org, RECIPE.org: 1.13.
++	* patches/topoforge-1.12-to-1.13.patch: New.
++
++2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
+ 	topology forge (formerly TopoForge) 1.12: the card that fills the map,
+ 	and the pad that pages it (Corwin, 2026-11-03, corrected at 13:44 to
+ 	topology: "the feature is way upstream from obsmage"; "fill as much
+--- topoforge-1.12/NEWS
++++ topoforge-1.13/NEWS
+@@ -4,6 +4,32 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.13 (2026-11-03; checked: tests/run.sh, the project-files check, the
++browser kit and the embedding kit green, with their planted faults; see
++RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
++yet)
++
++- A peek at a placed shape's card, for a page that asks (switch peek; it turns
++  preview on; Corwin, 2026-11-03: "when hovering a shape on the main stage
++  area it would be good to have a modifier key that shows the
++  flash-card/trading-card like we get with no modifier").  Hold Shift with the
++  pointer over a shape on the drawing and the overview map shows that shape's
++  card, the same card preview([id]) shows (so the big card fills the map when
++  bigcard is on); move to another shape and the card follows.  Let Shift go,
++  or leave the shape or the drawing, and the map shows again exactly what it
++  showed before: the page's own preview, on the card it was on, or nothing.
++  By keyboard: with the drawing focused and one shape selected, press Shift on
++  its own.  The modifier is Shift because a lone Alt takes the focus to the
++  browser's menu on Windows, and Ctrl zooms with the wheel.  The peek only
++  listens: Shift-click, Shift-drag, Shift+wheel, Shift on a resize handle and
++  Shift with the arrow keys do what they did.  The page is told
++  (topoforge:peek: the shape's id and name, then id null); with the map
++  hidden, nothing is drawn but the page is still told.
++- TopoForge.fitScale(): the zoom Fit to window would set now, read without
++  moving the view, so a page can put "fit" in the middle of its own zoom
++  slider.  Fit to window and fitScale() share one calculation; Fit sets
++  exactly the view it set in 1.12.
++
+ Version 1.12 (2026-11-03; checked: tests/run.sh, the project-files check, the
+ browser kit and the embedding kit green, with their planted faults; see
+ RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+--- topoforge-1.12/README.org
++++ topoforge-1.13/README.org
+@@ -72,6 +72,10 @@
+   fit, large art or a picture of the page's own origin, a box score or lines,
+   several matches as pages, =cardPage()=) and the pad that pages it
+   (=cardpad=: it turns 45 degrees and changes colour while a card shows).
++- New in 1.13: a peek at a placed shape's card (=peek=: hold Shift with the
++  pointer over a shape, or press Shift alone with one shape selected, and the
++  map shows its card until Shift is let go) and =fitScale()=, the zoom Fit
++  would set, read without moving the view.
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+--- topoforge-1.12/RECIPE.org
++++ topoforge-1.13/RECIPE.org
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.12: Bryant's v1.5 plus our changes (1.6 to 1.12) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, then =1.11-to-1.12= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
++| =index.html=                  | v1.13: Bryant's v1.5 plus our changes (1.6 to 1.13) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, =1.11-to-1.12=, then =1.12-to-1.13= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+--- topoforge-1.12/spec/EMBED-v1.md
++++ topoforge-1.13/spec/EMBED-v1.md
+@@ -2,7 +2,7 @@
+ SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ -->
+-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11 and 1.12)
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11, 1.12 and 1.13)
+ 
+ topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
+ This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
+@@ -419,6 +419,55 @@
+ put away; that is said too ("Map pad back: ...") (CP1, CP6). Without `cardpad` the pad never turns (CP9).
+ `topoforge:cardpage`, like every message, reaches a parent page of the app's own origin only (E11).
+ 
++## Added in 1.13 (still v1): a peek at a placed shape's card, and the zoom Fit would set
++
++From Corwin's words of 2026-11-03, 17:01: "when hovering a shape on the main stage area it would be good to have a
++modifier key that shows the flash-card/trading-card like we get with no modifier".
++
++One new switch word, `peek`, off unless a page asks and in neither `all` nor `bare` (W1), and one new call,
++`TopoForge.fitScale()`, which reads and changes nothing. Nothing 1.12 promised changes: a page opened on its own draws
++the same pixels as 1.12 (S1), and so does a page with every 1.12 switch on, the big card on its second page and the pad
++turned (S7).
++
++### A peek at a placed shape's card: `peek`
++
++`peek` turns `preview` on too (the peek shows the preview's card). The modifier is **Shift**: a lone Alt takes the focus
++to the browser's menu on Windows, and Ctrl and Meta zoom the drawing with the wheel.
++
++- **With the pointer.** While Shift is held with the pointer over a shape on the drawing, and no mouse button is down,
++  nothing is being dragged (no move, resize, marquee or connection) and no text is being edited, the map shows that
++  shape's card, drawn by the same path as `preview([id])`: the same card, so with `bigcard` it fills the map and is
++  fitted (PK2), and in `both` mode the shape is lit in the drawing (PK4). Moving to another shape with Shift held
++  swaps the card at once (PK3). Letting Shift go, leaving the shape (Shift still held) or the pointer leaving the
++  drawing puts back exactly what the map showed before the peek: the page's own preview, on the card of its pages it
++  was on, or nothing (PK4, PK5, PK6).
++- **With the keyboard.** With the drawing focused and exactly one shape selected, Shift pressed alone shows the
++  selected shape's card the same way, until Shift is let go (while the pointer is on the drawing, the shape under it is
++  the one shown). With two or more selected, or the focus elsewhere, it shows nothing (PK7).
++- **It never takes an event.** The peek only listens: it prevents and stops nothing. Shift-click still adds a shape
++  to the selection or takes it away, Shift-drag still draws a marquee or moves the selection, Shift+wheel still moves
++  the view east and west, Shift on a resize handle still keeps the shape's proportions, and Shift with the arrow keys
++  still nudges the selection one grid step (PK8). While a button is down there is no card; it comes back when the
++  button is let go, if Shift is still held over a shape (PK2).
++- **The page is told**: `topoforge:peek`, by the same two routes and the same origin rule as every message, `{ id,
++  name }` when a card shows (and again for each shape it swaps to; `name` is the card's title) and `{ id: null }` when
++  it goes (PK9, E12). With the map hidden (in a window 860 pixels wide or less, for one) nothing is drawn and nothing is
++  lit, but the page is still told (PK10).
++- **A peek is not the page's preview.** `topoforge:preview` is not sent for it, and the pad is left as it was (a pad
++  turned for the page's cards stays turned, on the page's card). While a peek shows, `cardPage()` reads the card shown
++  (one page). The page's own `preview()` during a peek ends it (told `{ id: null }`) and is drawn at once; letting
++  Shift go then leaves the page's preview where it is (PK11). `TopoForge.embed({ peek: false })` ends a peek that shows,
++  at once, and tells the page (PK1).
++
++### The zoom Fit would set: `TopoForge.fitScale()`
++
++`TopoForge.fitScale()` returns the zoom `k` that `fitView()` (Fit to window) would set now, with the same room for
++floating panels, the same padding (`fitScale(pad)` takes the same optional padding as `fitView(pad)`, 50 pixels when
++it is left out) and the same limits, rounded as `TopoForge.view` rounds `k` (to 5 places), so that after `fitView()`
++`TopoForge.view.k` equals it. It moves nothing: the view is as it was. On a page with nothing on it, it is 1, the zoom
++`fitView()` sets there. A page may use it to put "fit" in the middle of its own zoom slider (FS1). The two share one
++calculation, and `fitView()` sets exactly the view 1.12 set (FS2). It is not behind a switch: it changes nothing.
++
+ ## Page tabs that do not fit (1.9, everywhere)
+ 
+ This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
+--- topoforge-1.12/tests/browser/embed-prove-red.sh
++++ topoforge-1.13/tests/browser/embed-prove-red.sh
+@@ -4,7 +4,7 @@
+ # Corwin Brust <corwin@bru.st> and Contributors
+ # Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
+ #
+-# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.12).
++# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.13).
+ # A control run on the file as given must be green first. Then each plant changes a COPY of index.html
+ # in one place, the kit runs on the copy, and the check named for that plant must be among those that
+ # fail (a plant may trip others too: the standalone ones watch the whole page).
+@@ -149,6 +149,35 @@
+ #   cp-unasked     the pad turns without cardpad          -> CP9
+ #   any-origin-112 postMessage to '*', the new messages   -> E11
+ #   cp-no-names    the turned arms have no names           -> X4
++# 1.13:
++#   pk-leak-pad    the peek's guard keeps the pad from turning -> S7
++#   pk-on-default  the peek works without its switch      -> PK1
++#   pk-off-stays   turned off, a peek that shows stays    -> PK1
++#   pk-implies     peek leaves preview off                -> PK2
++#   pk-no-show     the peek draws no card                 -> PK2
++#   pk-button-down the card shows with a button down      -> PK2
++#   pk-no-swap     another shape keeps the first card     -> PK3
++#   pk-restore-none letting go clears the page's preview  -> PK4
++#   pk-page-lost   letting go puts the page's preview on its first card -> PK4
++#   pk-pad-turns   the peek turns the pad to its own card -> PK4
++#   pk-sticks      letting Shift go leaves the card       -> PK5
++#   pk-leave-shape leaving the shape keeps its card       -> PK6
++#   pk-leave-canvas leaving the drawing keeps the card    -> PK6
++#   pk-no-keys     Shift alone shows nothing by keyboard  -> PK7
++#   pk-key-any-focus the keyboard peek with the focus anywhere -> PK7
++#   pk-key-many    the keyboard peek with two selected    -> PK7
++#   pk-eats-click  the peek stops a Shift-press           -> PK8
++#   pk-eats-wheel  the peek stops a Shift+wheel           -> PK8
++#   pk-silent      a card shows and the page is not told  -> PK9
++#   pk-no-null     the card goes and the page is not told -> PK9
++#   pk-tells-preview a peek is told as a preview          -> PK9
++#   pk-draws-hidden the peek draws with the map hidden    -> PK10
++#   pk-hidden-silent the map hidden, the page is not told -> PK10
++#   pk-preview-lost the page's preview() during a peek is lost when it ends -> PK11
++#   fs-moves       fitScale() moves the view              -> FS1
++#   fs-pad         fitScale(pad) ignores the pad          -> FS1
++#   fs-view-changed fitView sets another view than 1.12's -> FS2
++#   any-origin-113 postMessage to '*', the new message    -> E12
+ # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
+ #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
+ # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
+@@ -321,5 +350,34 @@
+ plant cp-unasked     CP9 's@const on = !!want \&\& EMBED.cardpad \&\& EMBED.mappad \&\& !PAD.el.hidden;@const on = !!want \&\& EMBED.mappad \&\& !PAD.el.hidden;@'
+ plant cp-no-names    X4  "s@b.setAttribute('aria-label', label); b.title = label;@b.removeAttribute('aria-label');@"
+ plant any-origin-112 E11 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
++# 1.13
++plant pk-leak-pad    S7  's@^  if (!PREVIEW.peek) padCard(!!deck);@  if (!PREVIEW.peek \&\& false) padCard(!!deck);@'
++plant pk-on-default  PK1 's@if (EMBED.peek && !_peekWired) wirePeek();@if (!_peekWired) wirePeek();@; s@if (!EMBED.peek || !PK.shift || S.mode@if (!PK.shift || S.mode@'
++plant pk-off-stays   PK1 's@^  if (!EMBED.peek && PEEK) peekEnd(true);$@@'
++plant pk-implies     PK2 's@^    if (EMBED.peek) EMBED.preview = true;.*$@@'
++plant pk-no-show     PK2 's@  if (PEEK.draw) { PREVIEW = { ...previewOf(\[n.id\]), peek: true }; drawPreview(); }@  if (false) { }@'
++plant pk-button-down PK2 's@if (PK.at) { if (PK.at.buttons) return null; return@if (PK.at) { return@'
++plant pk-no-swap     PK3 's@if ((n ? n.id : null) === (PEEK ? PEEK.id : null)) return;@if (!!n === !!PEEK) return;@'
++plant pk-restore-none PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw) drawPreview(); }@if (p.draw) { PREVIEW = null; if (draw) drawPreview(); }@'
++plant pk-page-lost   PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw)@if (p.draw) { PREVIEW = p.saved; if (PREVIEW) PREVIEW.page = 0; if (draw)@'
++plant pk-pad-turns   PK4 's@^  if (!PREVIEW.peek) padCard(!!deck);@  padCard(!!deck);@'
++plant pk-sticks      PK5 "s@if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck();@if (e.key === 'Shift') { PK.key = false; } peekCheck();@"
++plant pk-leave-shape PK6 's@return hitTest(toWorld(PK.at)).node || null; }@return hitTest(toWorld(PK.at)).node || (PEEK \&\& N(PEEK.id)) || null; }@'
++plant pk-leave-canvas PK6 "s@svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });@svg.addEventListener('pointerleave', () => { });@"
++plant pk-no-keys     PK7 's@PK.key = !PK.at && !e.ctrlKey@PK.key = false \&\& !e.ctrlKey@'
++plant pk-key-any-focus PK7 's@if (PK.key && document.activeElement === svgEl() && S.sel.size === 1)@if (PK.key \&\& S.sel.size === 1)@'
++plant pk-key-many    PK7 's@&& S.sel.size === 1) return N(@\&\& S.sel.size >= 1) return N(@'
++plant pk-eats-click  PK8 "s@svg.addEventListener('pointerdown', at);   // after@svg.addEventListener('pointerdown', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, true);   // after@"
++plant pk-eats-wheel  PK8 "s@svg.addEventListener('wheel', at, { passive: true });@svg.addEventListener('wheel', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, { capture: true, passive: true });@"
++plant pk-silent      PK9 "s@^  tell('topoforge:peek', { id: n.id, name: nodeName(n) });\$@@"
++plant pk-no-null     PK9 "s@^  tell('topoforge:peek', { id: null });\$@@"
++plant pk-tells-preview PK9 's@peek: true }; drawPreview(); }@peek: true }; tellPreview(drawPreview()); }@'
++plant pk-draws-hidden PK10 "s@draw: .('#minimap').getClientRects().length > 0 }@draw: true }@"
++plant pk-hidden-silent PK10 "s@^  tell('topoforge:peek', { id: n.id, name: nodeName(n) });\$@  if (PEEK.draw) tell('topoforge:peek', { id: n.id, name: nodeName(n) });@"
++plant pk-preview-lost PK11 's@^  if (PEEK && (what === null.*$@@'
++plant fs-moves       FS1 's@function fitScale(pad = 50) { return rnd(fitCalc(pad).k, 5); }@function fitScale(pad = 50) { fitView(pad); return rnd(S.view.k, 5); }@'
++plant fs-pad         FS1 's@return rnd(fitCalc(pad).k, 5); }@return rnd(fitCalc().k, 5); }@'
++plant fs-view-changed FS2 's@y: (r.height - b.h \* k) / 2 - b.y \* k };$@y: (r.height - b.h * k) / 2 - b.y * k + 1 };@'
++plant any-origin-113 E12 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+ [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
+ exit $bad
+--- topoforge-1.12/tests/browser/embed.browser.mjs
++++ topoforge-1.13/tests/browser/embed.browser.mjs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 checks 2026-11-03.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03.
+ //
+-// embed.browser.mjs -- the embedding switches (1.8 to 1.12) in real Chromium, held to spec/EMBED-v1.md.
++// embed.browser.mjs -- the embedding switches (1.8 to 1.13) in real Chromium, held to spec/EMBED-v1.md.
+ //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+ //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+ //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+@@ -34,7 +34,7 @@
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+ // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+-const VER = '1.12', PREV = '1.11';
++const VER = '1.13', PREV = '1.12';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -45,15 +45,15 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+   }
+   return cur;
+ }
+-let v17, v18;
+-try { v17 = rebuild(6); v18 = rebuild(3); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
++let v17, v18, v111;   // v17: the version before (PREV); v18: 1.8; v111: 1.11, whose pad the 1.12 checks compare with
++try { v17 = rebuild(7); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -131,6 +131,7 @@
+   // ---- S: standalone, no switch: the same as the version before ----
+   routes['/v17.html'] = { type: 'text/html', body: fs.readFileSync(v17) };   // the version before (PREV)
+   routes['/v18.html'] = { type: 'text/html', body: fs.readFileSync(v18) };   // 1.8, the last without the page-tab fix (S4)
++  routes['/v111.html'] = { type: 'text/html', body: fs.readFileSync(v111) };   // 1.11, for the 1.12 checks of the pad (CP1, CP6)
+   for (const [w, h, dark] of [[1400, 900, false], [1400, 900, true], [1000, 800, false], [800, 700, true]]) {
+     const tag = `${w}x${h} ${dark ? 'dark' : 'light'}`;
+     const a = await open(A + '/v17.html', { w, h, dark, settle: 1200 }), b = await open(A + '/index.html', { w, h, dark, settle: 1200 });
+@@ -157,6 +158,17 @@
+     check(`S6 every 1.11 switch on (map, preview, mappad, reset, mapwheel), 1.10's card and the pad shown, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV} (the new switches are off)`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
+     await a.c.close(); await b.c.close();
+   }
++  // 1.13: with every 1.12 switch on (cardpad: bigcard, mappad, map, preview), the big card on its second page and the pad turned, 1.13 draws the same pixels as 1.12
++  for (const dark of [false, true]) {
++    const u = '?embed=cardpad,reset,mapwheel&load=/rich.json';
++    const a = await open(A + '/v17.html' + u, { dark, settle: 1200 }), b = await open(A + '/index.html' + u, { dark, settle: 1200 });
++    for (const x of [a, b]) { await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++      await x.p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); const m = await boxOf(x.p, '#minimap'); await x.p.mouse.move(m.x + m.w / 2, m.y + m.h + 5); await x.p.waitForTimeout(700); }   // within reach, below the map: not on the turned pad, whose hover would follow the turn
++    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
++    fs.writeFileSync(path.join(outdir, `switches112-${PREV}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `switches112-${VER}-${dark ? 'dark' : 'light'}.png`), ib);
++    check(`S7 every 1.12 switch on (cardpad, so bigcard, mappad, map and preview; reset, mapwheel), the big card on its second page and the pad turned, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV} (peek is off)`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
++    await a.c.close(); await b.c.close();
++  }
+ 
+   // ---- F, P, H, M: each switch ----
+   { const { c, p } = await open(A + '/index.html?embed=frameless');
+@@ -224,7 +236,7 @@
+     const fr = p.frame({ url: u => u.pathname === '/index.html' });
+     await fr.waitForFunction(() => window.TopoForge && document.querySelector('.pal-item'));
+     await fr.evaluate(() => { window.own = []; window.ownAll = []; addEventListener('topoforge:select', e => window.own.push(e.detail));
+-      for (const t of ['view', 'key', 'context', 'pages']) addEventListener('topoforge:' + t, e => window.ownAll.push(t)); });
++      for (const t of ['view', 'key', 'context', 'pages', 'peek']) addEventListener('topoforge:' + t, e => window.ownAll.push(t)); });
+     await p.waitForTimeout(900);
+     if (act) await act(p, fr);
+     await p.waitForTimeout(500);
+@@ -397,8 +409,8 @@
+   // W1: 'all' and 'bare' mean what they meant in 1.8
+   { const { c, p } = await open(A + '/index.html?embed=all,bare');
+     const w = await p.evaluate(() => TopoForge.embed());
+-    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];
+-    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.12 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset, bigcard, cardpad); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
++    const nu = ['view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad', 'peek'];
++    check('W1 ?embed=all and bare turn on none of the 1.9 to 1.13 switches (view, keys, context, pagelist, map, preview, mapwheel, mappad, reset, bigcard, cardpad, peek); they still mean what they meant in 1.8', nu.every(k => w[k] === false) && w.frameless && w.props && w.select && w['hide-pages'], JSON.stringify(w));
+     await c.close(); }
+   // E8: the new messages never reach a parent of another origin
+   { const r = await parentRun(B, A + '/index.html?embed=view,pagelist,keys,context&load=/fixture.json', async (p, fr) => {
+@@ -813,7 +825,7 @@
+       pv0.page === 1 && pv0.pages === 3 && Array.isArray(pv0.cards) && pv0.cards.length === 3 && pv0.cards[1].title === 'Edge Router' && Object.keys(pvOff).join() === 'mode,caption,count,other,ids,card',
+       JSON.stringify({ with: { page: pv0.page, pages: pv0.pages, n: (pv0.cards || []).length }, without: Object.keys(pvOff) })); }
+   // CP: the pad while a card shows
+-  { const { c: c11, p: p11 } = await open(A + '/v17.html?embed=mappad&load=/rich.json'); const pad11 = await p11.evaluate(() => ({ html: document.querySelector('#mmPad').outerHTML, tf: getComputedStyle(document.querySelector('#mmPad')).transform })); await c11.close();
++  { const { c: c11, p: p11 } = await open(A + '/v111.html?embed=mappad&load=/rich.json'); const pad11 = await p11.evaluate(() => ({ html: document.querySelector('#mmPad').outerHTML, tf: getComputedStyle(document.querySelector('#mmPad')).transform })); await c11.close();
+     const { c, p } = await open(A + '/index.html?embed=cardpad&load=/rich.json');
+     const padRead = () => p.evaluate(() => { const g = document.querySelector('#mmPad'), cs = getComputedStyle(g), e = g.querySelector('.mp-e'), es = getComputedStyle(e);
+       const L = h => { const m = h.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+@@ -861,9 +873,156 @@
+   { const r = await parentRun(B, A + '/index.html?embed=cardpad&load=/rich.json', async (p, fr) => { await fr.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); });
+     check('E11 topoforge:cardpage, and topoforge:preview with its pages, never reach a parent of another origin', r.got.length === 0, `parent got ${r.got.length}`); }
+ 
++  // ======== 1.13: a peek at a placed shape's card (peek), and the zoom Fit would set (fitScale) ========
++  // what the map shows, read with the kit's own code: the card shown or not, its title and pager; the map, the drawing's
++  // highlight and the pad as markup, for an exact compare; the peeks and previews the app's own window heard
++  const PEEK_READ = `(() => { const m = document.querySelector('#minimap'), el = m.querySelector('.mm-card'), hi = document.querySelector('#tfHi'), pad = document.querySelector('#mmPad');
++    const shown = !!el && !el.hidden && getComputedStyle(m).display !== 'none', n = shown && el.querySelector('.mc-n');
++    return { shown, title: shown ? el.querySelector('.mc-t').textContent : '', pager: n && !n.hidden ? n.textContent : '', map: m.outerHTML, hi: hi ? hi.outerHTML : '', hiN: document.querySelectorAll('#tfHi rect').length, pad: pad ? pad.outerHTML : '',
++      cap: !!m.querySelector('.mm-cap:not([hidden])'), rings: document.querySelectorAll('#mmPrev rect').length, carded: m.classList.contains('mm-carded'), page: TopoForge.cardPage(), peeks: (window.pk || []).slice(), previews: (window.pv || []).length }; })()`;
++  const peekRead = p => p.evaluate(PEEK_READ);
++  const listenPeek = p => p.evaluate(() => { window.pk = []; window.pv = []; addEventListener('topoforge:peek', e => window.pk.push(e.detail)); addEventListener('topoforge:preview', e => window.pv.push(e.detail)); });
++  const worldAt = (p, x, y) => p.evaluate(([x, y]) => { const r = svgEl().getBoundingClientRect(); return { x: r.left + x * S.view.k + S.view.x, y: r.top + y * S.view.k + S.view.y }; }, [x, y]);   // an empty spot: (150, 150) in rich.json
++  const names = pk => JSON.stringify(pk.map(x => x.id === null ? null : x.name));
++  const mapShot = async p => { const m = await boxOf(p, '#minimap'); return p.screenshot({ clip: { x: m.x, y: m.y, width: m.w, height: m.h } }); };
++  const bigger = async p => { for (let i = 0; i < 3; i++) { await p.focus('#mmwrap .mm-size'); await p.keyboard.press('Shift+ArrowLeft'); await p.keyboard.press('Shift+ArrowUp'); } await p.evaluate(() => document.activeElement.blur()); };   // room for the big card, as BC2 gives it
++  { const one = async (url) => { const { c, p } = await open(url); await listenPeek(p);
++      const s = await shapeAt(p, 'Edge Router'); await p.mouse.move(s.x, s.y); await p.keyboard.down('Shift'); await p.mouse.move(s.x + 3, s.y + 2); await p.waitForTimeout(150);
++      const r = { ...(await peekRead(p)), sw: (await p.evaluate(() => TopoForge.embed())).peek, el: await p.evaluate(() => !!document.querySelector('#minimap .mm-card')) };
++      await p.keyboard.up('Shift'); await c.close(); return r; };
++    at = 'PK1'; const solo = await one(A + '/index.html?load=/rich.json'), other = await one(A + '/index.html?embed=preview,bigcard,map,cardpad&load=/rich.json');
++    const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json'); await listenPeek(p);
++    const on = await p.evaluate(() => TopoForge.embed({ peek: true }).peek);
++    const s = await shapeAt(p, 'Edge Router'); await p.mouse.move(s.x, s.y); await p.keyboard.down('Shift'); await p.mouse.move(s.x + 3, s.y + 2); await p.waitForTimeout(150); const shown = await peekRead(p);
++    const offNow = await p.evaluate(() => { const sw = TopoForge.embed({ peek: false }).peek, el = document.querySelector('#minimap .mm-card'); return { sw, card: !!el && !el.hidden, pk: window.pk.slice() }; });
++    await p.mouse.move(s.x + 6, s.y + 4); await p.waitForTimeout(150); const after = await peekRead(p); await p.keyboard.up('Shift'); await c.close();
++    check('PK1 peek is off unless a page asks: opened on its own, and with every other card switch on (preview, bigcard, map, cardpad), Shift over a shape shows no card and tells nothing; TopoForge.embed({ peek: true }) turns it on, and { peek: false } ends a peek that shows, at once (told { id: null })',
++      [solo, other].every(x => !x.shown && x.peeks.length === 0 && x.sw === false) && !solo.el && on === true && shown.shown && shown.title === 'Edge Router' && offNow.sw === false && !offNow.card && names(offNow.pk) === '["Edge Router",null]' && !after.shown && after.peeks.length === 2,
++      JSON.stringify({ solo: [solo.shown, solo.peeks.length, solo.sw, solo.el], other: [other.shown, other.peeks.length, other.sw], on, shown: [shown.shown, shown.title], offNow, after: [after.shown, after.peeks.length] })); }
++  { const { c, p } = await open(A + '/index.html?embed=peek,bigcard,map&load=/rich.json'); await listenPeek(p);
++    at = 'PK2'; const sw = await p.evaluate(() => { const off = TopoForge.embed({ bigcard: false, preview: false }); TopoForge.embed({ bigcard: true }); return off; }); await bigger(p);   // asked off, preview stays on while peek is
++    const s = await shapeAt(p, 'Core Switch'); await p.evaluate(i => TopoForge.select([i]), s.id);
++    await p.mouse.move(s.x, s.y); await p.waitForTimeout(100); const none = await peekRead(p);
++    await p.keyboard.down('Shift'); await p.waitForTimeout(200); const c1 = await cardRead(p), r1 = await peekRead(p);
++    await p.mouse.down(); await p.waitForTimeout(150); const down = await peekRead(p), selDown = await p.evaluate(() => S.sel.size);   // a Shift-press on the selected shape: out of the selection, no drag
++    await p.mouse.up(); await p.waitForTimeout(150); const up = await peekRead(p);
++    await p.keyboard.up('Shift'); await p.waitForTimeout(100);
++    check('PK2 peek turns preview on (asked off, with bigcard off too, it stays on); with Shift held and the pointer on a shape, the map shows that shape\'s card, its name the title, fitted as bigcard fits a card (one page, no pager); no card without Shift, none while a mouse button is down (a Shift-press that takes the shape out of the selection and starts no drag), and the card again when the button is let go',
++      sw.peek && sw.preview && !none.shown && fitted(c1) && c1.title === 'Core Switch' && c1.pager === '' && names(r1.peeks) === '["Core Switch"]' && !down.shown && selDown === 0 && up.shown && up.title === 'Core Switch',
++      JSON.stringify({ sw: [sw.peek, sw.preview], none: none.shown, c1: { shown: c1.shown, title: c1.title, k: c1.k, cut0: c1.cut0, pager: c1.pager }, down: [down.shown, selDown], up: [up.shown, up.title], peeks: r1.peeks }));
++    at = 'PK3'; const e = await shapeAt(p, 'Edge Router'), v = await shapeAt(p, 'Server 4'); await p.evaluate(() => { window.pk.length = 0; });
++    await p.keyboard.down('Shift'); await p.waitForTimeout(100); await p.mouse.move(e.x, e.y); await p.waitForTimeout(150); const s2 = await peekRead(p);
++    await p.mouse.move(v.x, v.y); await p.waitForTimeout(150); const s3 = await peekRead(p); await p.keyboard.up('Shift'); await p.waitForTimeout(100);
++    check('PK3 moving to another shape with Shift held swaps the card at once: one topoforge:peek for each shape, nothing between',
++      s2.title === 'Edge Router' && s3.title === 'Server 4' && names(s3.peeks) === '["Core Switch","Edge Router","Server 4"]', JSON.stringify({ t: [s2.title, s3.title], peeks: names(s3.peeks) }));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=peek,cardpad&load=/rich.json'); await listenPeek(p); await bigger(p);
++    await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toast over the map's corner (PK5 compares its pixels)
++    at = 'PK4'; await p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); await p.waitForTimeout(500); const before = await peekRead(p);
++    const v = await shapeAt(p, 'Server 2'); await p.mouse.move(v.x, v.y); await p.waitForTimeout(150);
++    await p.keyboard.down('Shift'); await p.waitForTimeout(200); const during = await peekRead(p);
++    await p.keyboard.up('Shift'); await p.waitForTimeout(200); const after = await peekRead(p);
++    check('PK4 letting Shift go puts back exactly what the map showed before the peek: the page\'s own preview on the card it was on (2 of 3), the same markup in the map, the same highlight in the drawing; meanwhile the map showed the shape\'s card (cardPage() read it, one page) and lit it, and the pad, turned for the page\'s cards, was left as it was',
++      before.shown && before.pager === '2 of 3' && during.shown && during.title === 'Server 2' && during.page.pages === 1 && during.hiN === 1 && during.hi !== before.hi && during.pad === before.pad && during.previews === 1 &&
++      after.map === before.map && after.hi === before.hi && after.pad === before.pad && after.page.page === 2 && after.page.pages === 3 && names(after.peeks) === '["Server 2",null]' && after.previews === 1,
++      JSON.stringify({ before: [before.title, before.pager, before.hiN], during: [during.title, during.page, during.hiN, during.pad === before.pad, during.previews], same: { map: after.map === before.map, hi: after.hi === before.hi, pad: after.pad === before.pad }, page: after.page, peeks: names(after.peeks) }));
++    at = 'PK5'; await p.evaluate(() => { TopoForge.preview(null); window.pk.length = 0; }); await p.mouse.move(5, 300); await p.waitForTimeout(600); const b5 = await peekRead(p), shot0 = await mapShot(p);
++    await p.mouse.move(v.x, v.y); await p.keyboard.down('Shift'); await p.waitForTimeout(200); const d5 = await peekRead(p);
++    await p.keyboard.up('Shift'); await p.waitForTimeout(200); const a5 = await peekRead(p), shot1 = await mapShot(p); const dd = await pixelDiff(shot0, shot1);
++    check('PK5 with nothing in the map before the peek, letting Shift go leaves nothing again: no card, no caption, no rings, nothing lit in the drawing, the map not faded, the same pixels in the map, the pad as it was',
++      !b5.shown && d5.shown && d5.title === 'Server 2' && !a5.shown && !a5.cap && a5.rings === 0 && a5.hiN === 0 && !a5.carded && a5.pad === b5.pad && dd.size && dd.n === 0 && names(a5.peeks) === '["Server 2",null]',
++      JSON.stringify({ b5: b5.shown, d5: [d5.shown, d5.title], a5: [a5.shown, a5.cap, a5.rings, a5.hiN, a5.carded, a5.pad === b5.pad], diff: dd, peeks: names(a5.peeks) }));
++    at = 'PK6'; await p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('last'); }); await p.mouse.move(5, 300); await p.waitForTimeout(500); const b6 = await peekRead(p);
++    const e = await shapeAt(p, 'Edge Router'), gap = await worldAt(p, 150, 150), m = await boxOf(p, '#minimap');
++    await p.mouse.move(e.x, e.y); await p.keyboard.down('Shift'); await p.waitForTimeout(150); const on1 = await peekRead(p);
++    await p.mouse.move(gap.x, gap.y); await p.waitForTimeout(150); const off1 = await peekRead(p);   // onto the empty drawing, Shift still held
++    await p.mouse.move(e.x, e.y); await p.waitForTimeout(150); const on2 = await peekRead(p);
++    await p.mouse.move(m.x + m.w / 2, m.y + m.h / 2); await p.waitForTimeout(150); const off2 = await peekRead(p);   // straight off the drawing, onto the map
++    await p.keyboard.up('Shift');
++    check('PK6 leaving the shape (onto the empty drawing, Shift still held) or leaving the drawing (straight onto the map) puts back exactly what the map showed before: the page\'s own preview, on its last card',
++      b6.pager === '3 of 3' && on1.title === 'Edge Router' && off1.map === b6.map && off1.hi === b6.hi && on2.title === 'Edge Router' && off2.map === b6.map && off2.hi === b6.hi && off2.page.page === 3,
++      JSON.stringify({ b6: [b6.title, b6.pager], on1: on1.title, off1: [off1.title, off1.pager, off1.map === b6.map, off1.hi === b6.hi], on2: on2.title, off2: [off2.title, off2.pager, off2.map === b6.map, off2.hi === b6.hi] }));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=peek,bigcard,map&load=/rich.json'); await listenPeek(p);
++    at = 'PK7'; const e = await shapeAt(p, 'Edge Router'), s = await shapeAt(p, 'Core Switch'), x0 = await p.evaluate(i => N(i).x, e.id), grid = await p.evaluate(() => ST().grid);
++    await p.evaluate(i => { TopoForge.select([i]); svgEl().focus(); }, e.id);
++    await p.keyboard.down('Shift'); await p.waitForTimeout(150); const k1 = await peekRead(p);
++    await p.keyboard.press('ArrowRight'); await p.waitForTimeout(150); const x1 = await p.evaluate(i => N(i).x, e.id);
++    await p.keyboard.up('Shift'); await p.waitForTimeout(150); const k2 = await peekRead(p);
++    await p.evaluate(([a, b]) => { TopoForge.select([a, b]); svgEl().focus(); }, [e.id, s.id]); await p.keyboard.down('Shift'); await p.waitForTimeout(100); const k3 = await peekRead(p); await p.keyboard.up('Shift');
++    await p.evaluate(i => { TopoForge.select([i]); document.querySelector('#palSearch').focus(); }, e.id); await p.keyboard.down('Shift'); await p.waitForTimeout(100); const k4 = await peekRead(p); await p.keyboard.up('Shift');
++    check('PK7 by keyboard: with the drawing focused and one shape selected, Shift pressed alone shows that shape\'s card, Shift+→ still nudges it one grid step, and letting Shift go takes the card away; with two shapes selected, or the focus elsewhere, Shift shows nothing',
++      k1.shown && k1.title === 'Edge Router' && x1 === x0 + grid && !k2.shown && !k3.shown && !k4.shown && names(k4.peeks) === '["Edge Router",null]', JSON.stringify({ k1: [k1.shown, k1.title], x: [x0, x1, grid], k2: k2.shown, k3: k3.shown, k4: k4.shown, peeks: names(k4.peeks) }));
++    await c.close(); }
++  { const seq = async url => { const { c, p } = await open(url); await listenPeek(p);
++      const st = () => p.evaluate(() => JSON.stringify({ sel: [...S.sel].map(i => (N(i) || {}).text).sort(), v: S.view, n: P().nodes.map(n => [n.text, n.x, n.y, n.w, n.h]) }));
++      const out = [], pt = l => shapeAt(p, l);
++      const e = await pt('Edge Router'), s = await pt('Core Switch'), v = await pt('Server 3');
++      await p.mouse.click(e.x, e.y); out.push(await st());
++      await p.keyboard.down('Shift'); await p.mouse.move(s.x, s.y); await p.mouse.down(); await p.mouse.up(); out.push(await st());   // Shift-click adds
++      await p.mouse.move(e.x, e.y); await p.mouse.down(); await p.mouse.up(); out.push(await st());   // Shift-click takes away
++      await p.mouse.move(v.x, v.y); await p.mouse.wheel(0, 120); await p.waitForTimeout(80); out.push(await st());   // Shift+wheel pans east and west
++      const v1 = await pt('Server 1'); await p.mouse.move(v1.x - 60, v1.y - 60); await p.mouse.down(); await p.mouse.move(v1.x + 260, v1.y + 80, { steps: 6 }); await p.mouse.up(); out.push(await st());   // Shift-drag a marquee adds
++      const v5 = await pt('Server 5'); await p.mouse.move(v5.x, v5.y); await p.mouse.down(); await p.mouse.move(v5.x + 40, v5.y + 60, { steps: 6 }); await p.mouse.up(); out.push(await st());   // Shift-drag a shape: adds it and moves the selection
++      await p.keyboard.up('Shift');
++      const v2 = await pt('Server 2'); await p.mouse.click(v2.x, v2.y);
++      const hp = await p.evaluate(() => { const n = singleSelNode(); if (!n) return null; const h = handlePositions(n).find(h => h.k === 'se'), r = svgEl().getBoundingClientRect(); return { x: r.left + h.x * S.view.k + S.view.x, y: r.top + h.y * S.view.k + S.view.y }; });
++      if (hp) { await p.mouse.move(hp.x, hp.y); await p.keyboard.down('Shift'); await p.mouse.down(); await p.mouse.move(hp.x + 50, hp.y + 10, { steps: 5 }); await p.mouse.up(); } out.push(await st() + (hp ? '' : ' (no single shape to resize)'));   // Shift resize keeps the shape's proportions
++      await p.keyboard.up('Shift'); await p.evaluate(() => svgEl().focus()); await p.keyboard.press('Shift+ArrowRight'); out.push(await st());   // Shift+arrow nudges a grid step
++      const peeks = await p.evaluate(() => window.pk.length); await c.close(); return { out, peeks }; };
++    at = 'PK8'; const on = await seq(A + '/index.html?embed=peek&load=/rich.json'), off = await seq(A + '/index.html?load=/rich.json');
++    const same = on.out.map((x, i) => x === off.out[i]), J = x => JSON.parse(x), moved = J(off.out[3]).v.x !== J(off.out[2]).v.x && J(off.out[3]).v.y === J(off.out[2]).v.y;
++    check('PK8 the peek never takes an event: Shift-click adding and taking away, Shift+wheel, Shift-drag (a marquee, and a shape), Shift resize and Shift+→ leave the same selection, view and shapes with peek on as with it off, and the peek showed meanwhile',
++      same.every(Boolean) && on.peeks >= 2 && off.peeks === 0 && moved && J(off.out[1]).sel.length === 2 && J(off.out[2]).sel.length === 1,
++      JSON.stringify({ same, peeks: [on.peeks, off.peeks], moved, differ: on.out.map((x, i) => x === off.out[i] ? null : { on: x.slice(0, 160), off: off.out[i].slice(0, 160) }).filter(Boolean).slice(0, 2) })); }
++  { const r = await parentRun(A, A + '/index.html?embed=peek&load=/rich.json', async (p, fr) => {
++      const g = await inFrame(p, await worldAt(fr, 150, 150)); await p.mouse.click(g.x, g.y); await p.waitForTimeout(100);   // the frame focused, on an empty spot of the drawing
++      const e = await inFrame(p, await shapeAt(fr, 'Edge Router')), s = await inFrame(p, await shapeAt(fr, 'Core Switch'));
++      await p.mouse.move(e.x, e.y); await p.keyboard.down('Shift'); await p.waitForTimeout(150); await p.mouse.move(s.x, s.y); await p.waitForTimeout(150); await p.keyboard.up('Shift'); await p.waitForTimeout(150);
++    }, { after: (p, fr) => fr.evaluate(() => ['Edge Router', 'Core Switch'].map(t => P().nodes.find(n => n.text === t).id)) });
++    const pk = msgs(r.got, 'peek'), pv = msgs(r.got, 'preview');
++    check('PK9 the page is told: topoforge:peek { id, name } when a card shows (again for the next shape) and { id: null } when it goes, by the same two routes as the other messages (the parent, of this origin, and the app\'s own window); a peek is not a preview, so no topoforge:preview',
++      JSON.stringify(pk) === JSON.stringify([{ id: r.extra[0], name: 'Edge Router' }, { id: r.extra[1], name: 'Core Switch' }, { id: null }]) && pv.length === 0 && r.ownAll.filter(t => t === 'peek').length === 3 && r.got.every(m => m.origin === A),
++      JSON.stringify({ pk, ids: r.extra, pv: pv.length, own: r.ownAll })); }
++  { const { c, p } = await open(A + '/index.html?embed=peek&load=/rich.json', { w: 800, h: 700 }); await listenPeek(p);
++    at = 'PK10'; const e = await shapeAt(p, 'Edge Router'); await p.mouse.move(e.x, e.y); await p.keyboard.down('Shift'); await p.waitForTimeout(150);
++    const h1 = await p.evaluate(() => ({ disp: getComputedStyle(document.querySelector('#minimap')).display, card: !!document.querySelector('#minimap .mm-card'), carded: document.querySelector('#minimap').classList.contains('mm-carded'), hi: !!document.querySelector('#tfHi'), pk: window.pk.slice() }));
++    await p.keyboard.up('Shift'); await p.waitForTimeout(100); const pk2 = await p.evaluate(() => window.pk.slice());
++    check('PK10 with the map hidden (a window 800 pixels wide) a peek draws nothing (no card, nothing lit in the drawing), but the page is still told: { id, name }, then { id: null }',
++      h1.disp === 'none' && !h1.card && !h1.carded && !h1.hi && names(h1.pk) === '["Edge Router"]' && names(pk2) === '["Edge Router",null]', JSON.stringify({ h1, pk2 }));
++    await c.close(); }
++  { const { c, p } = await open(A + '/index.html?embed=peek,bigcard,map&load=/rich.json'); await listenPeek(p); await bigger(p);
++    at = 'PK11'; const e = await shapeAt(p, 'Edge Router'); await p.mouse.move(e.x, e.y); await p.keyboard.down('Shift'); await p.waitForTimeout(150); const a1 = await peekRead(p);
++    const r = await p.evaluate(() => TopoForge.preview({ kind: 'server' }, 'Servers')); await p.waitForTimeout(150); const a2 = await peekRead(p);
++    await p.keyboard.up('Shift'); await p.waitForTimeout(150); const a3 = await peekRead(p);
++    check('PK11 the page\'s own preview() during a peek ends the peek (told { id: null }) and is drawn at once, on its first card; letting Shift go then leaves the page\'s preview in the map',
++      a1.title === 'Edge Router' && r && r.count === 10 && a2.title === 'Servers' && a2.pager === '1 of 9' && a3.map === a2.map && a3.title === 'Servers' && names(a3.peeks) === '["Edge Router",null]',
++      JSON.stringify({ a1: a1.title, r: r && r.count, a2: [a2.title, a2.pager], a3: [a3.title, a3.map === a2.map], peeks: names(a3.peeks) }));
++    await c.close(); }
++  { const r = await parentRun(B, A + '/index.html?embed=peek&load=/rich.json', async (p, fr) => {
++      const e = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.move(e.x, e.y); await p.keyboard.down('Shift'); await p.mouse.move(e.x + 2, e.y + 2); await p.waitForTimeout(150);
++      await p.keyboard.up('Shift'); await p.mouse.move(e.x + 4, e.y + 4); await p.waitForTimeout(150); });
++    check('E12 topoforge:peek never reaches a parent of another origin, though it fired inside the app', r.got.length === 0 && r.ownAll.filter(t => t === 'peek').length === 2, `parent got ${r.got.length}; inside: ${r.ownAll.join(',')}`); }
++  { const { c, p } = await open(A + '/index.html?embed=props,shapes&load=/rich.json');
++    at = 'FS1'; const f = await p.evaluate(() => { const r = {};
++      TopoForge.setView({ k: 0.3, x: 11, y: 7 }); const v0 = JSON.stringify(S.view), t0 = JSON.stringify(TopoForge.view);
++      r.k = TopoForge.fitScale(); r.k80 = TopoForge.fitScale(80); r.still = JSON.stringify(S.view) === v0 && JSON.stringify(TopoForge.view) === t0;
++      TopoForge.fitView(); r.after = TopoForge.view.k; r.raw = S.view.k;
++      TopoForge.setView({ k: 2, x: 0, y: 0 }); TopoForge.fitView(80); r.after80 = TopoForge.view.k;
++      DOC.pages.push(newPage('Empty')); buildPages(); TopoForge.showPage('Empty'); TopoForge.setView({ k: 0.5, x: 9, y: 9 }); const v1 = JSON.stringify(S.view);
++      r.empty = TopoForge.fitScale(); r.stillEmpty = JSON.stringify(S.view) === v1; return r; });
++    check('FS1 TopoForge.fitScale() is the zoom Fit would set now, read without moving the view: equal to TopoForge.view.k after fitView() (with both panels floating, so the room they take counts), fitScale(80) to it after fitView(80); 1 on an empty page; the reading moves nothing',
++      typeof f.k === 'number' && f.k !== 0.3 && f.still && f.k === f.after && Math.abs(f.k - f.raw) < 1e-5 && f.k80 === f.after80 && f.k80 !== f.k && f.empty === 1 && f.stillEmpty, JSON.stringify(f));
++    await c.close();
++    at = 'FS2'; const fv = async url => { const { c, p } = await open(url); const r = await p.evaluate(() => { const out = [];
++        for (const pad of [undefined, 80, 0]) { TopoForge.setView({ k: 0.4, x: 3, y: 5 }); TopoForge.fitView(pad); out.push(JSON.stringify(S.view)); }
++        DOC.pages.push(newPage('Empty')); buildPages(); TopoForge.showPage('Empty'); TopoForge.setView({ k: 0.4, x: 3, y: 5 }); TopoForge.fitView(); out.push(JSON.stringify(S.view)); return out; }); await c.close(); return r; };
++    const f12 = await fv(A + '/v17.html?embed=props,shapes&load=/rich.json'), f13 = await fv(A + '/index.html?embed=props,shapes&load=/rich.json');
++    check(`FS2 fitView() sets exactly the view ${PREV}'s fitView sets (the same drawing, the same floating panels, the same window): pad 50, 80 and 0, and an empty page`, JSON.stringify(f12) === JSON.stringify(f13) && f13.length === 4, JSON.stringify({ [PREV]: f12, [VER]: f13 })); }
++
+   // ---- X: axe with every switch on; reduced motion ----
+   for (const dark of [false, true]) {
+-    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset,bigcard,cardpad&load=/fixture.json', { dark, reduce: true });
++    const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset,bigcard,cardpad,peek&load=/fixture.json', { dark, reduce: true });
+     await p.evaluate(() => TopoForge.preview({ category: 'net' }));
+     await p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});   // 1.7's toasts: see NEWS, 1.8
+     await p.addScriptTag({ content: axeSrc });
+--- topoforge-1.12/index.html
++++ topoforge-1.13/index.html
+@@ -23,6 +23,10 @@
+   picture of this page's own origin; a box score of cells, or lines; several matches as pages, at most 9) and the pad
+   that pages it (cardpad: while a card shows the pad turns 45 degrees and changes colour). Off for a page opened on its
+   own. By Mentat (for Corwin, claude-opus-5-5).
++  1.13: a peek at a placed shape's card (peek: hold Shift with the pointer over a shape on the drawing, or press Shift
++  alone with one shape selected and the drawing focused; the map shows that shape's card as preview([id]) draws it, and
++  what it showed before comes back when Shift is let go), and TopoForge.fitScale(), the zoom Fit would set, read without
++  moving the view. The peek is off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -490,7 +494,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.12';
++const TF_VERSION = '1.13';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -1614,13 +1618,16 @@
+   k = clamp(k, 0.08, 5); const v = S.view; const wx = (sx - v.x) / v.k, wy = (sy - v.y) / v.k;
+   v.k = k; v.x = sx - wx * k; v.y = sy - wy * k; applyView();
+ }
+-function fitView(pad = 50) {
++function fitView(pad = 50) { S.view = fitCalc(pad); applyView(); }
++// 1.13: the view Fit sets, worked out without setting it: fitView sets it, TopoForge.fitScale() reads its zoom
++function fitCalc(pad = 50) {
+   const r = svgEl().getBoundingClientRect(); const b = boundsOf(P().nodes.filter(visible), P().links.filter(visible));
+-  if (b.empty || r.width < 10) { S.view = { x: 60, y: 60, k: 1 }; applyView(); return; }
++  if (b.empty || r.width < 10) return { x: 60, y: 60, k: 1 };
+   const fi = fitInsets(r), W = r.width - fi.l - fi.r;   // 1.8: room the floating panels leave (none unless a switch floats one)
+   const k = clamp(Math.min((W - pad * 2) / (b.w || 1), (r.height - pad * 2) / (b.h || 1)), 0.08, 1.25);
+-  S.view = { k, x: fi.l + (W - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k }; applyView();
++  return { k, x: fi.l + (W - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k };
+ }
++function fitScale(pad = 50) { return rnd(fitCalc(pad).k, 5); }   // 1.13: rounded as TopoForge.view rounds k
+ // 1.8: what the floating Shapes and Properties panels cover of the canvas's left and right; zero unless one floats
+ function fitInsets(r) {
+   const o = { l: 0, r: 0 };
+@@ -4216,7 +4223,7 @@
+    for any other, and nothing is posted from file://).
+    ============================================================ */
+ const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
+-  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; 1.12: bigcard, cardpad; never turned on by 'all' or 'bare'
++  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad', 'peek'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; 1.12: bigcard, cardpad; 1.13: peek; never turned on by 'all' or 'bare'
+ const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
+ const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
+ const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
+@@ -4236,6 +4243,7 @@
+     for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
+     if (EMBED.cardpad) { EMBED.bigcard = true; EMBED.mappad = true; }   // 1.12: the pad pages the big card's pages
+     if (EMBED.bigcard) EMBED.preview = true;   // 1.12: the card is the preview's
++    if (EMBED.peek) EMBED.preview = true;   // 1.13: the peek shows the preview's card
+     if (EMBED.mappad) EMBED.map = true;   // 1.11: the pad hangs on the map's own frame
+   }
+   document.body.classList.toggle('tf-bigcard', EMBED.bigcard);   // 1.12
+@@ -4660,12 +4668,18 @@
+ }
+ function preview(what, opt, quiet) {
+   if (!EMBED.preview && !quiet) return false;
++  if (PEEK && (what === null || what === undefined || previewMatch(what))) peekEnd(false);   // 1.13: the page's own preview ends a peek and is drawn in its place
+   if (what === null || what === undefined) { PREVIEW = null; drawPreview(); if (!quiet) tellPreview(null); return true; }
+-  const m = previewMatch(what); if (!m) return false;
+-  const o = typeof opt === 'string' ? { caption: opt } : opt && typeof opt === 'object' ? opt : {};   // 1.9: a caption; 1.10: { caption, card }
+-  PREVIEW = { m, what, caption: typeof o.caption === 'string' ? o.caption : null, card: cleanCard(o.card) };
++  const p = previewOf(what, opt); if (!p) return false;
++  PREVIEW = p;
+   const r = drawPreview(); tellPreview(r); return r;
+ }
++// what preview(what, opt) draws (1.13: shared with the peek, which draws preview([id]) without telling the page a preview)
++function previewOf(what, opt) {
++  const m = previewMatch(what); if (!m) return null;
++  const o = typeof opt === 'string' ? { caption: opt } : opt && typeof opt === 'object' ? opt : {};   // 1.9: a caption; 1.10: { caption, card }
++  return { m, what, caption: typeof o.caption === 'string' ? o.caption : null, card: cleanCard(o.card) };
++}
+ function previewCaption(hits, other) {
+   if (PREVIEW.caption !== null) return PREVIEW.caption;
+   const w = PREVIEW.what, cat = w && w.category ? (CATS.find(c => c.id === w.category) || {}).name || w.category : w && w.kind ? (SHAPES[w.kind] || {}).name || w.kind : null;
+@@ -4699,7 +4713,7 @@
+   }
+   const r = { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
+   if (deck) Object.assign(r, { card: deck[0].card, page: PREVIEW.page + 1, pages: deck.length, cards: deck.map(d => d.card) });   // 1.12: the first card as shown
+-  padCard(!!deck);
++  if (!PREVIEW.peek) padCard(!!deck);   // 1.13: a peek leaves the pad as it was
+   return r;
+ }
+ /* ---- 1.10: the map's modes, its own scale, and the wheel over it ----
+@@ -4947,6 +4961,7 @@
+   if (EMBED.bigcard && !_cardRO && typeof ResizeObserver === 'function') { _cardRO = new ResizeObserver(() => refitCard()); _cardRO.observe($('#minimap')); }
+   if (PAD && !PAD.cardWired) wirePadCard();
+   if (EMBED.bigcard !== !!was.bigcard || EMBED.cardpad !== !!was.cardpad || EMBED.mappad !== !!was.mappad) { if (PREVIEW) drawPreview(); else padCard(false); }
++  embed113(was);
+ }
+ // the shape's own fields (hostname, address, VLAN ...), for the back of its card
+ function shapeFacts(n) {
+@@ -5126,6 +5141,59 @@
+     e.preventDefault(); cardPage(x);
+   }, true);
+ }
++/* ---- 1.13: a peek at a placed shape's card (peek), and the zoom Fit would set (fitScale) ----
++   From Corwin's words of 2026-11-03: "when hovering a shape on the main stage area it would be good to have a modifier key
++   that shows the flash-card/trading-card like we get with no modifier". The modifier is Shift: a lone Alt takes the focus
++   to the browser's menu on Windows, and Ctrl and Meta zoom with the wheel. peek (it turns preview on): while Shift is held
++   with the pointer over a shape on the drawing (no button down, nothing dragged, no text edited, no marquee), the map shows
++   that shape's card, drawn as preview([id]) draws it (so bigcard fits it); another shape under the pointer swaps it;
++   letting Shift go, leaving the shape or leaving the drawing puts back what the map showed before (the page's own preview,
++   on the page of its cards it was on, or nothing). With the drawing focused and one shape selected, Shift pressed alone
++   (the pointer not on the drawing) shows the selection's card the same way, until Shift is let go. The peek only listens:
++   it never prevents or stops an event, so Shift-click, Shift-drag, Shift+wheel, Shift resize and Shift+arrows do what they
++   did. topoforge:peek tells the page { id, name } when a card shows and { id: null } when it goes; with the map hidden
++   nothing is drawn, but the page is told. A peek is not the page's preview: topoforge:preview is not sent for it, the pad
++   is left as it was, and the page's own preview() ends a peek. */
++let PEEK = null, _peekWired = false;
++const PK = { shift: false, at: null, key: false };   // Shift held; the pointer on the drawing (null off it); Shift pressed alone with the pointer off the drawing
++function embed113(was) {
++  if (EMBED.peek && !_peekWired) wirePeek();
++  if (!EMBED.peek && PEEK) peekEnd(true);
++}
++function wirePeek() {
++  _peekWired = true; const svg = svgEl(), on = e => e.target === svg || svg.contains(e.target);
++  const at = e => { PK.at = { clientX: e.clientX, clientY: e.clientY, buttons: e.buttons }; PK.shift = e.shiftKey; PK.key = false; peekCheck(); };
++  svg.addEventListener('pointermove', at); svg.addEventListener('pointerdown', at);   // after the app's own press, which starts its drag
++  for (const t of ['pointerup', 'pointercancel']) window.addEventListener(t, e => { if (on(e)) at(e); });   // after the app's own, which ends it
++  svg.addEventListener('wheel', at, { passive: true });   // the drawing moves under a still pointer
++  svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });
++  svg.addEventListener('blur', () => peekCheck());
++  document.addEventListener('keydown', e => { if (e.key === 'Shift') { PK.shift = true; PK.key = !PK.at && !e.ctrlKey && !e.altKey && !e.metaKey; } peekCheck(); });
++  document.addEventListener('keyup', e => { if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck(); });
++  window.addEventListener('blur', () => { PK.shift = false; PK.key = false; peekCheck(); });
++}
++function peekWant() {   // the shape a peek shows now, or null
++  if (!EMBED.peek || !PK.shift || S.mode || S.editing) return null;
++  if (PK.at) { if (PK.at.buttons) return null; return hitTest(toWorld(PK.at)).node || null; }
++  if (PK.key && document.activeElement === svgEl() && S.sel.size === 1) return N([...S.sel][0]) || null;
++  return null;
++}
++function peekCheck() {
++  const n = peekWant();
++  if ((n ? n.id : null) === (PEEK ? PEEK.id : null)) return;
++  if (n) peekShow(n); else peekEnd(true);
++}
++function peekShow(n) {
++  if (!PEEK) PEEK = { saved: PREVIEW, draw: $('#minimap').getClientRects().length > 0 };   // the map hidden: nothing is drawn
++  PEEK.id = n.id;
++  if (PEEK.draw) { PREVIEW = { ...previewOf([n.id]), peek: true }; drawPreview(); }
++  tell('topoforge:peek', { id: n.id, name: nodeName(n) });
++}
++function peekEnd(draw) {
++  const p = PEEK; if (!p) return; PEEK = null;
++  if (p.draw) { PREVIEW = p.saved; if (draw) drawPreview(); }
++  tell('topoforge:peek', { id: null });
++}
+ /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
+    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
+    tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
+@@ -5257,7 +5325,9 @@
+   // 1.11
+   padArrows, resetLayout, undoReset,
+   // 1.12
+-  cardPage };
++  cardPage,
++  // 1.13
++  fitScale };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

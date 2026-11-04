@@ -23,6 +23,10 @@
   picture of this page's own origin; a box score of cells, or lines; several matches as pages, at most 9) and the pad
   that pages it (cardpad: while a card shows the pad turns 45 degrees and changes colour). Off for a page opened on its
   own. By Mentat (for Corwin, claude-opus-5-5).
+  1.13: a peek at a placed shape's card (peek: hold Shift with the pointer over a shape on the drawing, or press Shift
+  alone with one shape selected and the drawing focused; the map shows that shape's card as preview([id]) draws it, and
+  what it showed before comes back when Shift is let go), and TopoForge.fitScale(), the zoom Fit would set, read without
+  moving the view. The peek is off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -490,7 +494,7 @@ body.tf-pages #mmwrap{display:none}
 
 <script>
 'use strict';
-const TF_VERSION = '1.12';
+const TF_VERSION = '1.13';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -1614,13 +1618,16 @@ function zoomAt(k, sx, sy) {
   k = clamp(k, 0.08, 5); const v = S.view; const wx = (sx - v.x) / v.k, wy = (sy - v.y) / v.k;
   v.k = k; v.x = sx - wx * k; v.y = sy - wy * k; applyView();
 }
-function fitView(pad = 50) {
+function fitView(pad = 50) { S.view = fitCalc(pad); applyView(); }
+// 1.13: the view Fit sets, worked out without setting it: fitView sets it, TopoForge.fitScale() reads its zoom
+function fitCalc(pad = 50) {
   const r = svgEl().getBoundingClientRect(); const b = boundsOf(P().nodes.filter(visible), P().links.filter(visible));
-  if (b.empty || r.width < 10) { S.view = { x: 60, y: 60, k: 1 }; applyView(); return; }
+  if (b.empty || r.width < 10) return { x: 60, y: 60, k: 1 };
   const fi = fitInsets(r), W = r.width - fi.l - fi.r;   // 1.8: room the floating panels leave (none unless a switch floats one)
   const k = clamp(Math.min((W - pad * 2) / (b.w || 1), (r.height - pad * 2) / (b.h || 1)), 0.08, 1.25);
-  S.view = { k, x: fi.l + (W - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k }; applyView();
+  return { k, x: fi.l + (W - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k };
 }
+function fitScale(pad = 50) { return rnd(fitCalc(pad).k, 5); }   // 1.13: rounded as TopoForge.view rounds k
 // 1.8: what the floating Shapes and Properties panels cover of the canvas's left and right; zero unless one floats
 function fitInsets(r) {
   const o = { l: 0, r: 0 };
@@ -4216,7 +4223,7 @@ async function loadFromQuery() {
    for any other, and nothing is posted from file://).
    ============================================================ */
 const EMBED_WORDS = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages',
-  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; 1.12: bigcard, cardpad; never turned on by 'all' or 'bare'
+  'view', 'keys', 'context', 'pagelist', 'map', 'preview', 'mapwheel', 'mappad', 'reset', 'bigcard', 'cardpad', 'peek'];   // 1.9: view to preview; 1.10: mapwheel; 1.11: mappad, reset; 1.12: bigcard, cardpad; 1.13: peek; never turned on by 'all' or 'bare'
 const ALL_V1 = ['frameless', 'props', 'shapes', 'pages', 'select', 'ready'];   // what 'all' meant in 1.8, and still means
 const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'];
 const EMBED = Object.fromEntries(EMBED_WORDS.map(k => [k, false]));
@@ -4236,6 +4243,7 @@ function embed(opts) {
     for (const k of EMBED_WORDS) if (k in opts) EMBED[k] = !!opts[k];
     if (EMBED.cardpad) { EMBED.bigcard = true; EMBED.mappad = true; }   // 1.12: the pad pages the big card's pages
     if (EMBED.bigcard) EMBED.preview = true;   // 1.12: the card is the preview's
+    if (EMBED.peek) EMBED.preview = true;   // 1.13: the peek shows the preview's card
     if (EMBED.mappad) EMBED.map = true;   // 1.11: the pad hangs on the map's own frame
   }
   document.body.classList.toggle('tf-bigcard', EMBED.bigcard);   // 1.12
@@ -4660,11 +4668,17 @@ function previewMatch(what) {
 }
 function preview(what, opt, quiet) {
   if (!EMBED.preview && !quiet) return false;
+  if (PEEK && (what === null || what === undefined || previewMatch(what))) peekEnd(false);   // 1.13: the page's own preview ends a peek and is drawn in its place
   if (what === null || what === undefined) { PREVIEW = null; drawPreview(); if (!quiet) tellPreview(null); return true; }
-  const m = previewMatch(what); if (!m) return false;
-  const o = typeof opt === 'string' ? { caption: opt } : opt && typeof opt === 'object' ? opt : {};   // 1.9: a caption; 1.10: { caption, card }
-  PREVIEW = { m, what, caption: typeof o.caption === 'string' ? o.caption : null, card: cleanCard(o.card) };
+  const p = previewOf(what, opt); if (!p) return false;
+  PREVIEW = p;
   const r = drawPreview(); tellPreview(r); return r;
+}
+// what preview(what, opt) draws (1.13: shared with the peek, which draws preview([id]) without telling the page a preview)
+function previewOf(what, opt) {
+  const m = previewMatch(what); if (!m) return null;
+  const o = typeof opt === 'string' ? { caption: opt } : opt && typeof opt === 'object' ? opt : {};   // 1.9: a caption; 1.10: { caption, card }
+  return { m, what, caption: typeof o.caption === 'string' ? o.caption : null, card: cleanCard(o.card) };
 }
 function previewCaption(hits, other) {
   if (PREVIEW.caption !== null) return PREVIEW.caption;
@@ -4699,7 +4713,7 @@ function drawPreview() {
   }
   const r = { mode: MAPMODE, count: hits.length, other, caption: text, ids: hits.map(n => n.id), card };
   if (deck) Object.assign(r, { card: deck[0].card, page: PREVIEW.page + 1, pages: deck.length, cards: deck.map(d => d.card) });   // 1.12: the first card as shown
-  padCard(!!deck);
+  if (!PREVIEW.peek) padCard(!!deck);   // 1.13: a peek leaves the pad as it was
   return r;
 }
 /* ---- 1.10: the map's modes, its own scale, and the wheel over it ----
@@ -4947,6 +4961,7 @@ function embed112(was) {
   if (EMBED.bigcard && !_cardRO && typeof ResizeObserver === 'function') { _cardRO = new ResizeObserver(() => refitCard()); _cardRO.observe($('#minimap')); }
   if (PAD && !PAD.cardWired) wirePadCard();
   if (EMBED.bigcard !== !!was.bigcard || EMBED.cardpad !== !!was.cardpad || EMBED.mappad !== !!was.mappad) { if (PREVIEW) drawPreview(); else padCard(false); }
+  embed113(was);
 }
 // the shape's own fields (hostname, address, VLAN ...), for the back of its card
 function shapeFacts(n) {
@@ -5126,6 +5141,59 @@ function wirePadCard() {
     e.preventDefault(); cardPage(x);
   }, true);
 }
+/* ---- 1.13: a peek at a placed shape's card (peek), and the zoom Fit would set (fitScale) ----
+   From Corwin's words of 2026-11-03: "when hovering a shape on the main stage area it would be good to have a modifier key
+   that shows the flash-card/trading-card like we get with no modifier". The modifier is Shift: a lone Alt takes the focus
+   to the browser's menu on Windows, and Ctrl and Meta zoom with the wheel. peek (it turns preview on): while Shift is held
+   with the pointer over a shape on the drawing (no button down, nothing dragged, no text edited, no marquee), the map shows
+   that shape's card, drawn as preview([id]) draws it (so bigcard fits it); another shape under the pointer swaps it;
+   letting Shift go, leaving the shape or leaving the drawing puts back what the map showed before (the page's own preview,
+   on the page of its cards it was on, or nothing). With the drawing focused and one shape selected, Shift pressed alone
+   (the pointer not on the drawing) shows the selection's card the same way, until Shift is let go. The peek only listens:
+   it never prevents or stops an event, so Shift-click, Shift-drag, Shift+wheel, Shift resize and Shift+arrows do what they
+   did. topoforge:peek tells the page { id, name } when a card shows and { id: null } when it goes; with the map hidden
+   nothing is drawn, but the page is told. A peek is not the page's preview: topoforge:preview is not sent for it, the pad
+   is left as it was, and the page's own preview() ends a peek. */
+let PEEK = null, _peekWired = false;
+const PK = { shift: false, at: null, key: false };   // Shift held; the pointer on the drawing (null off it); Shift pressed alone with the pointer off the drawing
+function embed113(was) {
+  if (EMBED.peek && !_peekWired) wirePeek();
+  if (!EMBED.peek && PEEK) peekEnd(true);
+}
+function wirePeek() {
+  _peekWired = true; const svg = svgEl(), on = e => e.target === svg || svg.contains(e.target);
+  const at = e => { PK.at = { clientX: e.clientX, clientY: e.clientY, buttons: e.buttons }; PK.shift = e.shiftKey; PK.key = false; peekCheck(); };
+  svg.addEventListener('pointermove', at); svg.addEventListener('pointerdown', at);   // after the app's own press, which starts its drag
+  for (const t of ['pointerup', 'pointercancel']) window.addEventListener(t, e => { if (on(e)) at(e); });   // after the app's own, which ends it
+  svg.addEventListener('wheel', at, { passive: true });   // the drawing moves under a still pointer
+  svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });
+  svg.addEventListener('blur', () => peekCheck());
+  document.addEventListener('keydown', e => { if (e.key === 'Shift') { PK.shift = true; PK.key = !PK.at && !e.ctrlKey && !e.altKey && !e.metaKey; } peekCheck(); });
+  document.addEventListener('keyup', e => { if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck(); });
+  window.addEventListener('blur', () => { PK.shift = false; PK.key = false; peekCheck(); });
+}
+function peekWant() {   // the shape a peek shows now, or null
+  if (!EMBED.peek || !PK.shift || S.mode || S.editing) return null;
+  if (PK.at) { if (PK.at.buttons) return null; return hitTest(toWorld(PK.at)).node || null; }
+  if (PK.key && document.activeElement === svgEl() && S.sel.size === 1) return N([...S.sel][0]) || null;
+  return null;
+}
+function peekCheck() {
+  const n = peekWant();
+  if ((n ? n.id : null) === (PEEK ? PEEK.id : null)) return;
+  if (n) peekShow(n); else peekEnd(true);
+}
+function peekShow(n) {
+  if (!PEEK) PEEK = { saved: PREVIEW, draw: $('#minimap').getClientRects().length > 0 };   // the map hidden: nothing is drawn
+  PEEK.id = n.id;
+  if (PEEK.draw) { PREVIEW = { ...previewOf([n.id]), peek: true }; drawPreview(); }
+  tell('topoforge:peek', { id: n.id, name: nodeName(n) });
+}
+function peekEnd(draw) {
+  const p = PEEK; if (!p) return; PEEK = null;
+  if (p.draw) { PREVIEW = p.saved; if (draw) drawPreview(); }
+  tell('topoforge:peek', { id: null });
+}
 /* ---- 1.9 (C): page tabs that do not fit. Everywhere (a fix, not a switch): when, and only when, the tabs are
    wider than their strip, the strip shows the window of tabs that fits, with < and > to move our own window one
    tab at a time (no browser scrollbar), and, in the bottom bar, All, a fly-up list of every page with a filter
@@ -5257,7 +5325,9 @@ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(
   // 1.11
   padArrows, resetLayout, undoReset,
   // 1.12
-  cardPage };
+  cardPage,
+  // 1.13
+  fitScale };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>
