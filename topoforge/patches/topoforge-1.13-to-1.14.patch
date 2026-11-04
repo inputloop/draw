@@ -1,0 +1,457 @@
+--- topoforge-1.13/AUTHORS
++++ topoforge-1.14/AUTHORS
+@@ -19,7 +19,9 @@
+                                           1.12, the card that fills the map
+                                           and the pad that pages it;
+                                           1.13, a peek at a shape's card
+-                                          and fitScale
++                                          and fitScale;
++                                          1.14, the page's Shift and a long
++                                          title shortened
+ 
+ TopoForge was created by Bryant for Corwin.  Bryant is listed first on it,
+ and on everything that grows from it.
+--- topoforge-1.13/ChangeLog
++++ topoforge-1.14/ChangeLog
+@@ -1,3 +1,30 @@
++2026-11-04  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
++
++	topology forge (formerly TopoForge) 1.14: the page's Shift, and a
++	title too long for the card (Corwin, 2026-11-04, 04:36: "Please do
++	work the change to toplogy forge for Shift and the text cut off on
++	later pages").
++	* index.html (TF_VERSION): 1.14.  (header comment): the 1.14 lines.
++	(drawBigCard): keeps the card's whole title for fitCard.
++	(fitCard): a refit starts from the whole title; when not even the
++	title alone fits at 1.10's sizes, fitTitle shortens it, in place of
++	the last resort that drew everything at the floor and let the box cut
++	it off.
++	(fitTitle): New.
++	(PK): page, Shift as the embedding page heard it.
++	(peekKey): New.
++	(peekWant): the page's Shift stands for the drawing's focus.
++	(wirePeek): the app's own Shift clears the page's.
++	(window.TopoForge): peekKey.
++	* spec/EMBED-v1.md: "Added in 1.14 (still v1)".
++	* tests/browser/embed.browser.mjs: compared with 1.13; S8 (every 1.13
++	switch on, the big card on its second page, the pad turned and a peek
++	showing, the same pixels as 1.13), PK12, PK13, BC11.
++	* tests/browser/embed-prove-red.sh: 11 more plants (174); pk-sticks
++	and pk-key-any-focus retargeted (their lines name PK.page).
++	* NEWS, AUTHORS, README.org, RECIPE.org: 1.14.
++	* patches/topoforge-1.13-to-1.14.patch: New.
++
+ 2026-11-03  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
+ 	topology forge (formerly TopoForge) 1.13: a peek at a placed shape's
+--- topoforge-1.13/NEWS
++++ topoforge-1.14/NEWS
+@@ -4,6 +4,27 @@
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.14 (2026-11-04; checked: tests/run.sh, the project-files check, the
++browser kit and the embedding kit green, with their planted faults; see
++RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
++yet)
++
++- A page's own Shift can show the peek (Corwin, 2026-11-04, 04:36: "Please do
++  work the change to toplogy forge for Shift and the text cut off on later
++  pages").  The app hears its own keys only while the focus is in it, so on a
++  page whose frames had the focus the peek waited for the pointer to move.
++  With peek on, TopoForge.peekKey(true) when the page hears Shift go down shows
++  the card of the shape under the pointer's last place on the drawing (or,
++  with the pointer off it, of the one selected shape), and peekKey(false) when
++  Shift goes up puts back what the map showed.  It returns what shows ({ id,
++  name } or null), does nothing with peek off, and takes no event.
++- A big card whose title is too long to fit at 1.10's sizes even alone (a
++  match's card whose first line is a long sentence, on a later page) was cut
++  off by its box ("... for people and their agents:").  Such a title is now
++  shortened to the words that fit, at a word's end, with an ellipsis; its
++  whole text stays in a tooltip, in cardPage(), in what the live region says
++  and in topoforge:preview's cards.  A title that fits is drawn as before.
++
+ Version 1.13 (2026-11-03; checked: tests/run.sh, the project-files check, the
+ browser kit and the embedding kit green, with their planted faults; see
+ RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+--- topoforge-1.13/README.org
++++ topoforge-1.14/README.org
+@@ -76,6 +76,10 @@
+   pointer over a shape, or press Shift alone with one shape selected, and the
+   map shows its card until Shift is let go) and =fitScale()=, the zoom Fit
+   would set, read without moving the view.
++- New in 1.14: =peekKey(down)=, so a page whose own keys hear Shift can show
++  the peek (the shape under the pointer's last place, or the one selected
++  shape), and a big card's title too long to fit is shortened at a word with an
++  ellipsis, not cut off.
+ 
+ * Accessibility
+ We want TopoForge usable without a mouse, without colour, and without seeing
+--- topoforge-1.13/RECIPE.org
++++ topoforge-1.14/RECIPE.org
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.13: Bryant's v1.5 plus our changes (1.6 to 1.13) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, =1.11-to-1.12=, then =1.12-to-1.13= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
++| =index.html=                  | v1.14: Bryant's v1.5 plus our changes (1.6 to 1.14) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, =1.11-to-1.12=, =1.12-to-1.13=, then =1.13-to-1.14= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+--- topoforge-1.13/spec/EMBED-v1.md
++++ topoforge-1.14/spec/EMBED-v1.md
+@@ -2,7 +2,7 @@
+ SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ -->
+-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11, 1.12 and 1.13)
++# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11, 1.12, 1.13 and 1.14)
+ 
+ topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
+ This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
+@@ -468,6 +468,39 @@
+ `fitView()` sets there. A page may use it to put "fit" in the middle of its own zoom slider (FS1). The two share one
+ calculation, and `fitView()` sets exactly the view 1.12 set (FS2). It is not behind a switch: it changes nothing.
+ 
++## Added in 1.14 (still v1): the page's Shift, and a title too long for the card
++
++From Corwin's words of 2026-11-04, 04:36: "Please do work the change to toplogy forge for Shift and the text cut off on
++later pages."
++
++One new call, `TopoForge.peekKey(down)`, which does nothing unless `peek` is on, and one fault fixed in `bigcard`'s
++fitting. Nothing 1.13 promised changes: a page opened on its own draws the same pixels as 1.13 (S1), and so does a page
++with every 1.13 switch on, the big card on its second page, the pad turned and a peek showing (S8).
++
++### The page's Shift: `TopoForge.peekKey(down)`
++
++The app hears its own keys only while the focus is in it. A page whose frames take the focus (a finder, a menu) hears
++Shift itself, and then the peek waited for the pointer to move over the drawing (the pointer carries Shift). With
++`peek` on, the page may pass Shift on: `peekKey(true)` when Shift goes down, `peekKey(false)` when it goes up.
++
++- **Down**, with the pointer on the drawing (its last place there, which the drawing moving under it updates): the
++  shape under it, as Shift held there shows it. With the pointer off the drawing: the one selected shape, though the
++  drawing is not focused (the page speaks for the keyboard); two or more selected, or none, show nothing (PK12, PK13).
++- **Up**: the peek ends, and the map shows exactly what it showed before, as letting Shift go does (PK12).
++- It returns what shows now: `{ id, name }`, or `null`; with `peek` off it does nothing and returns `false` (PK12).
++- It takes no event and changes no selection. The page is told by `topoforge:peek`, as for any peek (PK12, PK13).
++- A page should not pass Shift on while a person types in one of its own fields, where Shift makes capitals.
++
++### A title too long for the card (`bigcard`)
++
++1.12 fits the card's words by leaving out the last facts, then the statement. A title too long to fit at 1.10's sizes
++even alone (a match's card whose first line is a long sentence) left nothing to fit, so the card was drawn at 1.10's
++sizes and its box cut the words off ("... for people and their agents:"). Now such a title is shortened to as many of
++its words as fit, at a word's end, followed by an ellipsis (a single word too long, at a letter), with the facts and the
++statement left out. Its whole text stays in the title's `title` attribute (a tooltip), in `cardPage()`, in what the
++live region says and in `topoforge:preview`'s cards. A larger map shows more of it, or all, with nothing cut, and so
++does the phone's sheet; a title that fits is drawn as before (BC11).
++
+ ## Page tabs that do not fit (1.9, everywhere)
+ 
+ This one is a fix, not a switch: it applies to the app opened on its own too, and only when there are more
+--- topoforge-1.13/tests/browser/embed-prove-red.sh
++++ topoforge-1.14/tests/browser/embed-prove-red.sh
+@@ -4,7 +4,7 @@
+ # Corwin Brust <corwin@bru.st> and Contributors
+ # Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
+ #
+-# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.13).
++# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.14).
+ # A control run on the file as given must be green first. Then each plant changes a COPY of index.html
+ # in one place, the kit runs on the copy, and the check named for that plant must be among those that
+ # fail (a plant may trip others too: the standalone ones watch the whole page).
+@@ -178,6 +178,19 @@
+ #   fs-pad         fitScale(pad) ignores the pad          -> FS1
+ #   fs-view-changed fitView sets another view than 1.12's -> FS2
+ #   any-origin-113 postMessage to '*', the new message    -> E12
++# 1.14:
++#   bc-title-always    every big card's title shortened  -> S8
++#   bc-title-cut       a title too long is cut off again -> BC11
++#   bc-title-one-word  shortened to its first word       -> BC11
++#   bc-title-no-full   the whole title not in its title attribute -> BC11
++#   bc-title-stays-short a larger map keeps the short title -> BC11
++#   pk-key-off         peekKey works with peek off       -> PK12
++#   pk-key-dead        peekKey shows nothing             -> PK12
++#   pk-key-up-stays    peekKey(false) leaves the card    -> PK12
++#   pk-key-says-none   peekKey returns null for a card   -> PK12
++#   pk-key-no-select   the page's Shift ignores the selection -> PK13
++#   pk-key-two         the page's Shift shows one of two selected -> PK13
++#   (retargeted in 1.14, their lines now name PK.page: pk-sticks -> PK5, pk-key-any-focus -> PK7)
+ # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
+ #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
+ # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
+@@ -361,11 +374,11 @@
+ plant pk-restore-none PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw) drawPreview(); }@if (p.draw) { PREVIEW = null; if (draw) drawPreview(); }@'
+ plant pk-page-lost   PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw)@if (p.draw) { PREVIEW = p.saved; if (PREVIEW) PREVIEW.page = 0; if (draw)@'
+ plant pk-pad-turns   PK4 's@^  if (!PREVIEW.peek) padCard(!!deck);@  padCard(!!deck);@'
+-plant pk-sticks      PK5 "s@if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck();@if (e.key === 'Shift') { PK.key = false; } peekCheck();@"
++plant pk-sticks      PK5 "s@if (e.key === 'Shift') { PK.shift = false; PK.key = false; PK.page = false; } peekCheck();@if (e.key === 'Shift') { PK.key = false; PK.page = false; } peekCheck();@"
+ plant pk-leave-shape PK6 's@return hitTest(toWorld(PK.at)).node || null; }@return hitTest(toWorld(PK.at)).node || (PEEK \&\& N(PEEK.id)) || null; }@'
+ plant pk-leave-canvas PK6 "s@svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });@svg.addEventListener('pointerleave', () => { });@"
+ plant pk-no-keys     PK7 's@PK.key = !PK.at && !e.ctrlKey@PK.key = false \&\& !e.ctrlKey@'
+-plant pk-key-any-focus PK7 's@if (PK.key && document.activeElement === svgEl() && S.sel.size === 1)@if (PK.key \&\& S.sel.size === 1)@'
++plant pk-key-any-focus PK7 's@if (PK.key && (document.activeElement === svgEl() || PK.page) && S.sel.size === 1)@if (PK.key \&\& S.sel.size === 1)@'
+ plant pk-key-many    PK7 's@&& S.sel.size === 1) return N(@\&\& S.sel.size >= 1) return N(@'
+ plant pk-eats-click  PK8 "s@svg.addEventListener('pointerdown', at);   // after@svg.addEventListener('pointerdown', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, true);   // after@"
+ plant pk-eats-wheel  PK8 "s@svg.addEventListener('wheel', at, { passive: true });@svg.addEventListener('wheel', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, { capture: true, passive: true });@"
+@@ -379,5 +392,17 @@
+ plant fs-pad         FS1 's@return rnd(fitCalc(pad).k, 5); }@return rnd(fitCalc().k, 5); }@'
+ plant fs-view-changed FS2 's@y: (r.height - b.h \* k) / 2 - b.y \* k };$@y: (r.height - b.h * k) / 2 - b.y * k + 1 };@'
+ plant any-origin-113 E12 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
++# 1.14
++plant bc-title-always S8 's@^  if (!best) best = fitTitle(el, facts, st, tt, W, H);@  best = fitTitle(el, facts, st, tt, W, H);@'
++plant bc-title-cut    BC11 "s@^  if (!best) best = fitTitle(el, facts, st, tt, W, H);.*\$@  if (!best) best = { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 };@"
++plant bc-title-one-word BC11 's@^  if (n >= 1) text = byWord(n);@  if (false) text = byWord(n);@'
++plant bc-title-no-full BC11 's@^  tt.textContent = text; tt.title = full;@  tt.textContent = text;@'
++plant bc-title-stays-short BC11 's@^  if (el._title !== undefined && tt.textContent !== el._title) tt.textContent = el._title;.*$@@'
++plant pk-key-off      PK12 's@^  if (!EMBED.peek) return false;$@@'
++plant pk-key-dead     PK12 's@^  PK.shift = !!down; PK.key = !!down && !PK.at; PK.page = PK.key;$@  void down;@'
++plant pk-key-up-stays PK12 's@^  PK.shift = !!down; PK.key@  PK.shift = PK.shift || !!down; PK.key@'
++plant pk-key-says-none PK12 's@^  return PEEK ? { id: PEEK.id, name: nodeName(N(PEEK.id)) } : null;$@  return null;@'
++plant pk-key-no-select PK13 's@(document.activeElement === svgEl() || PK.page)@(document.activeElement === svgEl())@'
++plant pk-key-two      PK13 's@&& S.sel.size === 1) return N(@\&\& S.sel.size >= 1) return N(@'
+ [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
+ exit $bad
+--- topoforge-1.13/tests/browser/embed.browser.mjs
++++ topoforge-1.14/tests/browser/embed.browser.mjs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03; 1.14 checks 2026-11-04.
+ //
+-// embed.browser.mjs -- the embedding switches (1.8 to 1.13) in real Chromium, held to spec/EMBED-v1.md.
++// embed.browser.mjs -- the embedding switches (1.8 to 1.14) in real Chromium, held to spec/EMBED-v1.md.
+ //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+ //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+ //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+@@ -34,7 +34,7 @@
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+ // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+-const VER = '1.13', PREV = '1.12';
++const VER = '1.14', PREV = '1.13';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -45,7 +45,7 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13', '1.13-to-1.14'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+@@ -53,7 +53,7 @@
+   return cur;
+ }
+ let v17, v18, v111;   // v17: the version before (PREV); v18: 1.8; v111: 1.11, whose pad the 1.12 checks compare with
+-try { v17 = rebuild(7); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
++try { v17 = rebuild(8); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -169,6 +169,20 @@
+     check(`S7 every 1.12 switch on (cardpad, so bigcard, mappad, map and preview; reset, mapwheel), the big card on its second page and the pad turned, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV} (peek is off)`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
+     await a.c.close(); await b.c.close();
+   }
++  // 1.14: with every 1.13 switch on (peek, cardpad: bigcard, mappad, map, preview), the big card on its second page, the pad turned, and a peek
++  // showing (Shift held over a shape), 1.14 draws the same pixels as 1.13: peekKey is a call, and the title is shortened only when it cannot fit
++  for (const dark of [false, true]) {
++    const u = '?embed=peek,cardpad,reset,mapwheel&load=/rich.json';
++    const a = await open(A + '/v17.html' + u, { dark, settle: 1200 }), b = await open(A + '/index.html' + u, { dark, settle: 1200 });
++    for (const x of [a, b]) { await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
++      await x.p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); const m = await boxOf(x.p, '#minimap'); await x.p.mouse.move(m.x + m.w / 2, m.y + m.h + 5); await x.p.waitForTimeout(500);
++      const v = await x.p.evaluate(() => { const n = P().nodes.find(y => y.text === 'Server 2'), r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y }; }); await x.p.mouse.move(v.x, v.y); await x.p.keyboard.down('Shift'); await x.p.mouse.move(v.x + 2, v.y + 1); await x.p.waitForTimeout(700); }
++    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
++    for (const x of [a, b]) await x.p.keyboard.up('Shift');
++    fs.writeFileSync(path.join(outdir, `switches113-${PREV}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `switches113-${VER}-${dark ? 'dark' : 'light'}.png`), ib);
++    check(`S8 every 1.13 switch on (peek; cardpad, so bigcard, mappad, map and preview; reset, mapwheel), the big card on its second page, the pad turned and a peek showing, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV}`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
++    await a.c.close(); await b.c.close();
++  }
+ 
+   // ---- F, P, H, M: each switch ----
+   { const { c, p } = await open(A + '/index.html?embed=frameless');
+@@ -1020,6 +1034,61 @@
+     const f12 = await fv(A + '/v17.html?embed=props,shapes&load=/rich.json'), f13 = await fv(A + '/index.html?embed=props,shapes&load=/rich.json');
+     check(`FS2 fitView() sets exactly the view ${PREV}'s fitView sets (the same drawing, the same floating panels, the same window): pad 50, 80 and 0, and an empty page`, JSON.stringify(f12) === JSON.stringify(f13) && f13.length === 4, JSON.stringify({ [PREV]: f12, [VER]: f13 })); }
+ 
++  // ======== 1.14: the page's Shift (peekKey), and a title too long for the card (bigcard) ========
++  // PK12 and PK13 run in a parent page of this origin with the focus in the parent, as an embedding page's own keys would hear Shift
++  const pkCall = (p, down) => p.evaluate(d => document.getElementById('f').contentWindow.TopoForge.peekKey(d), down);
++  const parentCorner = p => p.mouse.click(1225, 825);   // the parent's own body, beside the frame (1200 by 800 at its top left): the focus leaves the app
++  { const cap = {};
++    const off = await parentRun(A, A + '/index.html?embed=bigcard,map&load=/rich.json', async (p, fr) => {
++      await parentCorner(p); const e = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.move(e.x, e.y); await p.waitForTimeout(100);
++      cap.offRet = await pkCall(p, true); await p.waitForTimeout(150); cap.offCard = await peekRead(fr); await pkCall(p, false); });
++    const on = await parentRun(A, A + '/index.html?embed=peek,bigcard,map&load=/rich.json', async (p, fr) => {
++      await parentCorner(p); cap.focus = await p.evaluate(() => [document.hasFocus(), document.getElementById('f').contentDocument.hasFocus()]);
++      const e = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.move(e.x - 3, e.y); await p.mouse.move(e.x, e.y); await p.waitForTimeout(150);   // the pointer rests on the shape; no Shift
++      cap.before = await peekRead(fr);
++      cap.r1 = await pkCall(p, true); await p.waitForTimeout(150); cap.c1 = await cardRead(fr); cap.p1 = await peekRead(fr);
++      cap.r2 = await pkCall(p, false); await p.waitForTimeout(150); cap.p2 = await peekRead(fr);
++      cap.sel = await fr.evaluate(() => S.sel.size);
++    }, { after: (p, fr) => fr.evaluate(() => P().nodes.find(n => n.text === 'Edge Router').id) });
++    const pk = msgs(on.got, 'peek');
++    at = 'PK12'; check('PK12 TopoForge.peekKey(down), for a page whose own keys hear Shift (the focus in the parent page, never in the app): with the pointer resting on a shape and no Shift the app could hear, peekKey(true) shows that shape\'s card (it returns { id, name }; the page is told), peekKey(false) puts back what the map showed, here nothing (no card, not faded, nothing lit, as PK5 judges it; it returns null; told { id: null }); it takes no event (the selection as it was); with peek off it does nothing and returns false',
++      cap.offRet === false && !cap.offCard.shown && msgs(off.got, 'peek').length === 0 && cap.focus[0] === true && cap.focus[1] === false && !cap.before.shown &&
++      cap.r1 && cap.r1.id === on.extra && cap.r1.name === 'Edge Router' && fitted(cap.c1) && cap.c1.title === 'Edge Router' && cap.r2 === null && !cap.p2.shown && !cap.p2.carded && !cap.p2.cap && cap.p2.rings === 0 && cap.p2.hiN === 0 && cap.sel === 0 &&
++      JSON.stringify(pk) === JSON.stringify([{ id: on.extra, name: 'Edge Router' }, { id: null }]) && on.got.every(m => m.origin === A),
++      JSON.stringify({ off: [cap.offRet, cap.offCard.shown], focus: cap.focus, before: cap.before.shown, r1: cap.r1, c1: { shown: cap.c1.shown, title: cap.c1.title, cut0: cap.c1.cut0, k: cap.c1.k }, r2: cap.r2, p2: [cap.p2.shown, cap.p2.carded, cap.p2.cap, cap.p2.rings, cap.p2.hiN], sel: cap.sel, pk })); }
++  { const cap = {};
++    await parentRun(A, A + '/index.html?embed=peek,bigcard,map&load=/rich.json', async (p, fr) => {
++      const [e, s] = [await shapeAt(fr, 'Edge Router'), await shapeAt(fr, 'Core Switch')];
++      await fr.evaluate(i => TopoForge.select([i]), e.id); await parentCorner(p); await p.waitForTimeout(100);   // one selected, the pointer and the focus in the parent
++      cap.r1 = await pkCall(p, true); await p.waitForTimeout(150); cap.k1 = await peekRead(fr); cap.r1b = await pkCall(p, false); await p.waitForTimeout(150); cap.k1b = await peekRead(fr);
++      await fr.evaluate(([a, b]) => TopoForge.select([a, b]), [e.id, s.id]); cap.r2 = await pkCall(p, true); await p.waitForTimeout(150); cap.k2 = await peekRead(fr); await pkCall(p, false);
++      await fr.evaluate(() => TopoForge.select([])); cap.r3 = await pkCall(p, true); await p.waitForTimeout(150); cap.k3 = await peekRead(fr); await pkCall(p, false);
++      await fr.evaluate(i => TopoForge.select([i]), e.id); await pkCall(p, true); cap.selAfter = await fr.evaluate(() => [...S.sel].map(i => N(i).text)); await pkCall(p, false); });
++    at = 'PK13'; check('PK13 with the pointer off the drawing, peekKey(true) shows the one selected shape\'s card though the drawing is not focused (the page speaks for the keyboard), and peekKey(false) takes it away; with two selected, or none, it shows nothing (null); the selection is never changed',
++      cap.r1 && cap.r1.name === 'Edge Router' && cap.k1.shown && cap.k1.title === 'Edge Router' && cap.r1b === null && !cap.k1b.shown && cap.r2 === null && !cap.k2.shown && cap.r3 === null && !cap.k3.shown && JSON.stringify(cap.selAfter) === '["Edge Router"]',
++      JSON.stringify({ r1: cap.r1, k1: [cap.k1.shown, cap.k1.title], r1b: cap.r1b, k1b: cap.k1b.shown, two: [cap.r2, cap.k2.shown], none: [cap.r3, cap.k3.shown], sel: cap.selAfter })); }
++  // BC11: a title too long to fit at 1.10's sizes even alone, on a match's own card (a later page): shortened at a word, with an ellipsis, not cut off
++  { const LONG = 'gitcha: A free, self-hosted forge for people and their agents: packages, git, site hosting and CI, with two-factor sign-in on every account. Its README says which parts are tested only against stand-ins.';
++    const FULL = LONG.slice(0, 200);   // the card's title as the app makes it: the shape's first line, up to 200 characters (matchCard)
++    const add = p => p.evaluate(L => { edit(() => { const z = makeNode('server', 900, 400, { text: L + '\nsecond line' }); z.data.tooltip = 'A long tooltip: ' + L; P().nodes.push(z); }); render();
++      const ids = ['Edge Router', L + '\nsecond line', 'Core Switch'].map(t => P().nodes.find(n => n.text === t).id); TopoForge.preview(ids); TopoForge.cardPage(3); }, LONG);
++    const tRead = p => p.evaluate(() => { const t = document.querySelector('#minimap .mm-card .mc-t'); return { attr: t.getAttribute('title'), lines: Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)), page: TopoForge.cardPage(), live: (document.querySelector('#flLive') || {}).textContent || '' }; });
++    const short = c => c.title.endsWith('…') && FULL.startsWith(c.title.slice(0, -1)) && /[\s,;:.]/.test(FULL.charAt(c.title.length - 1));   // a word's end, then the ellipsis
++    const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json');
++    at = 'BC11'; await add(p); await p.waitForTimeout(250); const c1 = await cardRead(p), t1 = await tRead(p);
++    await bigger(p); await p.waitForTimeout(250); const c2 = await cardRead(p), t2 = await tRead(p);
++    await p.evaluate(() => TopoForge.fitView()); await p.waitForTimeout(250); const c3 = await cardRead(p);   // the view at fitScale(): the map redrawn, the card fitted again
++    await p.evaluate(() => TopoForge.mapScale(2)); await p.waitForTimeout(250); const c4 = await cardRead(p);
++    await p.evaluate(() => TopoForge.cardPage(2)); await p.waitForTimeout(200); const c5 = await cardRead(p), t5 = await tRead(p);
++    await c.close();
++    const ph = await open(A + '/index.html?embed=bigcard&load=/rich.json', { w: 390, h: 844 }); await add(ph.p); await ph.p.waitForTimeout(300); const c6 = await cardRead(ph.p); await ph.c.close();
++    check('BC11 a title too long to fit at 1.10\'s sizes even alone (a match\'s card, its own page) is shortened to the words that fit, at a word, ending in an ellipsis, not cut off: nothing of the card is cut, in the map\'s first size, a larger map (more of it shown, or all), with the view at fitScale(), at the map\'s scale 2 and on a phone\'s sheet; its whole text stays in its title attribute, in cardPage() and in the live region; it fills two lines or more; a short title is as before',
++      c1.shown && c1.cut0.length === 0 && short(c1) && t1.lines >= 2 && t1.attr === FULL && t1.page.title === FULL && t1.live.includes(FULL.slice(0, 80)) &&
++      c2.cut0.length === 0 && (c2.title === FULL || (short(c2) && c2.title.length > c1.title.length)) && (c2.title === FULL ? t2.attr === null : t2.attr === FULL) &&
++      c3.cut0.length === 0 && c3.title === c2.title && c4.cut0.length === 0 && c4.title === c2.title &&
++      fitted(c5) && c5.title === 'Edge Router' && t5.attr === null && c6.shown && c6.cut0.length === 0 && (c6.title === FULL || short(c6)),
++      JSON.stringify({ c1: [c1.title, c1.cut0, c1.k, c1.cls], t1: { attr: t1.attr === FULL, lines: t1.lines, page: t1.page.title === FULL, live: t1.live.slice(0, 40) }, c2: [c2.title.length, c2.cut0, c2.k], c3: [c3.title.length, c3.cut0], c4: [c4.title.length, c4.cut0], c5: [c5.title, c5.cut0, t5.attr], c6: [c6.title.length, c6.cut0, c6.k] })); }
++
+   // ---- X: axe with every switch on; reduced motion ----
+   for (const dark of [false, true]) {
+     const { c, p } = await open(A + '/index.html?embed=all,map,preview,view,keys,context,pagelist,mappad,reset,bigcard,cardpad,peek&load=/fixture.json', { dark, reduce: true });
+--- topoforge-1.13/index.html
++++ topoforge-1.14/index.html
+@@ -27,6 +27,10 @@
+   alone with one shape selected and the drawing focused; the map shows that shape's card as preview([id]) draws it, and
+   what it showed before comes back when Shift is let go), and TopoForge.fitScale(), the zoom Fit would set, read without
+   moving the view. The peek is off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
++  1.14: TopoForge.peekKey(down), for a page whose own keys hear Shift while the focus is in it (peek: the shape under the
++  pointer's last place on the drawing, or the one selected shape, until peekKey(false)), and a big card whose title
++  cannot fit at 1.10's sizes is shortened at a word, with an ellipsis, not cut off (bigcard). Nothing changes for a page
++  opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -494,7 +498,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.13';
++const TF_VERSION = '1.14';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -4997,7 +5001,7 @@
+   // the map is redrawn often (every pan): the same card in a box of the same size keeps its fit, unmeasured
+   const key = JSON.stringify([card, i, n, hits.map(h => h.type)]);
+   if (el._key === key && !el.hidden && el._size === el.clientWidth + 'x' + el.clientHeight && mm.classList.contains('mm-carded')) { el._deck = deck[i]; return; }
+-  el.querySelector('.mc-t').textContent = card.title || '';
++  el.querySelector('.mc-t').textContent = card.title || ''; el._title = card.title || '';   // 1.14: the full title, for fitCard
+   const pn = el.querySelector('.mc-n'); pn.textContent = n > 1 ? `${i + 1} of ${n}` : ''; pn.hidden = n <= 1;
+   el._deck = deck[i]; el.classList.toggle('mc-noart', !cardHasArt(card, hits));
+   const dl = el.querySelector('.mc-f'); dl.textContent = '';
+@@ -5037,7 +5041,9 @@
+   const pad = 8, gap = 8;
+   el.style.setProperty('--mcaw', Math.round(Math.max(24, Math.min(H - 2 * pad, (W - 2 * pad - gap) * 0.42))) + 'px');
+   el.style.setProperty('--mcah', Math.round(Math.max(24, Math.min(W - 2 * pad, (H - 2 * pad - gap) * 0.42))) + 'px');
+-  const facts = [...el.querySelectorAll('.mc-f>div')], st = el.querySelector('.mc-s');
++  const facts = [...el.querySelectorAll('.mc-f>div')], st = el.querySelector('.mc-s'), tt = el.querySelector('.mc-t');
++  if (el._title !== undefined && tt.textContent !== el._title) tt.textContent = el._title;   // 1.14: a refit starts from the full title
++  tt.removeAttribute('title');
+   let best = null, drop = 0;
+   for (; drop <= facts.length + 1 && !best; drop++) {   // too small for all of it at the floor: the last facts, then the statement, are left out, not cut
+     facts.forEach((d, i) => { d.hidden = i >= facts.length - drop; }); st.hidden = !st.textContent || drop > facts.length;
+@@ -5047,10 +5053,28 @@
+       if (k !== null && (!best || k > best.k)) best = { f, k };
+     }
+   }
+-  if (!best) { facts.forEach(d => { d.hidden = false; }); st.hidden = !st.textContent; best = { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 }; }   // nothing fits at all: lines, clipped
++  if (!best) best = fitTitle(el, facts, st, tt, W, H);   // 1.14: not even the title alone fits at the floor: it is shortened, not cut
+   cardForm(el, best.f); el.style.setProperty('--mck', String(best.k));
+   return { ...best, left: facts.filter(d => d.hidden).length };
+ }
++// 1.14: a title too long to fit at 1.10's sizes even alone (the facts and the statement left out) is shortened to the
++// most of its words that fit, cut at a word and ended with an ellipsis (a single word too long, at a letter); its whole
++// text stays in the title attribute, in cardPage(), in the live region and in topoforge:preview's cards. Before 1.14
++// everything was drawn at the floor and the card cut it off ("... for people and their agents:")
++function fitTitle(el, facts, st, tt, W, H) {
++  const full = tt.textContent, words = full.split(/\s+/).filter(Boolean), forms = [['mc-side', 'mc-lines'], ['mc-stack', 'mc-lines']];
++  facts.forEach(d => { d.hidden = true; }); st.hidden = true;
++  const fitsAt1 = () => forms.some(f => { cardForm(el, f); el.style.setProperty('--mck', '1'); return cardFits(el); });
++  const most = (n, text) => { let lo = 0, hi = n; while (lo < hi) { const m = Math.ceil((lo + hi) / 2); tt.textContent = text(m); if (fitsAt1()) lo = m; else hi = m - 1; } return lo; };
++  const byWord = m => words.slice(0, m).join(' ').replace(/[\s,;:.\u2013\u2014-]+$/, '') + '\u2026';
++  let n = most(Math.max(0, words.length - 1), byWord), text;
++  if (n >= 1) text = byWord(n);
++  else { const w = words[0] || '', c = most(Math.max(0, w.length - 1), m => w.slice(0, m) + '\u2026'); text = c >= 1 ? w.slice(0, c) + '\u2026' : '\u2026'; }
++  tt.textContent = text; tt.title = full;
++  let best = null;
++  for (const f of forms) { cardForm(el, f); const k = cardLargest(el); if (k !== null && (!best || k > best.k)) best = { f, k }; }
++  return best || { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 };
++}
+ function cardForm(el, f) { el.classList.remove('mc-side', 'mc-stack', 'mc-box', 'mc-lines'); el.classList.add(...f); }
+ function cardFits(el) {
+   const x = el.querySelector('.mc-x');
+@@ -5155,7 +5179,7 @@
+    nothing is drawn, but the page is told. A peek is not the page's preview: topoforge:preview is not sent for it, the pad
+    is left as it was, and the page's own preview() ends a peek. */
+ let PEEK = null, _peekWired = false;
+-const PK = { shift: false, at: null, key: false };   // Shift held; the pointer on the drawing (null off it); Shift pressed alone with the pointer off the drawing
++const PK = { shift: false, at: null, key: false, page: false };   // 1.14: page, Shift as the embedding page heard it (peekKey)   // Shift held; the pointer on the drawing (null off it); Shift pressed alone with the pointer off the drawing
+ function embed113(was) {
+   if (EMBED.peek && !_peekWired) wirePeek();
+   if (!EMBED.peek && PEEK) peekEnd(true);
+@@ -5168,14 +5192,24 @@
+   svg.addEventListener('wheel', at, { passive: true });   // the drawing moves under a still pointer
+   svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });
+   svg.addEventListener('blur', () => peekCheck());
+-  document.addEventListener('keydown', e => { if (e.key === 'Shift') { PK.shift = true; PK.key = !PK.at && !e.ctrlKey && !e.altKey && !e.metaKey; } peekCheck(); });
+-  document.addEventListener('keyup', e => { if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck(); });
++  document.addEventListener('keydown', e => { if (e.key === 'Shift') { PK.shift = true; PK.key = !PK.at && !e.ctrlKey && !e.altKey && !e.metaKey; PK.page = false; } peekCheck(); });
++  document.addEventListener('keyup', e => { if (e.key === 'Shift') { PK.shift = false; PK.key = false; PK.page = false; } peekCheck(); });
+   window.addEventListener('blur', () => { PK.shift = false; PK.key = false; peekCheck(); });
+ }
++// 1.14: TopoForge.peekKey(down): an embedding page whose own keys hear Shift (the focus is in the page, so the app's do
++// not) says it went down (true) or up (false). Down: the shape under the pointer's last place on the drawing, or, with
++// the pointer off it, the one selected shape (the page speaks for the keyboard, so the drawing need not be focused);
++// up: the peek ends. With peek off it does nothing and returns false; else what shows now, { id, name } or null
++function peekKey(down) {
++  if (!EMBED.peek) return false;
++  PK.shift = !!down; PK.key = !!down && !PK.at; PK.page = PK.key;
++  peekCheck();
++  return PEEK ? { id: PEEK.id, name: nodeName(N(PEEK.id)) } : null;
++}
+ function peekWant() {   // the shape a peek shows now, or null
+   if (!EMBED.peek || !PK.shift || S.mode || S.editing) return null;
+   if (PK.at) { if (PK.at.buttons) return null; return hitTest(toWorld(PK.at)).node || null; }
+-  if (PK.key && document.activeElement === svgEl() && S.sel.size === 1) return N([...S.sel][0]) || null;
++  if (PK.key && (document.activeElement === svgEl() || PK.page) && S.sel.size === 1) return N([...S.sel][0]) || null;   // 1.14: or the page's Shift (peekKey)
+   return null;
+ }
+ function peekCheck() {
+@@ -5327,7 +5361,9 @@
+   // 1.12
+   cardPage,
+   // 1.13
+-  fitScale };
++  fitScale,
++  // 1.14
++  peekKey };
+ document.addEventListener('DOMContentLoaded', boot);
+ 
+ </script>

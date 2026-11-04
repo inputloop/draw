@@ -5,6 +5,11 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- topology forge (formerly TopoForge) 1.14: a page whose own keys hear Shift
+  can show the peek (TopoForge.peekKey), and a big card's title too long to
+  fit is shortened at a word with an ellipsis, not cut off.  See
+  topoforge/NEWS.
+
 - topology forge (formerly TopoForge) 1.13: hold Shift over a shape on the
   drawing (or press Shift alone with one shape selected) and the overview
   map shows that shape's card until Shift is let go, for a page that asks;

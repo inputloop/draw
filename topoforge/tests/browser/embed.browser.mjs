@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
 // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03.
+// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03; 1.14 checks 2026-11-04.
 //
-// embed.browser.mjs -- the embedding switches (1.8 to 1.13) in real Chromium, held to spec/EMBED-v1.md.
+// embed.browser.mjs -- the embedding switches (1.8 to 1.14) in real Chromium, held to spec/EMBED-v1.md.
 //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
 //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
 //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
@@ -34,7 +34,7 @@ const results = []; let red = 0, at = '';   // at: the check whose steps are run
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
 
 // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
-const VER = '1.13', PREV = '1.12';
+const VER = '1.14', PREV = '1.13';
 function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
   const out = []; let on = false;
   for (const l of patchText.split('\n')) {
@@ -45,7 +45,7 @@ function indexPart(patchText) { // the hunks of one multi-file patch that touch 
 }
 function rebuild(upto) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13'].slice(0, upto)) {
+  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13', '1.13-to-1.14'].slice(0, upto)) {
     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
@@ -53,7 +53,7 @@ function rebuild(upto) {
   return cur;
 }
 let v17, v18, v111;   // v17: the version before (PREV); v18: 1.8; v111: 1.11, whose pad the 1.12 checks compare with
-try { v17 = rebuild(7); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+try { v17 = rebuild(8); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
 
 // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
 const html = fs.readFileSync(file);
@@ -167,6 +167,20 @@ try {
     const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
     fs.writeFileSync(path.join(outdir, `switches112-${PREV}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `switches112-${VER}-${dark ? 'dark' : 'light'}.png`), ib);
     check(`S7 every 1.12 switch on (cardpad, so bigcard, mappad, map and preview; reset, mapwheel), the big card on its second page and the pad turned, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV} (peek is off)`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
+    await a.c.close(); await b.c.close();
+  }
+  // 1.14: with every 1.13 switch on (peek, cardpad: bigcard, mappad, map, preview), the big card on its second page, the pad turned, and a peek
+  // showing (Shift held over a shape), 1.14 draws the same pixels as 1.13: peekKey is a call, and the title is shortened only when it cannot fit
+  for (const dark of [false, true]) {
+    const u = '?embed=peek,cardpad,reset,mapwheel&load=/rich.json';
+    const a = await open(A + '/v17.html' + u, { dark, settle: 1200 }), b = await open(A + '/index.html' + u, { dark, settle: 1200 });
+    for (const x of [a, b]) { await x.p.waitForFunction(() => !document.querySelector('#toasts .toast'), null, { timeout: 8000 }).catch(() => {});
+      await x.p.evaluate(() => { TopoForge.preview({ category: 'net' }); TopoForge.cardPage('next'); }); const m = await boxOf(x.p, '#minimap'); await x.p.mouse.move(m.x + m.w / 2, m.y + m.h + 5); await x.p.waitForTimeout(500);
+      const v = await x.p.evaluate(() => { const n = P().nodes.find(y => y.text === 'Server 2'), r = svgEl().getBoundingClientRect(); return { x: r.left + (n.x + n.w / 2) * S.view.k + S.view.x, y: r.top + (n.y + n.h / 2) * S.view.k + S.view.y }; }); await x.p.mouse.move(v.x, v.y); await x.p.keyboard.down('Shift'); await x.p.mouse.move(v.x + 2, v.y + 1); await x.p.waitForTimeout(700); }
+    const [ia, ib] = [await a.p.screenshot(), await b.p.screenshot()]; const d = await pixelDiff(ia, ib);
+    for (const x of [a, b]) await x.p.keyboard.up('Shift');
+    fs.writeFileSync(path.join(outdir, `switches113-${PREV}-${dark ? 'dark' : 'light'}.png`), ia); fs.writeFileSync(path.join(outdir, `switches113-${VER}-${dark ? 'dark' : 'light'}.png`), ib);
+    check(`S8 every 1.13 switch on (peek; cardpad, so bigcard, mappad, map and preview; reset, mapwheel), the big card on its second page, the pad turned and a peek showing, 1400x900 ${dark ? 'dark' : 'light'}: ${VER} draws the same pixels as ${PREV}`, d.size && d.over <= 8 && d.n <= d.total / 1000, `${d.n} of ${d.total} pixels differ, largest step ${d.max} of 255, ${d.over} by more than 16`);
     await a.c.close(); await b.c.close();
   }
 
@@ -1019,6 +1033,61 @@ try {
         DOC.pages.push(newPage('Empty')); buildPages(); TopoForge.showPage('Empty'); TopoForge.setView({ k: 0.4, x: 3, y: 5 }); TopoForge.fitView(); out.push(JSON.stringify(S.view)); return out; }); await c.close(); return r; };
     const f12 = await fv(A + '/v17.html?embed=props,shapes&load=/rich.json'), f13 = await fv(A + '/index.html?embed=props,shapes&load=/rich.json');
     check(`FS2 fitView() sets exactly the view ${PREV}'s fitView sets (the same drawing, the same floating panels, the same window): pad 50, 80 and 0, and an empty page`, JSON.stringify(f12) === JSON.stringify(f13) && f13.length === 4, JSON.stringify({ [PREV]: f12, [VER]: f13 })); }
+
+  // ======== 1.14: the page's Shift (peekKey), and a title too long for the card (bigcard) ========
+  // PK12 and PK13 run in a parent page of this origin with the focus in the parent, as an embedding page's own keys would hear Shift
+  const pkCall = (p, down) => p.evaluate(d => document.getElementById('f').contentWindow.TopoForge.peekKey(d), down);
+  const parentCorner = p => p.mouse.click(1225, 825);   // the parent's own body, beside the frame (1200 by 800 at its top left): the focus leaves the app
+  { const cap = {};
+    const off = await parentRun(A, A + '/index.html?embed=bigcard,map&load=/rich.json', async (p, fr) => {
+      await parentCorner(p); const e = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.move(e.x, e.y); await p.waitForTimeout(100);
+      cap.offRet = await pkCall(p, true); await p.waitForTimeout(150); cap.offCard = await peekRead(fr); await pkCall(p, false); });
+    const on = await parentRun(A, A + '/index.html?embed=peek,bigcard,map&load=/rich.json', async (p, fr) => {
+      await parentCorner(p); cap.focus = await p.evaluate(() => [document.hasFocus(), document.getElementById('f').contentDocument.hasFocus()]);
+      const e = await inFrame(p, await shapeAt(fr, 'Edge Router')); await p.mouse.move(e.x - 3, e.y); await p.mouse.move(e.x, e.y); await p.waitForTimeout(150);   // the pointer rests on the shape; no Shift
+      cap.before = await peekRead(fr);
+      cap.r1 = await pkCall(p, true); await p.waitForTimeout(150); cap.c1 = await cardRead(fr); cap.p1 = await peekRead(fr);
+      cap.r2 = await pkCall(p, false); await p.waitForTimeout(150); cap.p2 = await peekRead(fr);
+      cap.sel = await fr.evaluate(() => S.sel.size);
+    }, { after: (p, fr) => fr.evaluate(() => P().nodes.find(n => n.text === 'Edge Router').id) });
+    const pk = msgs(on.got, 'peek');
+    at = 'PK12'; check('PK12 TopoForge.peekKey(down), for a page whose own keys hear Shift (the focus in the parent page, never in the app): with the pointer resting on a shape and no Shift the app could hear, peekKey(true) shows that shape\'s card (it returns { id, name }; the page is told), peekKey(false) puts back what the map showed, here nothing (no card, not faded, nothing lit, as PK5 judges it; it returns null; told { id: null }); it takes no event (the selection as it was); with peek off it does nothing and returns false',
+      cap.offRet === false && !cap.offCard.shown && msgs(off.got, 'peek').length === 0 && cap.focus[0] === true && cap.focus[1] === false && !cap.before.shown &&
+      cap.r1 && cap.r1.id === on.extra && cap.r1.name === 'Edge Router' && fitted(cap.c1) && cap.c1.title === 'Edge Router' && cap.r2 === null && !cap.p2.shown && !cap.p2.carded && !cap.p2.cap && cap.p2.rings === 0 && cap.p2.hiN === 0 && cap.sel === 0 &&
+      JSON.stringify(pk) === JSON.stringify([{ id: on.extra, name: 'Edge Router' }, { id: null }]) && on.got.every(m => m.origin === A),
+      JSON.stringify({ off: [cap.offRet, cap.offCard.shown], focus: cap.focus, before: cap.before.shown, r1: cap.r1, c1: { shown: cap.c1.shown, title: cap.c1.title, cut0: cap.c1.cut0, k: cap.c1.k }, r2: cap.r2, p2: [cap.p2.shown, cap.p2.carded, cap.p2.cap, cap.p2.rings, cap.p2.hiN], sel: cap.sel, pk })); }
+  { const cap = {};
+    await parentRun(A, A + '/index.html?embed=peek,bigcard,map&load=/rich.json', async (p, fr) => {
+      const [e, s] = [await shapeAt(fr, 'Edge Router'), await shapeAt(fr, 'Core Switch')];
+      await fr.evaluate(i => TopoForge.select([i]), e.id); await parentCorner(p); await p.waitForTimeout(100);   // one selected, the pointer and the focus in the parent
+      cap.r1 = await pkCall(p, true); await p.waitForTimeout(150); cap.k1 = await peekRead(fr); cap.r1b = await pkCall(p, false); await p.waitForTimeout(150); cap.k1b = await peekRead(fr);
+      await fr.evaluate(([a, b]) => TopoForge.select([a, b]), [e.id, s.id]); cap.r2 = await pkCall(p, true); await p.waitForTimeout(150); cap.k2 = await peekRead(fr); await pkCall(p, false);
+      await fr.evaluate(() => TopoForge.select([])); cap.r3 = await pkCall(p, true); await p.waitForTimeout(150); cap.k3 = await peekRead(fr); await pkCall(p, false);
+      await fr.evaluate(i => TopoForge.select([i]), e.id); await pkCall(p, true); cap.selAfter = await fr.evaluate(() => [...S.sel].map(i => N(i).text)); await pkCall(p, false); });
+    at = 'PK13'; check('PK13 with the pointer off the drawing, peekKey(true) shows the one selected shape\'s card though the drawing is not focused (the page speaks for the keyboard), and peekKey(false) takes it away; with two selected, or none, it shows nothing (null); the selection is never changed',
+      cap.r1 && cap.r1.name === 'Edge Router' && cap.k1.shown && cap.k1.title === 'Edge Router' && cap.r1b === null && !cap.k1b.shown && cap.r2 === null && !cap.k2.shown && cap.r3 === null && !cap.k3.shown && JSON.stringify(cap.selAfter) === '["Edge Router"]',
+      JSON.stringify({ r1: cap.r1, k1: [cap.k1.shown, cap.k1.title], r1b: cap.r1b, k1b: cap.k1b.shown, two: [cap.r2, cap.k2.shown], none: [cap.r3, cap.k3.shown], sel: cap.selAfter })); }
+  // BC11: a title too long to fit at 1.10's sizes even alone, on a match's own card (a later page): shortened at a word, with an ellipsis, not cut off
+  { const LONG = 'gitcha: A free, self-hosted forge for people and their agents: packages, git, site hosting and CI, with two-factor sign-in on every account. Its README says which parts are tested only against stand-ins.';
+    const FULL = LONG.slice(0, 200);   // the card's title as the app makes it: the shape's first line, up to 200 characters (matchCard)
+    const add = p => p.evaluate(L => { edit(() => { const z = makeNode('server', 900, 400, { text: L + '\nsecond line' }); z.data.tooltip = 'A long tooltip: ' + L; P().nodes.push(z); }); render();
+      const ids = ['Edge Router', L + '\nsecond line', 'Core Switch'].map(t => P().nodes.find(n => n.text === t).id); TopoForge.preview(ids); TopoForge.cardPage(3); }, LONG);
+    const tRead = p => p.evaluate(() => { const t = document.querySelector('#minimap .mm-card .mc-t'); return { attr: t.getAttribute('title'), lines: Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)), page: TopoForge.cardPage(), live: (document.querySelector('#flLive') || {}).textContent || '' }; });
+    const short = c => c.title.endsWith('…') && FULL.startsWith(c.title.slice(0, -1)) && /[\s,;:.]/.test(FULL.charAt(c.title.length - 1));   // a word's end, then the ellipsis
+    const { c, p } = await open(A + '/index.html?embed=bigcard,map&load=/rich.json');
+    at = 'BC11'; await add(p); await p.waitForTimeout(250); const c1 = await cardRead(p), t1 = await tRead(p);
+    await bigger(p); await p.waitForTimeout(250); const c2 = await cardRead(p), t2 = await tRead(p);
+    await p.evaluate(() => TopoForge.fitView()); await p.waitForTimeout(250); const c3 = await cardRead(p);   // the view at fitScale(): the map redrawn, the card fitted again
+    await p.evaluate(() => TopoForge.mapScale(2)); await p.waitForTimeout(250); const c4 = await cardRead(p);
+    await p.evaluate(() => TopoForge.cardPage(2)); await p.waitForTimeout(200); const c5 = await cardRead(p), t5 = await tRead(p);
+    await c.close();
+    const ph = await open(A + '/index.html?embed=bigcard&load=/rich.json', { w: 390, h: 844 }); await add(ph.p); await ph.p.waitForTimeout(300); const c6 = await cardRead(ph.p); await ph.c.close();
+    check('BC11 a title too long to fit at 1.10\'s sizes even alone (a match\'s card, its own page) is shortened to the words that fit, at a word, ending in an ellipsis, not cut off: nothing of the card is cut, in the map\'s first size, a larger map (more of it shown, or all), with the view at fitScale(), at the map\'s scale 2 and on a phone\'s sheet; its whole text stays in its title attribute, in cardPage() and in the live region; it fills two lines or more; a short title is as before',
+      c1.shown && c1.cut0.length === 0 && short(c1) && t1.lines >= 2 && t1.attr === FULL && t1.page.title === FULL && t1.live.includes(FULL.slice(0, 80)) &&
+      c2.cut0.length === 0 && (c2.title === FULL || (short(c2) && c2.title.length > c1.title.length)) && (c2.title === FULL ? t2.attr === null : t2.attr === FULL) &&
+      c3.cut0.length === 0 && c3.title === c2.title && c4.cut0.length === 0 && c4.title === c2.title &&
+      fitted(c5) && c5.title === 'Edge Router' && t5.attr === null && c6.shown && c6.cut0.length === 0 && (c6.title === FULL || short(c6)),
+      JSON.stringify({ c1: [c1.title, c1.cut0, c1.k, c1.cls], t1: { attr: t1.attr === FULL, lines: t1.lines, page: t1.page.title === FULL, live: t1.live.slice(0, 40) }, c2: [c2.title.length, c2.cut0, c2.k], c3: [c3.title.length, c3.cut0], c4: [c4.title.length, c4.cut0], c5: [c5.title, c5.cut0, t5.attr], c6: [c6.title.length, c6.cut0, c6.k] })); }
 
   // ---- X: axe with every switch on; reduced motion ----
   for (const dark of [false, true]) {

@@ -27,6 +27,10 @@
   alone with one shape selected and the drawing focused; the map shows that shape's card as preview([id]) draws it, and
   what it showed before comes back when Shift is let go), and TopoForge.fitScale(), the zoom Fit would set, read without
   moving the view. The peek is off for a page opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+  1.14: TopoForge.peekKey(down), for a page whose own keys hear Shift while the focus is in it (peek: the shape under the
+  pointer's last place on the drawing, or the one selected shape, until peekKey(false)), and a big card whose title
+  cannot fit at 1.10's sizes is shortened at a word, with an ellipsis, not cut off (bigcard). Nothing changes for a page
+  opened on its own. By Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -494,7 +498,7 @@ body.tf-pages #mmwrap{display:none}
 
 <script>
 'use strict';
-const TF_VERSION = '1.13';
+const TF_VERSION = '1.14';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -4997,7 +5001,7 @@ function drawBigCard(deck, i) {
   // the map is redrawn often (every pan): the same card in a box of the same size keeps its fit, unmeasured
   const key = JSON.stringify([card, i, n, hits.map(h => h.type)]);
   if (el._key === key && !el.hidden && el._size === el.clientWidth + 'x' + el.clientHeight && mm.classList.contains('mm-carded')) { el._deck = deck[i]; return; }
-  el.querySelector('.mc-t').textContent = card.title || '';
+  el.querySelector('.mc-t').textContent = card.title || ''; el._title = card.title || '';   // 1.14: the full title, for fitCard
   const pn = el.querySelector('.mc-n'); pn.textContent = n > 1 ? `${i + 1} of ${n}` : ''; pn.hidden = n <= 1;
   el._deck = deck[i]; el.classList.toggle('mc-noart', !cardHasArt(card, hits));
   const dl = el.querySelector('.mc-f'); dl.textContent = '';
@@ -5037,7 +5041,9 @@ function fitCard(el) {
   const pad = 8, gap = 8;
   el.style.setProperty('--mcaw', Math.round(Math.max(24, Math.min(H - 2 * pad, (W - 2 * pad - gap) * 0.42))) + 'px');
   el.style.setProperty('--mcah', Math.round(Math.max(24, Math.min(W - 2 * pad, (H - 2 * pad - gap) * 0.42))) + 'px');
-  const facts = [...el.querySelectorAll('.mc-f>div')], st = el.querySelector('.mc-s');
+  const facts = [...el.querySelectorAll('.mc-f>div')], st = el.querySelector('.mc-s'), tt = el.querySelector('.mc-t');
+  if (el._title !== undefined && tt.textContent !== el._title) tt.textContent = el._title;   // 1.14: a refit starts from the full title
+  tt.removeAttribute('title');
   let best = null, drop = 0;
   for (; drop <= facts.length + 1 && !best; drop++) {   // too small for all of it at the floor: the last facts, then the statement, are left out, not cut
     facts.forEach((d, i) => { d.hidden = i >= facts.length - drop; }); st.hidden = !st.textContent || drop > facts.length;
@@ -5047,9 +5053,27 @@ function fitCard(el) {
       if (k !== null && (!best || k > best.k)) best = { f, k };
     }
   }
-  if (!best) { facts.forEach(d => { d.hidden = false; }); st.hidden = !st.textContent; best = { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 }; }   // nothing fits at all: lines, clipped
+  if (!best) best = fitTitle(el, facts, st, tt, W, H);   // 1.14: not even the title alone fits at the floor: it is shortened, not cut
   cardForm(el, best.f); el.style.setProperty('--mck', String(best.k));
   return { ...best, left: facts.filter(d => d.hidden).length };
+}
+// 1.14: a title too long to fit at 1.10's sizes even alone (the facts and the statement left out) is shortened to the
+// most of its words that fit, cut at a word and ended with an ellipsis (a single word too long, at a letter); its whole
+// text stays in the title attribute, in cardPage(), in the live region and in topoforge:preview's cards. Before 1.14
+// everything was drawn at the floor and the card cut it off ("... for people and their agents:")
+function fitTitle(el, facts, st, tt, W, H) {
+  const full = tt.textContent, words = full.split(/\s+/).filter(Boolean), forms = [['mc-side', 'mc-lines'], ['mc-stack', 'mc-lines']];
+  facts.forEach(d => { d.hidden = true; }); st.hidden = true;
+  const fitsAt1 = () => forms.some(f => { cardForm(el, f); el.style.setProperty('--mck', '1'); return cardFits(el); });
+  const most = (n, text) => { let lo = 0, hi = n; while (lo < hi) { const m = Math.ceil((lo + hi) / 2); tt.textContent = text(m); if (fitsAt1()) lo = m; else hi = m - 1; } return lo; };
+  const byWord = m => words.slice(0, m).join(' ').replace(/[\s,;:.\u2013\u2014-]+$/, '') + '\u2026';
+  let n = most(Math.max(0, words.length - 1), byWord), text;
+  if (n >= 1) text = byWord(n);
+  else { const w = words[0] || '', c = most(Math.max(0, w.length - 1), m => w.slice(0, m) + '\u2026'); text = c >= 1 ? w.slice(0, c) + '\u2026' : '\u2026'; }
+  tt.textContent = text; tt.title = full;
+  let best = null;
+  for (const f of forms) { cardForm(el, f); const k = cardLargest(el); if (k !== null && (!best || k > best.k)) best = { f, k }; }
+  return best || { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 };
 }
 function cardForm(el, f) { el.classList.remove('mc-side', 'mc-stack', 'mc-box', 'mc-lines'); el.classList.add(...f); }
 function cardFits(el) {
@@ -5155,7 +5179,7 @@ function wirePadCard() {
    nothing is drawn, but the page is told. A peek is not the page's preview: topoforge:preview is not sent for it, the pad
    is left as it was, and the page's own preview() ends a peek. */
 let PEEK = null, _peekWired = false;
-const PK = { shift: false, at: null, key: false };   // Shift held; the pointer on the drawing (null off it); Shift pressed alone with the pointer off the drawing
+const PK = { shift: false, at: null, key: false, page: false };   // 1.14: page, Shift as the embedding page heard it (peekKey)   // Shift held; the pointer on the drawing (null off it); Shift pressed alone with the pointer off the drawing
 function embed113(was) {
   if (EMBED.peek && !_peekWired) wirePeek();
   if (!EMBED.peek && PEEK) peekEnd(true);
@@ -5168,14 +5192,24 @@ function wirePeek() {
   svg.addEventListener('wheel', at, { passive: true });   // the drawing moves under a still pointer
   svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });
   svg.addEventListener('blur', () => peekCheck());
-  document.addEventListener('keydown', e => { if (e.key === 'Shift') { PK.shift = true; PK.key = !PK.at && !e.ctrlKey && !e.altKey && !e.metaKey; } peekCheck(); });
-  document.addEventListener('keyup', e => { if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Shift') { PK.shift = true; PK.key = !PK.at && !e.ctrlKey && !e.altKey && !e.metaKey; PK.page = false; } peekCheck(); });
+  document.addEventListener('keyup', e => { if (e.key === 'Shift') { PK.shift = false; PK.key = false; PK.page = false; } peekCheck(); });
   window.addEventListener('blur', () => { PK.shift = false; PK.key = false; peekCheck(); });
+}
+// 1.14: TopoForge.peekKey(down): an embedding page whose own keys hear Shift (the focus is in the page, so the app's do
+// not) says it went down (true) or up (false). Down: the shape under the pointer's last place on the drawing, or, with
+// the pointer off it, the one selected shape (the page speaks for the keyboard, so the drawing need not be focused);
+// up: the peek ends. With peek off it does nothing and returns false; else what shows now, { id, name } or null
+function peekKey(down) {
+  if (!EMBED.peek) return false;
+  PK.shift = !!down; PK.key = !!down && !PK.at; PK.page = PK.key;
+  peekCheck();
+  return PEEK ? { id: PEEK.id, name: nodeName(N(PEEK.id)) } : null;
 }
 function peekWant() {   // the shape a peek shows now, or null
   if (!EMBED.peek || !PK.shift || S.mode || S.editing) return null;
   if (PK.at) { if (PK.at.buttons) return null; return hitTest(toWorld(PK.at)).node || null; }
-  if (PK.key && document.activeElement === svgEl() && S.sel.size === 1) return N([...S.sel][0]) || null;
+  if (PK.key && (document.activeElement === svgEl() || PK.page) && S.sel.size === 1) return N([...S.sel][0]) || null;   // 1.14: or the page's Shift (peekKey)
   return null;
 }
 function peekCheck() {
@@ -5327,7 +5361,9 @@ window.TopoForge = { get doc() { return DOC; }, set doc(d) { DOC = normalizeDoc(
   // 1.12
   cardPage,
   // 1.13
-  fitScale };
+  fitScale,
+  // 1.14
+  peekKey };
 document.addEventListener('DOMContentLoaded', boot);
 
 </script>

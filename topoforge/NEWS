@@ -4,6 +4,27 @@ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
+Version 1.14 (2026-11-04; checked: tests/run.sh, the project-files check, the
+browser kit and the embedding kit green, with their planted faults; see
+RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+yet)
+
+- A page's own Shift can show the peek (Corwin, 2026-11-04, 04:36: "Please do
+  work the change to toplogy forge for Shift and the text cut off on later
+  pages").  The app hears its own keys only while the focus is in it, so on a
+  page whose frames had the focus the peek waited for the pointer to move.
+  With peek on, TopoForge.peekKey(true) when the page hears Shift go down shows
+  the card of the shape under the pointer's last place on the drawing (or,
+  with the pointer off it, of the one selected shape), and peekKey(false) when
+  Shift goes up puts back what the map showed.  It returns what shows ({ id,
+  name } or null), does nothing with peek off, and takes no event.
+- A big card whose title is too long to fit at 1.10's sizes even alone (a
+  match's card whose first line is a long sentence, on a later page) was cut
+  off by its box ("... for people and their agents:").  Such a title is now
+  shortened to the words that fit, at a word's end, with an ellipsis; its
+  whole text stays in a tooltip, in cardPage(), in what the live region says
+  and in topoforge:preview's cards.  A title that fits is drawn as before.
+
 Version 1.13 (2026-11-03; checked: tests/run.sh, the project-files check, the
 browser kit and the embedding kit green, with their planted faults; see
 RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed

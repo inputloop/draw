@@ -76,6 +76,10 @@ of your work outside the browser.
   pointer over a shape, or press Shift alone with one shape selected, and the
   map shows its card until Shift is let go) and =fitScale()=, the zoom Fit
   would set, read without moving the view.
+- New in 1.14: =peekKey(down)=, so a page whose own keys hear Shift can show
+  the peek (the shape under the pointer's last place, or the one selected
+  shape), and a big card's title too long to fit is shortened at a word with an
+  ellipsis, not cut off.
 
 * Accessibility
 We want TopoForge usable without a mouse, without colour, and without seeing

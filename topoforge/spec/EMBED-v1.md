@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
-# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11, 1.12 and 1.13)
+# Embedding topology forge (formerly TopoForge): EMBED v1, from 1.8 (added to in 1.9, 1.10, 1.11, 1.12, 1.13 and 1.14)
 
 topology forge (formerly TopoForge) was made by Bryant Frankford, with Corwin Brust and contributors.
 This spec says what a page that embeds it (in an `iframe`) may ask for, and what the app promises.
@@ -467,6 +467,39 @@ it is left out) and the same limits, rounded as `TopoForge.view` rounds `k` (to 
 `TopoForge.view.k` equals it. It moves nothing: the view is as it was. On a page with nothing on it, it is 1, the zoom
 `fitView()` sets there. A page may use it to put "fit" in the middle of its own zoom slider (FS1). The two share one
 calculation, and `fitView()` sets exactly the view 1.12 set (FS2). It is not behind a switch: it changes nothing.
+
+## Added in 1.14 (still v1): the page's Shift, and a title too long for the card
+
+From Corwin's words of 2026-11-04, 04:36: "Please do work the change to toplogy forge for Shift and the text cut off on
+later pages."
+
+One new call, `TopoForge.peekKey(down)`, which does nothing unless `peek` is on, and one fault fixed in `bigcard`'s
+fitting. Nothing 1.13 promised changes: a page opened on its own draws the same pixels as 1.13 (S1), and so does a page
+with every 1.13 switch on, the big card on its second page, the pad turned and a peek showing (S8).
+
+### The page's Shift: `TopoForge.peekKey(down)`
+
+The app hears its own keys only while the focus is in it. A page whose frames take the focus (a finder, a menu) hears
+Shift itself, and then the peek waited for the pointer to move over the drawing (the pointer carries Shift). With
+`peek` on, the page may pass Shift on: `peekKey(true)` when Shift goes down, `peekKey(false)` when it goes up.
+
+- **Down**, with the pointer on the drawing (its last place there, which the drawing moving under it updates): the
+  shape under it, as Shift held there shows it. With the pointer off the drawing: the one selected shape, though the
+  drawing is not focused (the page speaks for the keyboard); two or more selected, or none, show nothing (PK12, PK13).
+- **Up**: the peek ends, and the map shows exactly what it showed before, as letting Shift go does (PK12).
+- It returns what shows now: `{ id, name }`, or `null`; with `peek` off it does nothing and returns `false` (PK12).
+- It takes no event and changes no selection. The page is told by `topoforge:peek`, as for any peek (PK12, PK13).
+- A page should not pass Shift on while a person types in one of its own fields, where Shift makes capitals.
+
+### A title too long for the card (`bigcard`)
+
+1.12 fits the card's words by leaving out the last facts, then the statement. A title too long to fit at 1.10's sizes
+even alone (a match's card whose first line is a long sentence) left nothing to fit, so the card was drawn at 1.10's
+sizes and its box cut the words off ("... for people and their agents:"). Now such a title is shortened to as many of
+its words as fit, at a word's end, followed by an ellipsis (a single word too long, at a letter), with the facts and the
+statement left out. Its whole text stays in the title's `title` attribute (a tooltip), in `cardPage()`, in what the
+live region says and in `topoforge:preview`'s cards. A larger map shows more of it, or all, with nothing cut, and so
+does the phone's sheet; a title that fits is drawn as before (BC11).
 
 ## Page tabs that do not fit (1.9, everywhere)
 

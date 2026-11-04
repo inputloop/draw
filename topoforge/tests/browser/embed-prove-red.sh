@@ -4,7 +4,7 @@
 # Corwin Brust <corwin@bru.st> and Contributors
 # Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01.
 #
-# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.13).
+# embed-prove-red.sh -- show that embed.browser.mjs can go red on each promise of the switches (1.8 to 1.14).
 # A control run on the file as given must be green first. Then each plant changes a COPY of index.html
 # in one place, the kit runs on the copy, and the check named for that plant must be among those that
 # fail (a plant may trip others too: the standalone ones watch the whole page).
@@ -178,6 +178,19 @@
 #   fs-pad         fitScale(pad) ignores the pad          -> FS1
 #   fs-view-changed fitView sets another view than 1.12's -> FS2
 #   any-origin-113 postMessage to '*', the new message    -> E12
+# 1.14:
+#   bc-title-always    every big card's title shortened  -> S8
+#   bc-title-cut       a title too long is cut off again -> BC11
+#   bc-title-one-word  shortened to its first word       -> BC11
+#   bc-title-no-full   the whole title not in its title attribute -> BC11
+#   bc-title-stays-short a larger map keeps the short title -> BC11
+#   pk-key-off         peekKey works with peek off       -> PK12
+#   pk-key-dead        peekKey shows nothing             -> PK12
+#   pk-key-up-stays    peekKey(false) leaves the card    -> PK12
+#   pk-key-says-none   peekKey returns null for a card   -> PK12
+#   pk-key-no-select   the page's Shift ignores the selection -> PK13
+#   pk-key-two         the page's Shift shows one of two selected -> PK13
+#   (retargeted in 1.14, their lines now name PK.page: pk-sticks -> PK5, pk-key-any-focus -> PK7)
 # usage: sh tests/browser/embed-prove-red.sh /path/to/index.html [outdir]   (default outdir: out-embed-prove-red)
 #        PLANTS='name name' runs only those plants (after the control); the full run is what counts
 # exit:  0 every plant caught, 1 a plant NOT caught, 2 cannot run (no file, control not green)
@@ -361,11 +374,11 @@ plant pk-no-swap     PK3 's@if ((n ? n.id : null) === (PEEK ? PEEK.id : null)) r
 plant pk-restore-none PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw) drawPreview(); }@if (p.draw) { PREVIEW = null; if (draw) drawPreview(); }@'
 plant pk-page-lost   PK4 's@if (p.draw) { PREVIEW = p.saved; if (draw)@if (p.draw) { PREVIEW = p.saved; if (PREVIEW) PREVIEW.page = 0; if (draw)@'
 plant pk-pad-turns   PK4 's@^  if (!PREVIEW.peek) padCard(!!deck);@  padCard(!!deck);@'
-plant pk-sticks      PK5 "s@if (e.key === 'Shift') { PK.shift = false; PK.key = false; } peekCheck();@if (e.key === 'Shift') { PK.key = false; } peekCheck();@"
+plant pk-sticks      PK5 "s@if (e.key === 'Shift') { PK.shift = false; PK.key = false; PK.page = false; } peekCheck();@if (e.key === 'Shift') { PK.key = false; PK.page = false; } peekCheck();@"
 plant pk-leave-shape PK6 's@return hitTest(toWorld(PK.at)).node || null; }@return hitTest(toWorld(PK.at)).node || (PEEK \&\& N(PEEK.id)) || null; }@'
 plant pk-leave-canvas PK6 "s@svg.addEventListener('pointerleave', () => { PK.at = null; peekCheck(); });@svg.addEventListener('pointerleave', () => { });@"
 plant pk-no-keys     PK7 's@PK.key = !PK.at && !e.ctrlKey@PK.key = false \&\& !e.ctrlKey@'
-plant pk-key-any-focus PK7 's@if (PK.key && document.activeElement === svgEl() && S.sel.size === 1)@if (PK.key \&\& S.sel.size === 1)@'
+plant pk-key-any-focus PK7 's@if (PK.key && (document.activeElement === svgEl() || PK.page) && S.sel.size === 1)@if (PK.key \&\& S.sel.size === 1)@'
 plant pk-key-many    PK7 's@&& S.sel.size === 1) return N(@\&\& S.sel.size >= 1) return N(@'
 plant pk-eats-click  PK8 "s@svg.addEventListener('pointerdown', at);   // after@svg.addEventListener('pointerdown', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, true);   // after@"
 plant pk-eats-wheel  PK8 "s@svg.addEventListener('wheel', at, { passive: true });@svg.addEventListener('wheel', e => { if (e.shiftKey) e.stopImmediatePropagation(); at(e); }, { capture: true, passive: true });@"
@@ -379,5 +392,17 @@ plant fs-moves       FS1 's@function fitScale(pad = 50) { return rnd(fitCalc(pad
 plant fs-pad         FS1 's@return rnd(fitCalc(pad).k, 5); }@return rnd(fitCalc().k, 5); }@'
 plant fs-view-changed FS2 's@y: (r.height - b.h \* k) / 2 - b.y \* k };$@y: (r.height - b.h * k) / 2 - b.y * k + 1 };@'
 plant any-origin-113 E12 "s#window.parent.postMessage({ type, detail }, location.origin)#window.parent.postMessage({ type, detail }, '*')#"
+# 1.14
+plant bc-title-always S8 's@^  if (!best) best = fitTitle(el, facts, st, tt, W, H);@  best = fitTitle(el, facts, st, tt, W, H);@'
+plant bc-title-cut    BC11 "s@^  if (!best) best = fitTitle(el, facts, st, tt, W, H);.*\$@  if (!best) best = { f: [W >= H * 1.15 ? 'mc-side' : 'mc-stack', 'mc-lines'], k: 1 };@"
+plant bc-title-one-word BC11 's@^  if (n >= 1) text = byWord(n);@  if (false) text = byWord(n);@'
+plant bc-title-no-full BC11 's@^  tt.textContent = text; tt.title = full;@  tt.textContent = text;@'
+plant bc-title-stays-short BC11 's@^  if (el._title !== undefined && tt.textContent !== el._title) tt.textContent = el._title;.*$@@'
+plant pk-key-off      PK12 's@^  if (!EMBED.peek) return false;$@@'
+plant pk-key-dead     PK12 's@^  PK.shift = !!down; PK.key = !!down && !PK.at; PK.page = PK.key;$@  void down;@'
+plant pk-key-up-stays PK12 's@^  PK.shift = !!down; PK.key@  PK.shift = PK.shift || !!down; PK.key@'
+plant pk-key-says-none PK12 's@^  return PEEK ? { id: PEEK.id, name: nodeName(N(PEEK.id)) } : null;$@  return null;@'
+plant pk-key-no-select PK13 's@(document.activeElement === svgEl() || PK.page)@(document.activeElement === svgEl())@'
+plant pk-key-two      PK13 's@&& S.sel.size === 1) return N(@\&\& S.sel.size >= 1) return N(@'
 [ $bad -eq 0 ] && echo "embed-prove-red.sh: all $n plants caught" || echo "embed-prove-red.sh: a plant got through" >&2
 exit $bad
