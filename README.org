@@ -1,35 +1,38 @@
-#+TITLE: topology
+#+TITLE: draw
 #+SUBTITLE: Draw what you have, from the files that describe it
 #+LANGUAGE: en
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: showall
 
-Point topology at the git repositories you keep.  Each can say what it is in
-a short =TOPOLOGY.md=; topology reads them, sorts what they say by where,
-what, how and who, and draws it with TopoForge.  You move the shapes; the
+Point draw at the git repositories you keep.  Each can say what it is in
+a short =TOPOLOGY.md=; draw reads them, sorts what they say by where,
+what, how and who, and draws it.  You move the shapes; the
 drawing is yours.
 
 The browser app works with no server at all ("Zero Sharing": everything
 stays in your browser).  With a server, every feature can be switched off,
 down to just the app's files on disk.
 
-* The drawing app: topology forge (formerly TopoForge)
+* The drawing app
 
-The drawing app in =www/topoforge/= is *topology forge (formerly TopoForge)*.  Bryant
-Frankford made it, for Corwin; he is named first, here and on everything that grows from it.  Its
-work goes on in this branch (Corwin, 2026-11-01): what was the TopoForge project is folded in here,
-and =topoforge/= carries its kits, specs and recipe.
+The drawing app in =www/topoforge/= is draw's own.  Bryant Frankford made it, for Corwin, first as
+TopoForge; he is named first, here and on everything that grows from it.  Its work goes on in this
+branch (Corwin, 2026-11-01): what was the TopoForge project is folded in here, and =topoforge/=
+carries its kits, specs and recipe.
 
-The naming rule: in our own text (READMEs, NEWS, ChangeLog, documents, the app's About box) say
-"topology forge (formerly TopoForge)".  Do not rename what saved drawings and pages that embed the
-app rely on: =window.TopoForge=, the TopoForge JSON format, the =topoforge.*= storage keys, file
-names, and the brand and title in the app, which a visitor opening it on its own sees.  From 1.8 a
-page may embed it with switches (no frame, floating panels, page tabs in the overview map, a
-selection hook, a ready event): =topoforge/spec/EMBED-v1.md=.
+The naming rule (Corwin, 2026-11-11): this project is *draw*, a plain dictionary word, as C4 names
+things; it was topology, and topology forge before that.  The TopoForge names are held by others now,
+offered for sale, so our own text (READMEs, NEWS, ChangeLog, documents, the app's About box) says
+"draw", and names TopoForge only to credit where Bryant's work began.  Do not yet rename what saved
+drawings and pages that embed the app rely on: =window.TopoForge=, the TopoForge JSON format, the
+=topoforge.*= storage keys, file names, and the brand and title in the app, which a visitor opening it
+on its own sees.  Those move only with a migration that keeps every saved drawing and every embedding
+page working.  From 1.8 a page may embed it with switches (no frame, floating panels, page tabs in
+the overview map, a selection hook, a ready event): =topoforge/spec/EMBED-v1.md=.
 
-* The painting app: topology paint
+* The painting app: draw paint
 
-=paint/= holds *topology paint*, made for Bryant Frankford: a drawing and painting program in C for
+=paint/= holds *draw paint*, made for Bryant Frankford: a drawing and painting program in C for
 Windows, Linux and macOS, with pen pressure and tilt (written with the XP-Pen Artist 13.3 Pro V2 in
 mind), brushes, layers with blend modes, OpenRaster and Photoshop files with their layers, the
 common flat formats, and mods.  =paint/build.bat= (Windows) or =paint/build.sh= builds, installs and
@@ -54,9 +57,9 @@ own, see [[file:context/FOR-OTHERS.md][context/FOR-OTHERS.md]].
 * Where things are
 
 | =RECIPE.org=            | the source of =bin/=, =debian/= and =etc/=; tangle it to rebuild them  |
-| =www/=                  | the front door, the app, topology forge (formerly TopoForge) 1.14      |
-| =topoforge/=            | topology forge's own kits: tests, story and embedding specs, project files, recipe, patches from 1.5 |
-| =paint/=                | topology paint: the C painting program, its build scripts, mods, tests and guides |
+| =www/=                  | the front door, and the drawing app, 1.14                            |
+| =topoforge/=            | the drawing app's own kits: tests, story and embedding specs, project files, recipe, patches from 1.5 |
+| =paint/=                | draw paint: the C painting program, its build scripts, mods, tests and guides |
 | =www/css/egad.css=      | egad's colours and type, the default palette (see below)               |
 | =examples/inputloop/=   | the shop drawn: hosts, projects, tools, paths, people (37 files)        |
 | =AGENTS.md=             | who commits, where work lands, what to run before a push               |
@@ -104,5 +107,5 @@ other.  The tests run under perl 5.44.0 (core =class=) and perl 5.38
 * Licences
 
 Code: GPL-3.0-or-later OR LGPL-3.0-or-later, your choice.  Prose:
-CC-BY-SA-4.0.  =REUSE.toml= says which covers which file.  TopoForge is
-Bryant Frankford's, under the same terms.
+CC-BY-SA-4.0.  =REUSE.toml= says which covers which file.  The drawing app
+(first made as TopoForge) is Bryant Frankford's, under the same terms.

@@ -39,7 +39,7 @@ refuses a vendor author or committer.
   has one).
 - Private parts of a `TOPOLOGY.md` stay under a `## Private` heading and the file says
   `private: hide`; nothing a person marked private appears in a public part.
-- `www/topoforge/` is topology forge, grown from Bryant Frankford's TopoForge (his work for Corwin; the
+- `www/topoforge/` is the drawing app, grown from Bryant Frankford's TopoForge (his work for Corwin; the
   old TopoForge repository is obsolete, and work there merges forward here). It changes only by a
   versioned patch in `topoforge/patches/`, whose sha256 is recorded in RECIPE.org, and each version's
   tests show the previous version unchanged when the new switches are off.

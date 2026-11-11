@@ -1,9 +1,17 @@
-topology NEWS -- user-visible changes
+draw NEWS -- user-visible changes (topology NEWS until 2026-11-11)
 
 Copyright 2026 Bryant Frankford and Corwin Brust and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
+
+- The project is renamed draw (it was topology; Corwin, 2026-11-11), a plain
+  dictionary word: the TopoForge names are held by others, offered for sale.
+  The repository is github.com/inputloop/draw; the old address redirects.
+  Our own text says "draw"; what saved drawings and embedding pages rely on
+  (window.TopoForge, the TopoForge JSON format, the topoforge.* storage keys,
+  the topology-* package names, the TOPOLOGY.md file each repository keeps)
+  keeps its name until a migration that keeps them working.
 
 - topology forge (formerly TopoForge) 1.14: a page whose own keys hear Shift
   can show the peek (TopoForge.peekKey), and a big card's title too long to
