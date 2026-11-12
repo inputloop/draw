@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
 // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03; 1.14 checks 2026-11-04.
+// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03; 1.14 checks 2026-11-04; 1.15 (the About box says draw) 2026-11-11.
 //
-// embed.browser.mjs -- the embedding switches (1.8 to 1.14) in real Chromium, held to spec/EMBED-v1.md.
+// embed.browser.mjs -- the embedding switches (1.8 to 1.15) in real Chromium, held to spec/EMBED-v1.md.
 //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
 //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
 //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
@@ -34,7 +34,7 @@ const results = []; let red = 0, at = '';   // at: the check whose steps are run
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
 
 // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
-const VER = '1.14', PREV = '1.13';
+const VER = '1.15', PREV = '1.14';
 function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
   const out = []; let on = false;
   for (const l of patchText.split('\n')) {
@@ -45,7 +45,7 @@ function indexPart(patchText) { // the hunks of one multi-file patch that touch 
 }
 function rebuild(upto) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13', '1.13-to-1.14'].slice(0, upto)) {
+  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13', '1.13-to-1.14', '1.14-to-1.15'].slice(0, upto)) {
     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
@@ -53,7 +53,7 @@ function rebuild(upto) {
   return cur;
 }
 let v17, v18, v111;   // v17: the version before (PREV); v18: 1.8; v111: 1.11, whose pad the 1.12 checks compare with
-try { v17 = rebuild(8); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+try { v17 = rebuild(9); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
 
 // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
 const html = fs.readFileSync(file);
@@ -340,7 +340,7 @@ try {
   { const { c, p } = await open(A + '/index.html');
     await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
     const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
-    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
+    check('A1 About says "draw", names Bryant Frankford first, and the version', t.h === 'draw' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
     await c.close(); }
 
   // ======== 1.9 (A): more for an embedding page; each message behind its own switch ========
@@ -1137,7 +1137,7 @@ console.log(results.join('\n'));
 console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
 const passed = results.filter(r => r.startsWith('PASS')).length;
 fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
-  'topology forge (formerly TopoForge) ' + VER + ', the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
+  'draw ' + VER + ' (the drawing app), the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
   'Licence of this note: CC-BY-SA-4.0',
   'Run at: ' + new Date().toISOString() + ' on ' + os.type() + ' ' + os.release() + ', node ' + process.version + ', ' + 'playwright ' + require(PW + '/package.json').version,
   'File tested: index.html sha256 ' + sha(html),

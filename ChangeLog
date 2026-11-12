@@ -1,5 +1,17 @@
 2026-11-11  Corwin Brust  <corwin@bru.st>
 
+	The drawing app 1.15 in www/topoforge/: its About box says draw.
+	topoforge/ChangeLog has the detail.
+	* www/topoforge/index.html: 1.15.
+	* topoforge/: the 1.14-to-1.15 patch, its NEWS, ChangeLog and RECIPE;
+	the kit's About check (A1), its old-name plant, and the misspelling
+	plant, all on the new name; the embedding kit's version, 1.15 against
+	1.14.
+	* RECIPE.org: the app's row, named draw, with 1.15's sha256; the
+	1.14-to-1.15 patch's sha256.
+
+2026-11-11  Corwin Brust  <corwin@bru.st>
+
 	The project is renamed draw (Corwin, 2026-11-11: "topology is renamed
 	draw"; the TopoForge names are held by others, offered for sale, and
 	C4 lands on dictionary words).  The repository is inputloop/draw.

@@ -1,3 +1,15 @@
+2026-11-11  Corwin Brust  <corwin@bru.st>
+
+	1.15: the About box names the app draw (Corwin, 2026-11-11: "topology
+	is renamed draw").
+	* index.html (showAbout): the title is draw; Bryant made it first as
+	TopoForge.  TF_VERSION is 1.15; the header says what 1.15 changed.
+	* tests/run.sh: the misspelling plant goes in the About box; the
+	RECIPE row it reads is named draw.
+	* tests/browser/embed.browser.mjs (A1), embed-prove-red.sh (old-name):
+	the About box says draw.
+	* RECIPE.org, NEWS: 1.15.
+
 2026-11-04  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
 
 	topology forge (formerly TopoForge) 1.14: the page's Shift, and a

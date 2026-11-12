@@ -31,6 +31,9 @@
   pointer's last place on the drawing, or the one selected shape, until peekKey(false)), and a big card whose title
   cannot fit at 1.10's sizes is shortened at a word, with an ellipsis, not cut off (bigcard). Nothing changes for a page
   opened on its own. By Mentat (for Corwin, claude-opus-5-5).
+  1.15: the About box names the app draw (Corwin, 2026-11-11: topology is renamed draw, a plain dictionary word; the
+  TopoForge names are held by others). The brand, the title, window.TopoForge, the JSON format and the storage keys keep
+  their names until a migration that keeps saved drawings. By Mentat (for Corwin, claude-opus-5-5).
 -->
 <!doctype html>
 <html lang="en">
@@ -498,7 +501,7 @@ body.tf-pages #mmwrap{display:none}
 
 <script>
 'use strict';
-const TF_VERSION = '1.14';
+const TF_VERSION = '1.15';
 /* ============================================================
    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
    ============================================================ */
@@ -3015,7 +3018,7 @@ function showFormats() {
   <li><b>SVG / PNG</b> — current page; <b>PDF</b> — every page as a page; <b>Print</b> gives vector output through the browser’s “Save as PDF”.</li>
   <li>Legacy binary <b>.vsd</b> and <b>.vdx</b> are not supported — re-save them as .vsdx in Visio.</li></ul>` });
 }
-function showAbout() { modal({ title: 'topology forge (formerly TopoForge)', body: `<p>Made by Bryant Frankford, with Corwin Brust and contributors.</p><p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
+function showAbout() { modal({ title: 'draw', body: `<p>Made by Bryant Frankford (first as TopoForge), with Corwin Brust and contributors.</p><p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
 
 /* ---------- minimap ---------- */
 let _mmTimer = null, MM = null;

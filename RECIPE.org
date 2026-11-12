@@ -47,7 +47,7 @@ is the same thing as commands.
 |-------------------------------+---------------------------------------------+-------------------------------------------|
 | perl 5.44.0 source            | =https://www.cpan.org/src/5.0/= (not in git: 21 MB) | the sum in =bin/fetch-sources.sh=  |
 | 16 CPAN distributions         | metacpan, kept in =vendor/cpan/= (1.4 MB)    | =vendor/cpan/SHA256SUMS=; =vendor/VENDOR.org= says who and why |
-| topology forge (formerly TopoForge) 1.14 | Bryant Frankford's, with our 1.6-1.14 changes (=topoforge/patches/=), =www/topoforge/index.html= | sha256 =9273fc0433a4e82e99c1ee3d2cbbeaa57898029026781ad044f3761d8bbe9dd2= |
+| the drawing app (draw) 1.15 | Bryant Frankford's (first as TopoForge), with our 1.6-1.15 changes (=topoforge/patches/=), =www/topoforge/index.html= | sha256 =9a0cad9d04d6aaa09480b64b78a011b92a8c708a6c0b10f1637b6b59a5b2c0dc= |
 | the patch 1.5 to 1.6 | =topoforge/patches/topoforge-1.5-to-1.6.patch= | sha256 =3753077776d4a6307b5a383fb84277272cce192f827ca2f4d7506c61d9a88ebe= |
 | the patch 1.6 to 1.7 | =topoforge/patches/topoforge-1.6-to-1.7.patch= | sha256 =3b1ba9db7b1e8b88968c8c91c5fc8564a2e1b6a65258e23936b484dc706dbafd= |
 | the patch 1.7 to 1.8 | =topoforge/patches/topoforge-1.7-to-1.8.patch= | sha256 =2f2304752b69da1f8e2a2508ab1e3bf573bf9c6ac4ef179bb94ef00120b64f4a= |
@@ -57,6 +57,7 @@ is the same thing as commands.
 | the patch 1.11 to 1.12 | =topoforge/patches/topoforge-1.11-to-1.12.patch= | sha256 =d59702f37272c877cb255146d244aeb368126c132fb512978e6295d6f30d16a9= |
 | the patch 1.12 to 1.13 | =topoforge/patches/topoforge-1.12-to-1.13.patch= | sha256 =f12dfcb32f2b4033bb26a95935b1f74b27807baec603a7cf4c3ba2535c082830= |
 | the patch 1.13 to 1.14 | =topoforge/patches/topoforge-1.13-to-1.14.patch= | sha256 =a8a42e5a8313213e252f787ea38a77deac45f455da20b5b6dc463ce833a35d19= |
+| the patch 1.14 to 1.15 | =topoforge/patches/topoforge-1.14-to-1.15.patch= | sha256 =e201db74a6543a15bf7b595fd0b07544baa0ced85e83c4b6f3ab3138169ebd47= |
 | TopoForge's own kits          | =topoforge/=: its tests, story spec, project files, recipe, and the patches from Bryant's 1.5 (=upstream/=) | =topoforge/tests/run.sh= (needs jq), =topoforge/kit/project-files/check.py= |
 | the Topology modules          | =perl/Topology/= (h2xs-shaped)              | =perl/Topology/t/= under two perls        |
 | the browser app               | =www/=                                      | =tests/js/=, =tests/browser/=             |

@@ -1,8 +1,18 @@
-topology forge (formerly TopoForge) NEWS -- user-visible changes
+draw's drawing app NEWS -- user-visible changes (topology forge, and TopoForge, before 2026-11-11)
 
 Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
 Corwin Brust <corwin@bru.st> and Contributors
 SPDX-License-Identifier: CC-BY-SA-4.0
+
+Version 1.15 (2026-11-11; checked: tests/run.sh green with its planted faults; the
+embedding kit's About check moved with it; no release packed or signed yet)
+
+- The About box names the app draw (Corwin, 2026-11-11: topology is renamed
+  draw, a plain dictionary word; the TopoForge names are held by others,
+  offered for sale), and says Bryant Frankford made it first as TopoForge.
+  Nothing else changes: the brand and title a visitor sees, window.TopoForge,
+  the TopoForge JSON format and the topoforge.* storage keys keep their names
+  until a migration that keeps every saved drawing and embedding page working.
 
 Version 1.14 (2026-11-04; checked: tests/run.sh, the project-files check, the
 browser kit and the embedding kit green, with their planted faults; see

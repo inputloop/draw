@@ -237,7 +237,7 @@ plant shapes-shows  B2 's#body.tf-hide-shapes \#palette,body.tf-hide-shapes \#bt
 plant bare-pages    B1 "s#const HIDE_ALL = \['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'\];#const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props'];#"
 plant no-icons      Z1 "s#icon: previewSVG(k) }))#icon: '' }))#"
 plant drop-lost     Z2 's#e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));#placing(null);#'
-plant old-name      A1 "s#title: 'topology forge (formerly TopoForge)'#title: 'TopoForge'#"
+plant old-name      A1 "s#title: 'draw'#title: 'TopoForge'#"
 # 1.9 (A)
 plant view-silent   V1 's#^  tellView();$##'
 plant view-unasked  V2 's#^  if (!EMBED.view) return;$#  if (false) return;#'

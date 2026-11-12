@@ -1,0 +1,188 @@
+diff -ruN topoforge-1.14/ChangeLog topoforge-1.15/ChangeLog
+--- topoforge-1.14/ChangeLog
++++ topoforge-1.15/ChangeLog
+@@ -1,3 +1,15 @@
++2026-11-11  Corwin Brust  <corwin@bru.st>
++
++	1.15: the About box names the app draw (Corwin, 2026-11-11: "topology
++	is renamed draw").
++	* index.html (showAbout): the title is draw; Bryant made it first as
++	TopoForge.  TF_VERSION is 1.15; the header says what 1.15 changed.
++	* tests/run.sh: the misspelling plant goes in the About box; the
++	RECIPE row it reads is named draw.
++	* tests/browser/embed.browser.mjs (A1), embed-prove-red.sh (old-name):
++	the About box says draw.
++	* RECIPE.org, NEWS: 1.15.
++
+ 2026-11-04  Mentat (for Corwin, claude-opus-5-5)  <corwin@bru.st>
+ 
+ 	topology forge (formerly TopoForge) 1.14: the page's Shift, and a
+diff -ruN topoforge-1.14/NEWS topoforge-1.15/NEWS
+--- topoforge-1.14/NEWS
++++ topoforge-1.15/NEWS
+@@ -1,9 +1,19 @@
+-topology forge (formerly TopoForge) NEWS -- user-visible changes
++draw's drawing app NEWS -- user-visible changes (topology forge, and TopoForge, before 2026-11-11)
+ 
+ Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and
+ Corwin Brust <corwin@bru.st> and Contributors
+ SPDX-License-Identifier: CC-BY-SA-4.0
+ 
++Version 1.15 (2026-11-11; checked: tests/run.sh green with its planted faults; the
++embedding kit's About check moved with it; no release packed or signed yet)
++
++- The About box names the app draw (Corwin, 2026-11-11: topology is renamed
++  draw, a plain dictionary word; the TopoForge names are held by others,
++  offered for sale), and says Bryant Frankford made it first as TopoForge.
++  Nothing else changes: the brand and title a visitor sees, window.TopoForge,
++  the TopoForge JSON format and the topoforge.* storage keys keep their names
++  until a migration that keeps every saved drawing and embedding page working.
++
+ Version 1.14 (2026-11-04; checked: tests/run.sh, the project-files check, the
+ browser kit and the embedding kit green, with their planted faults; see
+ RESULT.txt and RESULT-embed.txt in tests/browser/; no release packed or signed
+diff -ruN topoforge-1.14/RECIPE.org topoforge-1.15/RECIPE.org
+--- topoforge-1.14/RECIPE.org
++++ topoforge-1.15/RECIPE.org
+@@ -33,7 +33,7 @@
+ | file                          | what it is                                   | sha256                                                             |
+ |-------------------------------+----------------------------------------------+--------------------------------------------------------------------|
+ | =upstream/topoforge-1.5.html= | Bryant's v1.5, exactly as received; never edited | =6a76e9ca66e6a2733a35677c11599114b4009529568580526d90427fa08a9e2a= |
+-| =index.html=                  | v1.14: Bryant's v1.5 plus our changes (1.6 to 1.14) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, =1.11-to-1.12=, =1.12-to-1.13=, then =1.13-to-1.14= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
++| =index.html=                  | v1.15: Bryant's v1.5 plus our changes (1.6 to 1.15) | carried by =SHA256SUMS=; =patches/topoforge-1.5-to-1.6.patch=, =1.6-to-1.7=, =1.7-to-1.8=, =1.8-to-1.9=, =1.9-to-1.10=, =1.10-to-1.11=, =1.11-to-1.12=, =1.12-to-1.13=, =1.13-to-1.14=, then =1.14-to-1.15= turn v1.5 into it byte for byte, applied in version order (=tests/run.sh= checks it); in topology it is =www/topoforge/index.html= |
+ | =LICENSES/GPL-3.0-or-later.txt=  | GNU GPL v3 text                            | =3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986= |
+ | =LICENSES/LGPL-3.0-or-later.txt= | GNU LGPL v3 text                           | =e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118= |
+ | =LICENSES/CC-BY-SA-4.0.txt=      | CC BY-SA 4.0 legal code                    | =28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5= |
+diff -ruN topoforge-1.14/index.html topoforge-1.15/index.html
+--- topoforge-1.14/index.html
++++ topoforge-1.15/index.html
+@@ -31,6 +31,9 @@
+   pointer's last place on the drawing, or the one selected shape, until peekKey(false)), and a big card whose title
+   cannot fit at 1.10's sizes is shortened at a word, with an ellipsis, not cut off (bigcard). Nothing changes for a page
+   opened on its own. By Mentat (for Corwin, claude-opus-5-5).
++  1.15: the About box names the app draw (Corwin, 2026-11-11: topology is renamed draw, a plain dictionary word; the
++  TopoForge names are held by others). The brand, the title, window.TopoForge, the JSON format and the storage keys keep
++  their names until a migration that keeps saved drawings. By Mentat (for Corwin, claude-opus-5-5).
+ -->
+ <!doctype html>
+ <html lang="en">
+@@ -498,7 +501,7 @@
+ 
+ <script>
+ 'use strict';
+-const TF_VERSION = '1.14';
++const TF_VERSION = '1.15';
+ /* ============================================================
+    TopoForge — utilities: DOM, ids, colors, zip, csv, sampling
+    ============================================================ */
+@@ -3015,7 +3018,7 @@
+   <li><b>SVG / PNG</b> — current page; <b>PDF</b> — every page as a page; <b>Print</b> gives vector output through the browser’s “Save as PDF”.</li>
+   <li>Legacy binary <b>.vsd</b> and <b>.vdx</b> are not supported — re-save them as .vsdx in Visio.</li></ul>` });
+ }
+-function showAbout() { modal({ title: 'topology forge (formerly TopoForge)', body: `<p>Made by Bryant Frankford, with Corwin Brust and contributors.</p><p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
++function showAbout() { modal({ title: 'draw', body: `<p>Made by Bryant Frankford (first as TopoForge), with Corwin Brust and contributors.</p><p>Single-file network topology designer. Everything runs in your browser — no server, no network calls. Work is autosaved to this browser; use File › Export to keep copies.</p><p class="hint">Version ${TF_VERSION} · ${new Date().getFullYear()}</p><p class="hint">Copyright 2026 Bryant Frankford and Corwin Brust and Contributors. Code: GPL-3.0-or-later OR LGPL-3.0-or-later. Prose and art: CC-BY-SA-4.0.<br>Written with Alfred (for Bryant; claude-opus-5-5); story feature by Mentat (for Corwin; claude-opus-5-5).</p>` }); }
+ 
+ /* ---------- minimap ---------- */
+ let _mmTimer = null, MM = null;
+diff -ruN topoforge-1.14/tests/browser/embed-prove-red.sh topoforge-1.15/tests/browser/embed-prove-red.sh
+--- topoforge-1.14/tests/browser/embed-prove-red.sh
++++ topoforge-1.15/tests/browser/embed-prove-red.sh
+@@ -237,7 +237,7 @@
+ plant bare-pages    B1 "s#const HIDE_ALL = \['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props', 'hide-pages'\];#const HIDE_ALL = ['frameless', 'hide-menus', 'hide-tools', 'hide-shapes', 'hide-props'];#"
+ plant no-icons      Z1 "s#icon: previewSVG(k) }))#icon: '' }))#"
+ plant drop-lost     Z2 's#e.preventDefault(); e.stopImmediatePropagation(); const k = PLACING; placing(null); addShapeAt(k, toWorld(e));#placing(null);#'
+-plant old-name      A1 "s#title: 'topology forge (formerly TopoForge)'#title: 'TopoForge'#"
++plant old-name      A1 "s#title: 'draw'#title: 'TopoForge'#"
+ # 1.9 (A)
+ plant view-silent   V1 's#^  tellView();$##'
+ plant view-unasked  V2 's#^  if (!EMBED.view) return;$#  if (false) return;#'
+diff -ruN topoforge-1.14/tests/browser/embed.browser.mjs topoforge-1.15/tests/browser/embed.browser.mjs
+--- topoforge-1.14/tests/browser/embed.browser.mjs
++++ topoforge-1.15/tests/browser/embed.browser.mjs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later OR LGPL-3.0-or-later
+ // Copyright 2026 Bryant Frankford <nathanielfrankford@gmail.com> and Corwin Brust <corwin@bru.st> and Contributors
+-// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03; 1.14 checks 2026-11-04.
++// Written by Mentat (for Corwin, claude-opus-5-5), 2026-11-01, for topology forge (formerly TopoForge) 1.8; 1.9, 1.10 and 1.11 checks 2026-11-02; 1.12 and 1.13 checks 2026-11-03; 1.14 checks 2026-11-04; 1.15 (the About box says draw) 2026-11-11.
+ //
+-// embed.browser.mjs -- the embedding switches (1.8 to 1.14) in real Chromium, held to spec/EMBED-v1.md.
++// embed.browser.mjs -- the embedding switches (1.8 to 1.15) in real Chromium, held to spec/EMBED-v1.md.
+ //   S  standalone is unchanged: 1.9 opened with no switch draws the same pixels as 1.8 (rebuilt here from
+ //      Bryant's 1.5 and patches/, so the kit needs no copy of 1.8), at three widths, light and dark, with the
+ //      same tab order, and writes nothing new to storage; with more page tabs than fit, only the bottom bar differs (S4).
+@@ -34,7 +34,7 @@
+ const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' :: ' + detail : ''}`); if (!ok) red++; };
+ 
+ // ---- the version before, rebuilt: Bryant's 1.5 plus the index.html part of each patch up to it ----
+-const VER = '1.14', PREV = '1.13';
++const VER = '1.15', PREV = '1.14';
+ function indexPart(patchText) { // the hunks of one multi-file patch that touch index.html
+   const out = []; let on = false;
+   for (const l of patchText.split('\n')) {
+@@ -45,7 +45,7 @@
+ }
+ function rebuild(upto) {
+   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-embed-')); let cur = path.join(KIT, 'upstream', 'topoforge-1.5.html');
+-  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13', '1.13-to-1.14'].slice(0, upto)) {
++  for (const step of ['1.5-to-1.6', '1.6-to-1.7', '1.7-to-1.8', '1.8-to-1.9', '1.9-to-1.10', '1.10-to-1.11', '1.11-to-1.12', '1.12-to-1.13', '1.13-to-1.14', '1.14-to-1.15'].slice(0, upto)) {
+     const pf = path.join(dir, step + '.patch'), out = path.join(dir, step + '.html');
+     fs.writeFileSync(pf, indexPart(fs.readFileSync(path.join(KIT, 'patches', 'topoforge-' + step + '.patch'), 'utf8')));
+     execFileSync('patch', ['-s', '-o', out, cur, pf], { stdio: 'pipe' }); cur = out;
+@@ -53,7 +53,7 @@
+   return cur;
+ }
+ let v17, v18, v111;   // v17: the version before (PREV); v18: 1.8; v111: 1.11, whose pad the 1.12 checks compare with
+-try { v17 = rebuild(8); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
++try { v17 = rebuild(9); v18 = rebuild(3); v111 = rebuild(6); } catch (e) { console.error('KIT BROKEN: could not rebuild ' + PREV + ' from upstream/ and patches/: ' + e.message); process.exit(2); }
+ 
+ // ---- two origins: A serves the app, its fixtures and parent pages; B serves only parent pages ----
+ const html = fs.readFileSync(file);
+@@ -340,7 +340,7 @@
+   { const { c, p } = await open(A + '/index.html');
+     await p.click('.menu-btn[data-menu="help"]'); await p.click('.menu .mi:has-text("About")'); await p.waitForTimeout(200);
+     const t = await p.evaluate(() => ({ h: document.querySelector('.modal-h h2').textContent, b: document.querySelector('.modal-b').textContent }));
+-    check('A1 About says "topology forge (formerly TopoForge)", names Bryant Frankford first, and the version', t.h === 'topology forge (formerly TopoForge)' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
++    check('A1 About says "draw", names Bryant Frankford first, and the version', t.h === 'draw' && t.b.indexOf('Bryant Frankford') > -1 && t.b.indexOf('Bryant Frankford') < t.b.indexOf('Corwin Brust') && t.b.includes('Version ' + VER), JSON.stringify(t).slice(0, 300));
+     await c.close(); }
+ 
+   // ======== 1.9 (A): more for an embedding page; each message behind its own switch ========
+@@ -1137,7 +1137,7 @@
+ console.log(red ? `TOPOFORGE EMBED RED (${red} failed)` : 'TOPOFORGE EMBED GREEN');
+ const passed = results.filter(r => r.startsWith('PASS')).length;
+ fs.writeFileSync(RESULT, [red ? 'RED' : 'GREEN',
+-  'topology forge (formerly TopoForge) ' + VER + ', the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
++  'draw ' + VER + ' (the drawing app), the embedding switches, in a real browser -- written by tests/browser/embed.browser.mjs (do not edit by hand)',
+   'Licence of this note: CC-BY-SA-4.0',
+   'Run at: ' + new Date().toISOString() + ' on ' + os.type() + ' ' + os.release() + ', node ' + process.version + ', ' + 'playwright ' + require(PW + '/package.json').version,
+   'File tested: index.html sha256 ' + sha(html),
+diff -ruN topoforge-1.14/tests/run.sh topoforge-1.15/tests/run.sh
+--- topoforge-1.14/tests/run.sh
++++ topoforge-1.15/tests/run.sh
+@@ -61,7 +61,7 @@
+ origin_red() { sed "s/postMessage({ type, detail }, location\.origin)/postMessage({ type, detail }, '*')/" "$html" > "$tmp/o.html"
+   cmp -s "$tmp/o.html" "$html" && { echo "could not plant"; return 2; }; origin_only "$tmp/o.html" >/dev/null && { echo "stayed green with '*'"; return 2; }; return 0; }
+ step "prove-red: a postMessage to '*' is caught" origin_red
+-# 1.8: the name is "topology forge (formerly TopoForge)" (Corwin, 2026-11-01 20:51: "topology is the correct
++# 1.15: the About box says draw (Corwin, 2026-11-11); 1.8: the name was "topology forge (formerly TopoForge)" (Corwin, 2026-11-01 20:51: "topology is the correct
+ # name"); the misspelling "topography" is in none of the files 1.8 touched
+ spelled() { bad=$(grep -l -i 'topography' "$@" 2>/dev/null); [ -z "$bad" ] || { echo "\"topography\" in: $bad"; return 1; }; }
+ named="$html $here/../README.org $here/../NEWS $here/../ChangeLog $here/../AUTHORS $here/../RECIPE.org $here/../spec/EMBED-v1.md $here/browser/embed.browser.mjs $here/browser/embed-prove-red.sh $here/../../README.org $here/../../NEWS $here/../../ChangeLog"
+@@ -69,7 +69,7 @@
+ # 1.8: topology's RECIPE.org names the app it serves by sha256 (its ingredients table)
+ recipe_sum() { # $1 = the app
+   r=$here/../../RECIPE.org; [ -f "$r" ] || { echo "no topology RECIPE.org beside topoforge/"; return 2; }
+-  want=$(sed -n 's/^| topology forge .*=www\/topoforge\/index.html=.*sha256 =\([0-9a-f]\{64\}\)= |$/\1/p' "$r")
++  want=$(sed -n 's/^| the drawing app (draw) .*=www\/topoforge\/index.html=.*sha256 =\([0-9a-f]\{64\}\)= |$/\1/p' "$r")   # 1.15: the row is named draw
+   got=$(sha256sum "$1" | cut -d' ' -f1)
+   [ -n "$want" ] && [ "$want" = "$got" ] || { echo "RECIPE.org says ${want:-nothing}, the app is $got"; return 1; }
+ }
+@@ -99,7 +99,8 @@
+     patch_sums "$tmp/pp" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
+   step "prove-red: a changed patch no longer matches RECIPE.org" patch_sums_red
+ fi
+-spelled_red() { sed 's/topology forge (formerly/topography forge (formerly/' "$html" > "$tmp/s.html"; cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
++spelled_red() { sed "s/title: 'draw'/title: 'topography'/" "$html" > "$tmp/s.html";   # 1.15: planted in the About box, which says draw
++ cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
+   spelled "$tmp/s.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
+ step "prove-red: \"topography\" planted in the app is caught" spelled_red
+ if [ $broken = 1 ]; then echo "KIT BROKEN"; exit 2; fi

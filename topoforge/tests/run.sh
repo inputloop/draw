@@ -61,7 +61,7 @@ step "every postMessage in the app names location.origin" origin_only "$html"
 origin_red() { sed "s/postMessage({ type, detail }, location\.origin)/postMessage({ type, detail }, '*')/" "$html" > "$tmp/o.html"
   cmp -s "$tmp/o.html" "$html" && { echo "could not plant"; return 2; }; origin_only "$tmp/o.html" >/dev/null && { echo "stayed green with '*'"; return 2; }; return 0; }
 step "prove-red: a postMessage to '*' is caught" origin_red
-# 1.8: the name is "topology forge (formerly TopoForge)" (Corwin, 2026-11-01 20:51: "topology is the correct
+# 1.15: the About box says draw (Corwin, 2026-11-11); 1.8: the name was "topology forge (formerly TopoForge)" (Corwin, 2026-11-01 20:51: "topology is the correct
 # name"); the misspelling "topography" is in none of the files 1.8 touched
 spelled() { bad=$(grep -l -i 'topography' "$@" 2>/dev/null); [ -z "$bad" ] || { echo "\"topography\" in: $bad"; return 1; }; }
 named="$html $here/../README.org $here/../NEWS $here/../ChangeLog $here/../AUTHORS $here/../RECIPE.org $here/../spec/EMBED-v1.md $here/browser/embed.browser.mjs $here/browser/embed-prove-red.sh $here/../../README.org $here/../../NEWS $here/../../ChangeLog"
@@ -69,7 +69,7 @@ step "the name is spelled topology in the app and its documents" spelled $named
 # 1.8: topology's RECIPE.org names the app it serves by sha256 (its ingredients table)
 recipe_sum() { # $1 = the app
   r=$here/../../RECIPE.org; [ -f "$r" ] || { echo "no topology RECIPE.org beside topoforge/"; return 2; }
-  want=$(sed -n 's/^| topology forge .*=www\/topoforge\/index.html=.*sha256 =\([0-9a-f]\{64\}\)= |$/\1/p' "$r")
+  want=$(sed -n 's/^| the drawing app (draw) .*=www\/topoforge\/index.html=.*sha256 =\([0-9a-f]\{64\}\)= |$/\1/p' "$r")   # 1.15: the row is named draw
   got=$(sha256sum "$1" | cut -d' ' -f1)
   [ -n "$want" ] && [ "$want" = "$got" ] || { echo "RECIPE.org says ${want:-nothing}, the app is $got"; return 1; }
 }
@@ -99,7 +99,8 @@ if [ -f "$here/../../RECIPE.org" ]; then
     patch_sums "$tmp/pp" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
   step "prove-red: a changed patch no longer matches RECIPE.org" patch_sums_red
 fi
-spelled_red() { sed 's/topology forge (formerly/topography forge (formerly/' "$html" > "$tmp/s.html"; cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
+spelled_red() { sed "s/title: 'draw'/title: 'topography'/" "$html" > "$tmp/s.html";   # 1.15: planted in the About box, which says draw
+ cmp -s "$tmp/s.html" "$html" && { echo "could not plant"; return 2; }
   spelled "$tmp/s.html" >/dev/null && { echo "stayed green"; return 2; }; return 0; }
 step "prove-red: \"topography\" planted in the app is caught" spelled_red
 if [ $broken = 1 ]; then echo "KIT BROKEN"; exit 2; fi

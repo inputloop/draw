@@ -5,6 +5,9 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Version 0.02 (2026-11-01; the corwin branch; unreleased)
 
+- The drawing app 1.15: its About box says draw, and that Bryant Frankford
+  made it first as TopoForge.  Nothing else in the app changes.  See
+  topoforge/NEWS.
 - The project is renamed draw (it was topology; Corwin, 2026-11-11), a plain
   dictionary word: the TopoForge names are held by others, offered for sale.
   The repository is github.com/inputloop/draw; the old address redirects.
